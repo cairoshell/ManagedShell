@@ -81,8 +81,11 @@ namespace ManagedShell.Common.Helpers
             int stride = width / 4;
             byte[] pixels = new byte[height * stride];
 
-            return BitmapSource.Create(width, height, 96, 96, PixelFormats.Indexed1,
+            BitmapSource bs = BitmapSource.Create(width, height, 96, 96, PixelFormats.Indexed1,
                 BitmapPalettes.WebPalette, pixels, stride);
+            bs.Freeze();
+
+            return bs;
         }
 
         /// <summary>
@@ -96,7 +99,7 @@ namespace ManagedShell.Common.Helpers
             {
                 BitmapImage img = new BitmapImage();
                 img.BeginInit();
-                img.UriSource = new Uri("pack://application:,,/Resources/nullIcon.png", UriKind.RelativeOrAbsolute);
+                img.UriSource = new Uri("pack://application:,,,/ManagedShell.Common;component/Resources/nullIcon.png", UriKind.RelativeOrAbsolute);
                 img.EndInit();
                 img.Freeze();
 

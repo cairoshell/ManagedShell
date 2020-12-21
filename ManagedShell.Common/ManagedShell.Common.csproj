@@ -7,6 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Resource Include="Resources\nullIcon.png" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\ManagedShell.Interop\ManagedShell.Interop.csproj" />
   </ItemGroup>
 
