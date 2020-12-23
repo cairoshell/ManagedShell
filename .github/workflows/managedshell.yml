@@ -28,8 +28,12 @@ jobs:
       with:
         dotnet-version: 3.1.404
 
+    - uses: dotnet/nbgv@v0.4.0
+      id: nbgv
+    - run: echo 'SemVer2: ${{ steps.nbgv.outputs.SemVer2 }}'
+
     - name: Build
-      run: dotnet build -c $env:Config
+      run: dotnet build -c $env:Config -p:Version=${{ steps.nbgv.outputs.SemVer2 }}
       env:
         Config: ${{ matrix.buildconfig }}
 
@@ -37,4 +41,4 @@ jobs:
       uses: actions/upload-artifact@v2
       with:
         name: ManagedShell nupkg
-        path: src\**\*.nupkg
+        path: '**\*.nupkg'
