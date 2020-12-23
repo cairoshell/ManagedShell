@@ -38,3 +38,29 @@ jobs:
       with:
         name: ManagedShell nupkg
         path: '**\*.nupkg'
+
+  publish:
+    
+    runs-on: windows-latest
+
+    env:
+      project: src\ManagedShell\ManagedShell.csproj
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        fetch-depth: 0
+
+    - name: Install nbgv
+      id: nbgv
+      uses: dotnet/nbgv@v0.4.0
+
+    - name: Build and publish to NuGet
+      uses: rohith/publish-nuget@v2
+      with:
+        PROJECT_FILE_PATH: $env:project
+        VERSION_STATIC: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
+        TAG_COMMIT: false
+        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
+        INCLUDE_SYMBOLS: true
