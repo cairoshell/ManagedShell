@@ -13,9 +13,11 @@ jobs:
     strategy:
       matrix:
         buildconfig: [ Release ]
-        project: [ src\ManagedShell\ManagedShell.csproj ]
 
     runs-on: windows-latest
+
+    env:
+      project: src\ManagedShell\ManagedShell.csproj
 
     steps:
     - name: Checkout
@@ -27,10 +29,9 @@ jobs:
       uses: dotnet/nbgv@v0.4.0
 
     - name: Build
-      run: dotnet build $env:Project -c $env:Config
+      run: dotnet build $env:project -c $env:config
       env:
-        Config: ${{ matrix.buildconfig }}
-        Project: ${{ matrix.project }}
+        config: ${{ matrix.buildconfig }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v2
