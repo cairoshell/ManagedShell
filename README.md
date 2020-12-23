@@ -1,5 +1,5 @@
 # ManagedShell
-A common library for creating Windows shell replacements using .NET, written in C#.
+A library for creating Windows shell replacements using .NET, written in C#.
 
 ## Features
 - Tasks service that provides taskbar functionality

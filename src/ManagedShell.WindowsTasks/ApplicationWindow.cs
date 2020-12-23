@@ -106,7 +106,7 @@ namespace ManagedShell.WindowsTasks
             {
                 if (string.IsNullOrEmpty(_winFileName))
                 {
-                    _winFileName = Shell.GetPathForHandle(Handle);
+                    _winFileName = ShellHelper.GetPathForHandle(Handle);
                 }
 
                 return _winFileName;
@@ -312,7 +312,7 @@ namespace ManagedShell.WindowsTasks
         private bool getShowInTaskbar()
         {
             // EnumWindows and ShellHook return UWP app windows that are 'cloaked', which should not be visible in the taskbar.
-            if (Shell.IsWindows8OrBetter)
+            if (EnvironmentHelper.IsWindows8OrBetter)
             {
                 uint cloaked;
                 int cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
@@ -418,13 +418,13 @@ namespace ManagedShell.WindowsTasks
                         if (hIco == IntPtr.Zero && _icon == null)
                         {
                             // last resort: find icon by executable. if we already have an icon from a previous fetch, then just skip this
-                            if (Shell.Exists(WinFileName))
+                            if (ShellHelper.Exists(WinFileName))
                             {
                                 int size = 1;
                                 if (sizeSetting != IconSize.Small)
                                     size = 0;
 
-                                hIco = Shell.GetIconByFilename(WinFileName, size);
+                                hIco = IconHelper.GetIconByFilename(WinFileName, size);
                             }
                         }
 
@@ -449,7 +449,7 @@ namespace ManagedShell.WindowsTasks
                     }
 
                     _iconLoading = false;
-                }, CancellationToken.None, TaskCreationOptions.None, Shell.IconScheduler);
+                }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
             }
         }
 

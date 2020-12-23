@@ -22,7 +22,7 @@ namespace ManagedShell.WindowsTray
 
         internal void Run()
         {
-            if (!Shell.IsCairoRunningAsShell && trayDelegate != null)
+            if (!EnvironmentHelper.IsAppRunningAsShell && trayDelegate != null)
             {
                 bool autoTrayEnabled = GetAutoTrayEnabled();
 
@@ -230,7 +230,7 @@ namespace ManagedShell.WindowsTray
         {
             try
             {
-                if (Shell.IsWindows8OrBetter)
+                if (EnvironmentHelper.IsWindows8OrBetter)
                 {
                     var trayNotifyInstance = (ITrayNotify)trayNotify;
                     trayNotifyInstance.EnableAutoTray(enabled);

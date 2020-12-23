@@ -62,7 +62,7 @@ namespace ManagedShell
 
         public void Dispose()
         {
-            Shell.DisposeIml();
+            IconHelper.DisposeIml();
 
             FullScreenHelper.Dispose();
             NotificationArea.Dispose();

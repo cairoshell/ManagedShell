@@ -12,7 +12,7 @@ namespace ManagedShell.WindowsTray
 
         public void Start()
         {
-            if (Shell.IsCairoRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell)
             {
                 try
                 {

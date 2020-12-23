@@ -6,8 +6,7 @@
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
     <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
     <IncludeSymbols>true</IncludeSymbols>
-    <Version>0.0.1</Version>
-    <Description>A common library for creating Windows shell replacements using .NET.</Description>
+    <Description>A library for creating Windows shell replacements using .NET.</Description>
     <RepositoryUrl>https://github.com/cairoshell/ManagedShell.git</RepositoryUrl>
     <RepositoryType>git</RepositoryType>
     <PackageProjectUrl>https://github.com/cairoshell/ManagedShell</PackageProjectUrl>

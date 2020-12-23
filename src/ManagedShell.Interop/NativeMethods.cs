@@ -1,4 +1,5 @@
-﻿using System.Runtime.InteropServices;
+﻿using System;
+using System.Runtime.InteropServices;
 
 namespace ManagedShell.Interop
 {
@@ -32,6 +33,13 @@ namespace ManagedShell.Interop
         {
             public long x;
             public long y;
+        }
+
+        // lo = x; hi = y
+        public static IntPtr MakeLParam(int loWord, int hiWord)
+        {
+            int i = ((short)hiWord << 16) | ((short)loWord & 0xffff);
+            return new IntPtr(i);
         }
     }
 }

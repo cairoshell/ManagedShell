@@ -116,7 +116,7 @@ namespace ManagedShell.AppBar
                 }
 
                 // make sure this is not a cloaked window
-                if (Shell.IsWindows8OrBetter)
+                if (EnvironmentHelper.IsWindows8OrBetter)
                 {
                     int cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
                     DwmGetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out uint cloaked, cbSize);

@@ -21,7 +21,7 @@ namespace ManagedShell.Common.Helpers
         {
             BitmapSource bs = null;
             
-            IntPtr hIcon = Shell.GetIconByFilename(filename, (int)size);
+            IntPtr hIcon = IconHelper.GetIconByFilename(filename, (int)size);
                 
             if (hIcon == IntPtr.Zero || hIcon == null)
             {

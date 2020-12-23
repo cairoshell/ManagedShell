@@ -64,7 +64,7 @@ namespace ManagedShell.WindowsTasks
                 TASKBARBUTTONCREATEDMESSAGE = RegisterWindowMessage("TaskbarButtonCreated");
                 _HookWin.MessageReceived += ShellWinProc;
 
-                if (Shell.IsWindows8OrBetter)
+                if (EnvironmentHelper.IsWindows8OrBetter)
                 {
                     // set event hook for uncloak events
                     uncloakEventProc = UncloakEventCallback;
@@ -208,7 +208,7 @@ namespace ManagedShell.WindowsTasks
             // Only send TaskbarButtonCreated if we are shell, and if OS is not Server Core
             // This is because if Explorer is running, it will send the message, so we don't need to
             // Server Core doesn't support ITaskbarList, so sending this message on that OS could cause some assuming apps to crash
-            if (Shell.IsCairoRunningAsShell && !Shell.IsServerCore) SendNotifyMessage(win.Handle, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
+            if (EnvironmentHelper.IsAppRunningAsShell && !EnvironmentHelper.IsServerCore) SendNotifyMessage(win.Handle, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
 
             return win;
         }

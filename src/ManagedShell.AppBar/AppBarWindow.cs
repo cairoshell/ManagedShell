@@ -66,14 +66,14 @@ namespace ManagedShell.AppBar
             // set initial DPI. We do it here so that we get the correct value when DPI has changed since initial user logon to the system.
             if (Screen.Primary)
             {
-                Shell.DpiScale = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice.M11;
+                DpiHelper.DpiScale = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice.M11;
             }
 
             dpiScale = PresentationSource.FromVisual(this).CompositionTarget.TransformToDevice.M11;
 
             SetPosition();
 
-            if (Shell.IsCairoRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell)
             {
                 // set position again, on a delay, in case one display has a different DPI. for some reason the system overrides us if we don't wait
                 DelaySetPosition();
@@ -82,7 +82,7 @@ namespace ManagedShell.AppBar
             RegisterAppBar();
 
             // hide from alt-tab etc
-            Shell.HideWindowFromTasks(Handle);
+            WindowHelper.HideWindowFromTasks(Handle);
 
             // register for full-screen notifications
             _fullScreenHelper.FullScreenApps.CollectionChanged += FullScreenApps_CollectionChanged;
@@ -162,7 +162,7 @@ namespace ManagedShell.AppBar
                 }
                 handled = true;
             }
-            else if (msg == (int)NativeMethods.WM.ACTIVATE && enableAppBar && !Shell.IsCairoRunningAsShell && !AllowClose)
+            else if (msg == (int)NativeMethods.WM.ACTIVATE && enableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
                 _appBarManager.AppBarActivate(hwnd);
             }
@@ -180,7 +180,7 @@ namespace ManagedShell.AppBar
                     wndPos.UpdateMessage(lParam);
                 }
             }
-            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && enableAppBar && !Shell.IsCairoRunningAsShell && !AllowClose)
+            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && enableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
                 _appBarManager.AppBarWindowPosChanged(hwnd);
             }
@@ -188,7 +188,7 @@ namespace ManagedShell.AppBar
             {
                 if (Screen.Primary)
                 {
-                    Shell.DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
+                    DpiHelper.DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
                 }
 
                 dpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
@@ -233,7 +233,7 @@ namespace ManagedShell.AppBar
         protected internal void SetScreenPosition()
         {
             // set our position if running as shell, otherwise let AppBar do the work
-            if (Shell.IsCairoRunningAsShell || !enableAppBar)
+            if (EnvironmentHelper.IsAppRunningAsShell || !enableAppBar)
             {
                 DelaySetPosition();
             }
@@ -269,7 +269,7 @@ namespace ManagedShell.AppBar
                 ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} conceding to full-screen app");
 
                 Topmost = false;
-                Shell.ShowWindowBottomMost(Handle);
+                WindowHelper.ShowWindowBottomMost(Handle);
             }
             else
             {
@@ -277,7 +277,7 @@ namespace ManagedShell.AppBar
 
                 isRaising = true;
                 Topmost = true;
-                Shell.ShowWindowTopMost(Handle);
+                WindowHelper.ShowWindowTopMost(Handle);
                 isRaising = false;
             }
         }
@@ -287,13 +287,13 @@ namespace ManagedShell.AppBar
             if (enableBlur != enable && Handle != IntPtr.Zero)
             {
                 enableBlur = enable;
-                Shell.SetWindowBlur(Handle, enable);
+                WindowHelper.SetWindowBlur(Handle, enable);
             }
         }
 
         protected void RegisterAppBar()
         {
-            if (!Shell.IsCairoRunningAsShell && enableAppBar && !_appBarManager.AppBars.Contains(this))
+            if (!EnvironmentHelper.IsAppRunningAsShell && enableAppBar && !_appBarManager.AppBars.Contains(this))
             {
                 appbarMessageId = _appBarManager.RegisterBar(this, ActualWidth * dpiScale, desiredHeight * dpiScale, appBarEdge);
             }

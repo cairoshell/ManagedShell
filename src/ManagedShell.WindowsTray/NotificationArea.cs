@@ -204,16 +204,16 @@ namespace ManagedShell.WindowsTray
             if (icon != null)
             {
                 if (dwMessage == 1)
-                    return Shell.MakeLParam(icon.Placement.Left, icon.Placement.Top);
+                    return MakeLParam(icon.Placement.Left, icon.Placement.Top);
                 else if (dwMessage == 2)
-                    return Shell.MakeLParam(icon.Placement.Right, icon.Placement.Bottom);
+                    return MakeLParam(icon.Placement.Right, icon.Placement.Bottom);
             }
             else if (guidItem == new Guid(VOLUME_GUID))
             {
                 if (dwMessage == 1)
-                    return Shell.MakeLParam(defaultPlacement.Left, defaultPlacement.Top);
+                    return MakeLParam(defaultPlacement.Left, defaultPlacement.Top);
                 else if (dwMessage == 2)
-                    return Shell.MakeLParam(defaultPlacement.Right, defaultPlacement.Bottom);
+                    return MakeLParam(defaultPlacement.Right, defaultPlacement.Bottom);
             }
 
             return IntPtr.Zero;
@@ -236,7 +236,7 @@ namespace ManagedShell.WindowsTray
                         bool exists = false;
 
                         // hide icons while we are shell which require UWP support & we have a separate implementation for
-                        if (nicData.guidItem == new Guid(VOLUME_GUID) && ((Shell.IsCairoRunningAsShell && Shell.IsWindows10OrBetter) || GroupPolicyHelper.HideScaVolume))
+                        if (nicData.guidItem == new Guid(VOLUME_GUID) && ((EnvironmentHelper.IsAppRunningAsShell && EnvironmentHelper.IsWindows10OrBetter) || GroupPolicyHelper.HideScaVolume))
                             return false;
 
                         foreach (NotifyIcon ti in TrayIcons)
@@ -309,7 +309,7 @@ namespace ManagedShell.WindowsTray
                             trayIcon.Placement = defaultPlacement;
 
                             // set properties used for pinning
-                            trayIcon.Path = Shell.GetPathForHandle(trayIcon.HWnd);
+                            trayIcon.Path = ShellHelper.GetPathForHandle(trayIcon.HWnd);
                             trayIcon.SetPinValues();
 
                             if (trayIcon.Icon == null)

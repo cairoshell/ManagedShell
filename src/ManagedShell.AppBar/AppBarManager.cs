@@ -317,7 +317,7 @@ namespace ManagedShell.AppBar
 
         public static void ResetWorkArea()
         {
-            if (Shell.IsCairoRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell)
             {
                 // TODO this is wrong for multi-display
                 // set work area back to full screen size. we can't assume what pieces of the old work area may or may not be still used

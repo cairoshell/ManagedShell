@@ -89,7 +89,7 @@ namespace ManagedShell.UWPInterop
             XmlDocument manifest = new XmlDocument();
             string manPath = path + "\\AppxManifest.xml";
 
-            if (Shell.Exists(manPath))
+            if (ShellHelper.Exists(manPath))
                 manifest.Load(manPath);
 
             return manifest;
@@ -220,7 +220,7 @@ namespace ManagedShell.UWPInterop
 
             // do some sorting based on DPI for prettiness
             if (scale == 0)
-                scale = Shell.DpiScale;
+                scale = DpiHelper.DpiScale;
 
             int numMoved = 0;
             for (int i = 0; i < iconAssets.Count; i++)

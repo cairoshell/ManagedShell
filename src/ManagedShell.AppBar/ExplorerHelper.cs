@@ -142,7 +142,7 @@ namespace ManagedShell.AppBar
 
         public void HideTaskbar()
         {
-            if (!Shell.IsCairoRunningAsShell)
+            if (!EnvironmentHelper.IsAppRunningAsShell)
             {
                 if (startupTaskbarState == null)
                 {
@@ -159,7 +159,7 @@ namespace ManagedShell.AppBar
 
         public void ShowTaskbar()
         {
-            if (!Shell.IsCairoRunningAsShell)
+            if (!EnvironmentHelper.IsAppRunningAsShell)
             {
                 SetTaskbarState(startupTaskbarState ?? TaskbarState.OnTop);
                 SetTaskbarVisibility((int)SetWindowPosFlags.SWP_SHOWWINDOW);
