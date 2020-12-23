@@ -43,9 +43,6 @@ jobs:
     
     runs-on: windows-latest
 
-    env:
-      project: src/ManagedShell/ManagedShell.csproj
-
     steps:
     - name: Checkout
       uses: actions/checkout@v2
@@ -59,7 +56,7 @@ jobs:
     - name: Build and publish to NuGet
       uses: rohith/publish-nuget@v2
       with:
-        PROJECT_FILE_PATH: $env:project
+        PROJECT_FILE_PATH: src/ManagedShell/ManagedShell.csproj
         VERSION_STATIC: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
         TAG_COMMIT: false
         NUGET_KEY: ${{secrets.NUGET_API_KEY}}
