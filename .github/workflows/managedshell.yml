@@ -13,6 +13,7 @@ jobs:
     strategy:
       matrix:
         buildconfig: [ Release ]
+        project: [ src\ManagedShell\ManagedShell.csproj ]
 
     runs-on: windows-latest
 
@@ -26,9 +27,10 @@ jobs:
       uses: dotnet/nbgv@v0.4.0
 
     - name: Build
-      run: dotnet build -c $env:Config
+      run: dotnet build $env:Project -c $env:Config
       env:
         Config: ${{ matrix.buildconfig }}
+        Project: ${{ matrix.project }}
 
     - name: Upload build artifacts
       uses: actions/upload-artifact@v2
