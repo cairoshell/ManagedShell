@@ -39,25 +39,6 @@ jobs:
         name: ManagedShell nupkg
         path: '**\*.nupkg'
 
-  publish:
-    
-    runs-on: windows-latest
-
-    steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-      with:
-        fetch-depth: 0
-
-    - name: Install nbgv
-      id: nbgv
-      uses: dotnet/nbgv@v0.4.0
-
-    - name: Build and publish to NuGet
-      uses: rohith/publish-nuget@v2
-      with:
-        PROJECT_FILE_PATH: src/ManagedShell/ManagedShell.csproj
-        VERSION_STATIC: ${{ steps.nbgv.outputs.NuGetPackageVersion }}
-        TAG_COMMIT: false
-        NUGET_KEY: ${{secrets.NUGET_API_KEY}}
-        INCLUDE_SYMBOLS: true
+    - name: Publish to NuGet
+      if: matrix.buildconfig == 'Release'
+      run: dotnet nuget push **\*.nupkg -s https://api.nuget.org/v3/index.json -k ${{secrets.NUGET_API_KEY}} --skip-duplicate
