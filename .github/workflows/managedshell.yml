@@ -44,7 +44,7 @@ jobs:
     runs-on: windows-latest
 
     env:
-      project: src\ManagedShell\ManagedShell.csproj
+      project: src/ManagedShell/ManagedShell.csproj
 
     steps:
     - name: Checkout
