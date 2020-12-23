@@ -22,18 +22,12 @@ jobs:
       with:
         fetch-depth: 0
 
-    # Install the .NET Core workload
-    - name: Install .NET Core
-      uses: actions/setup-dotnet@v1
-      with:
-        dotnet-version: 3.1.404
-
     - name: Install nbgv
       uses: dotnet/nbgv@v0.4.0
       id: nbgv
 
     - name: Build
-      run: dotnet build -c $env:Config -p:Version=${{ steps.nbgv.outputs.SemVer2 }}
+      run: dotnet build -c $env:Config
       env:
         Config: ${{ matrix.buildconfig }}
 
