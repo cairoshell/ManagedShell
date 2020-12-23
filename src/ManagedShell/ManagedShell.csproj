@@ -19,6 +19,7 @@
     <ProjectReference Include="..\ManagedShell.Interop\ManagedShell.Interop.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.UWPInterop\ManagedShell.UWPInterop.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.WindowsTasks\ManagedShell.WindowsTasks.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\ManagedShell.WindowsTray\ManagedShell.WindowsTray.csproj" PrivateAssets="all" />
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
   </ItemGroup>
 
