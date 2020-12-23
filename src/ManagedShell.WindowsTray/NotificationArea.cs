@@ -21,14 +21,16 @@ namespace ManagedShell.WindowsTray
         };
 
         const string VOLUME_GUID = "7820ae73-23e3-4229-82c1-e41cb67d5b9c";
-        NativeMethods.Rect defaultPlacement = new NativeMethods.Rect { Top = 0, Left = GetSystemMetrics(0) - 200, Bottom = 23, Right = 23 };
+        readonly NativeMethods.Rect defaultPlacement = new NativeMethods.Rect { Top = 0, Left = GetSystemMetrics(0) - 200, Bottom = 23, Right = 23 };
+        
+        public string[] PinnedNotifyIcons { get; internal set; }
+        public IntPtr Handle { get; private set; }
+        public bool IsFailed { get; private set; }
+
         private SystrayDelegate trayDelegate;
         private IconDataDelegate iconDataDelegate;
         private TrayHostSizeDelegate trayHostSizeDelegate;
-        internal string[] PinnedNotifyIcons;
         private object _lockObject = new object();
-        public IntPtr Handle;
-        public bool IsFailed;
         private ShellServiceObject shellServiceObject;
         private TrayHostSizeData trayHostSizeData = new TrayHostSizeData { edge = (int)ABEdge.ABE_TOP, rc = new NativeMethods.Rect { Top = 0, Left = 0, Bottom = 23, Right = GetSystemMetrics(0) } };
 

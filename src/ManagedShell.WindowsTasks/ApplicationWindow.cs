@@ -340,7 +340,7 @@ namespace ManagedShell.WindowsTasks
             return CanAddToTaskbar;
         }
 
-        public void Uncloak()
+        internal void Uncloak()
         {
             ShellLogger.Debug($"Uncloak event received for {Title}");
 
@@ -453,7 +453,7 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public void UpdateProperties()
+        internal void UpdateProperties()
         {
             setTitle();
             SetShowInTaskbar();
@@ -542,7 +542,7 @@ namespace ManagedShell.WindowsTasks
         /// Returns whether a window is normal (1), minimized (2), or maximized (3).
         /// </summary>
         /// <param name="hWnd">The handle of the window.</param>
-        public NativeMethods.WindowShowStyle GetWindowShowStyle(IntPtr hWnd)
+        private NativeMethods.WindowShowStyle GetWindowShowStyle(IntPtr hWnd)
         {
             NativeMethods.WINDOWPLACEMENT placement = new NativeMethods.WINDOWPLACEMENT();
             NativeMethods.GetWindowPlacement(hWnd, ref placement);

@@ -27,17 +27,17 @@ namespace ManagedShell.WindowsTray
         }
 
         #region Set callbacks
-        public void SetSystrayCallback(SystrayDelegate theDelegate)
+        internal void SetSystrayCallback(SystrayDelegate theDelegate)
         {
             trayDelegate = theDelegate;
         }
 
-        public void SetIconDataCallback(IconDataDelegate theDelegate)
+        internal void SetIconDataCallback(IconDataDelegate theDelegate)
         {
             iconDataDelegate = theDelegate;
         }
 
-        public void SetTrayHostSizeCallback(TrayHostSizeDelegate theDelegate)
+        internal void SetTrayHostSizeCallback(TrayHostSizeDelegate theDelegate)
         {
             trayHostSizeDelegate = theDelegate;
         }
