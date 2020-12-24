@@ -293,7 +293,7 @@ namespace ManagedShell.AppBar
 
         protected void RegisterAppBar()
         {
-            if (!EnvironmentHelper.IsAppRunningAsShell && enableAppBar && !_appBarManager.AppBars.Contains(this))
+            if (enableAppBar && !_appBarManager.AppBars.Contains(this))
             {
                 appbarMessageId = _appBarManager.RegisterBar(this, ActualWidth * dpiScale, desiredHeight * dpiScale, appBarEdge);
             }

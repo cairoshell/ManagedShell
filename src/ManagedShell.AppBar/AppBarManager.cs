@@ -48,24 +48,34 @@ namespace ManagedShell.AppBar
 
                 if (!AppBars.Contains(abWindow))
                 {
-                    uCallBack = RegisterWindowMessage("AppBarMessage");
-                    abd.uCallbackMessage = uCallBack;
+                    if (!EnvironmentHelper.IsAppRunningAsShell)
+                    {
+                        uCallBack = RegisterWindowMessage("AppBarMessage");
+                        abd.uCallbackMessage = uCallBack;
 
-                    _explorerHelper.SuspendTrayService();
-                    SHAppBarMessage((int)ABMsg.ABM_NEW, ref abd);
-                    _explorerHelper.ResumeTrayService();
+                        _explorerHelper.SuspendTrayService();
+                        SHAppBarMessage((int) ABMsg.ABM_NEW, ref abd);
+                        _explorerHelper.ResumeTrayService();
+                    }
                     
                     AppBars.Add(abWindow);
                     
                     ShellLogger.Debug($"AppBarManager: Created AppBar for handle {abWindow.Handle}");
 
-                    ABSetPos(abWindow, width, height, edge, true);
+                    if (!EnvironmentHelper.IsAppRunningAsShell)
+                    {
+                        ABSetPos(abWindow, width, height, edge, true);
+                    }
                 }
                 else
                 {
-                    _explorerHelper.SuspendTrayService();
-                    SHAppBarMessage((int)ABMsg.ABM_REMOVE, ref abd);
-                    _explorerHelper.ResumeTrayService();
+                    if (!EnvironmentHelper.IsAppRunningAsShell)
+                    {
+                        _explorerHelper.SuspendTrayService();
+                        SHAppBarMessage((int) ABMsg.ABM_REMOVE, ref abd);
+                        _explorerHelper.ResumeTrayService();
+                    }
+
                     AppBars.Remove(abWindow);
                     ShellLogger.Debug($"AppBarManager: Removed AppBar for handle {abWindow.Handle}");
 
@@ -297,7 +307,6 @@ namespace ManagedShell.AppBar
                     }
 
                     dpiScale = window.dpiScale;
-                    break;
                 }
             }
 
