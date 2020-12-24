@@ -19,7 +19,7 @@ namespace ManagedShell.WindowsTasks
         private NativeWindowEx _HookWin;
         private object _windowsLock = new object();
         internal bool IsInitialized;
-        internal IconSize TaskIconSize;
+        public IconSize TaskIconSize;
 
         private static int WM_SHELLHOOKMESSAGE = -1;
         private static int WM_TASKBARCREATEDMESSAGE = -1;

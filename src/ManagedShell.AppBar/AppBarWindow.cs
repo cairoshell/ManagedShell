@@ -32,7 +32,7 @@ namespace ManagedShell.AppBar
         // AppBar properties
         private int appbarMessageId = -1;
         public NativeMethods.ABEdge appBarEdge = NativeMethods.ABEdge.ABE_TOP;
-        internal bool enableAppBar = true;
+        protected internal bool enableAppBar = true;
         protected internal bool requiresScreenEdge;
 
         public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper)
@@ -230,7 +230,7 @@ namespace ManagedShell.AppBar
             };
         }
 
-        protected internal void SetScreenPosition()
+        public void SetScreenPosition()
         {
             // set our position if running as shell, otherwise let AppBar do the work
             if (EnvironmentHelper.IsAppRunningAsShell || !enableAppBar)

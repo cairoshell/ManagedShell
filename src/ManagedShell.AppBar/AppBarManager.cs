@@ -8,7 +8,7 @@ using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.AppBar
 {
-    public class AppBarManager
+    public class AppBarManager : IDisposable
     {
         private static object appBarLock = new object();
         
@@ -332,5 +332,10 @@ namespace ManagedShell.AppBar
             }
         }
         #endregion
+
+        public void Dispose()
+        {
+            ResetWorkArea();
+        }
     }
 }

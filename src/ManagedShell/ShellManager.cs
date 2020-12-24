@@ -64,6 +64,7 @@ namespace ManagedShell
         {
             IconHelper.DisposeIml();
 
+            AppBarManager.Dispose();
             FullScreenHelper.Dispose();
             NotificationArea.Dispose();
             Tasks.Dispose();
