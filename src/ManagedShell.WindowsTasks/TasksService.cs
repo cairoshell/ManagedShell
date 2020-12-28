@@ -181,10 +181,9 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-
         public void CloseWindow(ApplicationWindow window)
         {
-            if (window.Close() != IntPtr.Zero)
+            if (window.DoClose() != IntPtr.Zero)
             {
                 ShellLogger.Debug($"Removing window {window.Title} from collection due to no response");
                 window.Dispose();

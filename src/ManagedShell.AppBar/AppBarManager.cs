@@ -173,7 +173,7 @@ namespace ManagedShell.AppBar
                     abd.rc.Right = right;
                     if (abd.uEdge == (int)ABEdge.ABE_TOP)
                     {
-                        if (!abWindow.requiresScreenEdge)
+                        if (!abWindow.RequiresScreenEdge)
                         {
                             abd.rc.Top = top + Convert.ToInt32(GetAppBarEdgeWindowsHeight((ABEdge)abd.uEdge, abWindow.Screen));
                         }
@@ -186,7 +186,7 @@ namespace ManagedShell.AppBar
                     }
                     else
                     {
-                        if (!abWindow.requiresScreenEdge)
+                        if (!abWindow.RequiresScreenEdge)
                         {
                             abd.rc.Bottom = bottom - Convert.ToInt32(GetAppBarEdgeWindowsHeight((ABEdge)abd.uEdge, abWindow.Screen));
                         }
@@ -228,10 +228,10 @@ namespace ManagedShell.AppBar
                 bool isSameCoords = false;
                 if (!isCreate)
                 {
-                    bool topUnchanged = abd.rc.Top == (abWindow.Top * abWindow.dpiScale);
-                    bool leftUnchanged = abd.rc.Left == (abWindow.Left * abWindow.dpiScale);
-                    bool bottomUnchanged = abd.rc.Bottom == (abWindow.Top * abWindow.dpiScale) + sHeight;
-                    bool rightUnchanged = abd.rc.Right == (abWindow.Left * abWindow.dpiScale) + sWidth;
+                    bool topUnchanged = abd.rc.Top == (abWindow.Top * abWindow.DpiScale);
+                    bool leftUnchanged = abd.rc.Left == (abWindow.Left * abWindow.DpiScale);
+                    bool bottomUnchanged = abd.rc.Bottom == (abWindow.Top * abWindow.DpiScale) + sHeight;
+                    bool rightUnchanged = abd.rc.Right == (abWindow.Left * abWindow.DpiScale) + sWidth;
 
                     isSameCoords = topUnchanged
                                    && leftUnchanged
@@ -241,7 +241,7 @@ namespace ManagedShell.AppBar
 
                 if (!isSameCoords)
                 {
-                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {abWindow.Top * abWindow.dpiScale}x{abWindow.Left * abWindow.dpiScale}x{(abWindow.Top * abWindow.dpiScale) + sHeight}x{ (abWindow.Left * abWindow.dpiScale) + sWidth}");
+                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {abWindow.Top * abWindow.DpiScale}x{abWindow.Left * abWindow.DpiScale}x{(abWindow.Top * abWindow.DpiScale) + sHeight}x{ (abWindow.Left * abWindow.DpiScale) + sWidth}");
                     abWindow.SetAppBarPosition(abd.rc);
                 }
 
@@ -285,33 +285,43 @@ namespace ManagedShell.AppBar
         {
             double topEdgeWindowHeight = 0;
             double bottomEdgeWindowHeight = 0;
+            double leftEdgeWindowWidth = 0;
+            double rightEdgeWindowWidth = 0;
             Rect rc;
-            rc.Left = screen.Bounds.Left;
-            rc.Right = screen.Bounds.Right;
 
             // get appropriate windows for this display
             foreach (var window in AppBars)
             {
                 if (window.Screen.DeviceName == screen.DeviceName)
                 {
-                    if ((window.enableAppBar || !enabledBarsOnly) && (window.requiresScreenEdge || !edgeBarsOnly))
+                    if ((window.EnableAppBar || !enabledBarsOnly) && (window.RequiresScreenEdge || !edgeBarsOnly))
                     {
-                        if (window.appBarEdge == ABEdge.ABE_TOP)
+                        if (window.AppBarEdge == ABEdge.ABE_TOP)
                         {
                             topEdgeWindowHeight += window.ActualHeight;
                         }
-                        else if (window.appBarEdge == ABEdge.ABE_BOTTOM)
+                        else if (window.AppBarEdge == ABEdge.ABE_BOTTOM)
                         {
                             bottomEdgeWindowHeight += window.ActualHeight;
                         }
+                        else if (window.AppBarEdge == ABEdge.ABE_LEFT)
+                        {
+                            leftEdgeWindowWidth += window.ActualWidth;
+                        }
+                        else if (window.AppBarEdge == ABEdge.ABE_RIGHT)
+                        {
+                            rightEdgeWindowWidth += window.ActualWidth;
+                        }
                     }
 
-                    dpiScale = window.dpiScale;
+                    dpiScale = window.DpiScale;
                 }
             }
 
             rc.Top = screen.Bounds.Top + (int)(topEdgeWindowHeight * dpiScale);
             rc.Bottom = screen.Bounds.Bottom - (int)(bottomEdgeWindowHeight * dpiScale);
+            rc.Left = screen.Bounds.Left + (int)(leftEdgeWindowWidth * dpiScale);
+            rc.Right = screen.Bounds.Right - (int)(rightEdgeWindowWidth * dpiScale);
 
             return rc;
         }

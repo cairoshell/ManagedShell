@@ -93,11 +93,6 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public void CloseByTaskService()
-        {
-            _tasksService.CloseWindow(this);
-        }
-
         private string _winFileName = "";
 
         public string WinFileName
@@ -514,12 +509,17 @@ namespace ManagedShell.WindowsTasks
             NativeMethods.SetForegroundWindow(Handle);
         }
 
-        internal IntPtr Close()
+        internal IntPtr DoClose()
         {
             IntPtr retval = IntPtr.Zero;
             NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_CLOSE, 0, 2, 200, ref retval);
 
             return retval;
+        }
+
+        public void Close()
+        {
+            _tasksService.CloseWindow(this);
         }
 
         public void Move()

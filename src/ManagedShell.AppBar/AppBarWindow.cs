@@ -17,25 +17,25 @@ namespace ManagedShell.AppBar
         protected readonly ExplorerHelper _explorerHelper;
         protected readonly FullScreenHelper _fullScreenHelper;
         public Screen Screen;
-        public double dpiScale = 1.0;
-        protected bool processScreenChanges;
+        public double DpiScale = 1.0;
+        protected bool ProcessScreenChanges = true;
 
         // Window properties
         private WindowInteropHelper helper;
-        private bool isRaising;
+        private bool IsRaising;
         public IntPtr Handle;
         public bool AllowClose;
         public bool IsClosing;
-        protected double desiredHeight;
-        private bool enableBlur;
+        protected double DesiredHeight;
+        private bool EnableBlur;
 
         // AppBar properties
-        private int appbarMessageId = -1;
-        public NativeMethods.ABEdge appBarEdge = NativeMethods.ABEdge.ABE_TOP;
-        protected internal bool enableAppBar = true;
-        protected internal bool requiresScreenEdge;
+        private int AppBarMessageId = -1;
+        public NativeMethods.ABEdge AppBarEdge;
+        protected internal bool EnableAppBar = true;
+        protected internal bool RequiresScreenEdge;
 
-        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper)
+        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, Screen screen, NativeMethods.ABEdge edge, double height)
         {
             _explorerHelper = explorerHelper;
             _fullScreenHelper = fullScreenHelper;
@@ -50,10 +50,14 @@ namespace ManagedShell.AppBar
             Topmost = true;
             UseLayoutRounding = true;
             WindowStyle = WindowStyle.None;
+
+            Screen = screen;
+            AppBarEdge = edge;
+            DesiredHeight = height;
         }
 
         #region Events
-        private void OnSourceInitialized(object sender, EventArgs e)
+        protected virtual void OnSourceInitialized(object sender, EventArgs e)
         {
             // set up helper and get handle
             helper = new WindowInteropHelper(this);
@@ -69,7 +73,7 @@ namespace ManagedShell.AppBar
                 DpiHelper.DpiScale = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice.M11;
             }
 
-            dpiScale = PresentationSource.FromVisual(this).CompositionTarget.TransformToDevice.M11;
+            DpiScale = PresentationSource.FromVisual(this).CompositionTarget.TransformToDevice.M11;
 
             SetPosition();
 
@@ -86,8 +90,6 @@ namespace ManagedShell.AppBar
 
             // register for full-screen notifications
             _fullScreenHelper.FullScreenApps.CollectionChanged += FullScreenApps_CollectionChanged;
-
-            PostInit();
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -134,14 +136,14 @@ namespace ManagedShell.AppBar
             }
         }
 
-        private IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
+        protected virtual IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
         {
-            if (msg == appbarMessageId && appbarMessageId != -1)
+            if (msg == AppBarMessageId && AppBarMessageId != -1)
             {
                 switch ((NativeMethods.AppBarNotifications)wParam.ToInt32())
                 {
                     case NativeMethods.AppBarNotifications.PosChanged:
-                        _appBarManager.ABSetPos(this, ActualWidth * dpiScale, desiredHeight * dpiScale, appBarEdge);
+                        _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
                         break;
 
                     case NativeMethods.AppBarNotifications.WindowArrange:
@@ -162,7 +164,7 @@ namespace ManagedShell.AppBar
                 }
                 handled = true;
             }
-            else if (msg == (int)NativeMethods.WM.ACTIVATE && enableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
+            else if (msg == (int)NativeMethods.WM.ACTIVATE && EnableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
                 _appBarManager.AppBarActivate(hwnd);
             }
@@ -173,14 +175,14 @@ namespace ManagedShell.AppBar
 
                 // Determine if the z-order is changing (absence of SWP_NOZORDER flag)
                 // If we are intentionally trying to become topmost, make it so
-                if (isRaising && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOZORDER) == 0)
+                if (IsRaising && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOZORDER) == 0)
                 {
                     // Sometimes Windows thinks we shouldn't go topmost, so poke here to make it happen.
                     wndPos.hwndInsertAfter = (IntPtr)NativeMethods.WindowZOrder.HWND_TOPMOST;
                     wndPos.UpdateMessage(lParam);
                 }
             }
-            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && enableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
+            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && EnableAppBar && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
                 _appBarManager.AppBarWindowPosChanged(hwnd);
             }
@@ -191,7 +193,7 @@ namespace ManagedShell.AppBar
                     DpiHelper.DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
                 }
 
-                dpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
+                DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
 
                 ProcessScreenChange(ScreenSetupReason.DpiChange);
             }
@@ -210,9 +212,8 @@ namespace ManagedShell.AppBar
                 ProcessScreenChange(ScreenSetupReason.DwmChange);
                 handled = true;
             }
-
-            // call custom implementations' window procedure
-            return CustomWndProc(hwnd, msg, wParam, lParam, ref handled);
+            
+            return IntPtr.Zero;
         }
         #endregion
 
@@ -233,22 +234,22 @@ namespace ManagedShell.AppBar
         public void SetScreenPosition()
         {
             // set our position if running as shell, otherwise let AppBar do the work
-            if (EnvironmentHelper.IsAppRunningAsShell || !enableAppBar)
+            if (EnvironmentHelper.IsAppRunningAsShell || !EnableAppBar)
             {
                 DelaySetPosition();
             }
-            else if (enableAppBar)
+            else if (EnableAppBar)
             {
-                _appBarManager.ABSetPos(this, ActualWidth * dpiScale, desiredHeight * dpiScale, appBarEdge);
+                _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
             }
         }
 
         internal void SetAppBarPosition(NativeMethods.Rect rect)
         {
-            Top = rect.Top / dpiScale;
-            Left = rect.Left / dpiScale;
-            Width = (rect.Right - rect.Left) / dpiScale;
-            Height = (rect.Bottom - rect.Top) / dpiScale;
+            Top = rect.Top / DpiScale;
+            Left = rect.Left / DpiScale;
+            Width = (rect.Right - rect.Left) / DpiScale;
+            Height = (rect.Bottom - rect.Top) / DpiScale;
         }
 
         private void ProcessScreenChange(ScreenSetupReason reason)
@@ -256,7 +257,7 @@ namespace ManagedShell.AppBar
             // process screen changes if we are on the primary display and the designated window
             // (or any display in the case of a DPI change, since only the changed display receives that message and not all windows receive it reliably)
             // suppress this if we are shutting down (which can trigger this method on multi-dpi setups due to window movements)
-            if (((Screen.Primary && processScreenChanges) || reason == ScreenSetupReason.DpiChange) && !AllowClose)
+            if (((Screen.Primary && ProcessScreenChanges) || reason == ScreenSetupReason.DpiChange) && !AllowClose)
             {
                 SetScreenProperties(reason);
             }
@@ -275,27 +276,27 @@ namespace ManagedShell.AppBar
             {
                 ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} returning to normal state");
 
-                isRaising = true;
+                IsRaising = true;
                 Topmost = true;
                 WindowHelper.ShowWindowTopMost(Handle);
-                isRaising = false;
+                IsRaising = false;
             }
         }
 
         protected void SetBlur(bool enable)
         {
-            if (enableBlur != enable && Handle != IntPtr.Zero)
+            if (EnableBlur != enable && Handle != IntPtr.Zero)
             {
-                enableBlur = enable;
+                EnableBlur = enable;
                 WindowHelper.SetWindowBlur(Handle, enable);
             }
         }
 
         protected void RegisterAppBar()
         {
-            if (enableAppBar && !_appBarManager.AppBars.Contains(this))
+            if (EnableAppBar && !_appBarManager.AppBars.Contains(this))
             {
-                appbarMessageId = _appBarManager.RegisterBar(this, ActualWidth * dpiScale, desiredHeight * dpiScale, appBarEdge);
+                AppBarMessageId = _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
             }
         }
 
@@ -303,7 +304,7 @@ namespace ManagedShell.AppBar
         {
             if (_appBarManager.AppBars.Contains(this))
             {
-                _appBarManager.RegisterBar(this, ActualWidth * dpiScale, desiredHeight * dpiScale);
+                _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale);
             }
         }
         #endregion
@@ -331,14 +332,7 @@ namespace ManagedShell.AppBar
             }
         }
 
-        protected virtual void PostInit() { }
-
         protected virtual void CustomClosing() { }
-
-        protected virtual IntPtr CustomWndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
-        {
-            return IntPtr.Zero;
-        }
 
         protected virtual void SetScreenProperties(ScreenSetupReason reason)
         {
@@ -348,7 +342,13 @@ namespace ManagedShell.AppBar
             SetScreenPosition();
         }
 
-        public virtual void SetPosition() { }
+        public virtual void SetPosition()
+        {
+            Left = Screen.Bounds.Left / DpiScale;
+            Width = Screen.Bounds.Width / DpiScale;
+            Height = DesiredHeight;
+            Top = Screen.Bounds.Bottom / DpiScale - Height;
+        }
         #endregion
     }
 }
