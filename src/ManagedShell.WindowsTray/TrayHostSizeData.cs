@@ -10,6 +10,6 @@ namespace ManagedShell.WindowsTray
     public struct TrayHostSizeData
     {
         public Rect rc;
-        public int edge;
+        public ABEdge edge;
     }
 }

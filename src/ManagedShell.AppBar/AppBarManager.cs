@@ -66,6 +66,10 @@ namespace ManagedShell.AppBar
                     {
                         ABSetPos(abWindow, width, height, edge, true);
                     }
+                    else
+                    {
+                        SetWorkArea(abWindow.Screen);
+                    }
                 }
                 else
                 {
@@ -78,6 +82,11 @@ namespace ManagedShell.AppBar
 
                     AppBars.Remove(abWindow);
                     ShellLogger.Debug($"AppBarManager: Removed AppBar for handle {abWindow.Handle}");
+
+                    if (EnvironmentHelper.IsAppRunningAsShell)
+                    {
+                        SetWorkArea(abWindow.Screen);
+                    }
 
                     return 0;
                 }

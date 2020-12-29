@@ -344,10 +344,31 @@ namespace ManagedShell.AppBar
 
         public virtual void SetPosition()
         {
+            double edgeOffset = 0;
+
+            if (!RequiresScreenEdge)
+            {
+                edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
+            }
+
+            // TODO: Handle left/right AppBar positioning and sizing
             Left = Screen.Bounds.Left / DpiScale;
             Width = Screen.Bounds.Width / DpiScale;
             Height = DesiredHeight;
-            Top = Screen.Bounds.Bottom / DpiScale - Height;
+
+            if (AppBarEdge == NativeMethods.ABEdge.ABE_TOP)
+            {
+                Top = (Screen.Bounds.Top / DpiScale) + edgeOffset;
+            }
+            else
+            {
+                Top = Screen.Bounds.Bottom / DpiScale - Height - edgeOffset;
+            }
+
+            if (EnvironmentHelper.IsAppRunningAsShell)
+            {
+                _appBarManager.SetWorkArea(Screen);
+            }
         }
         #endregion
     }
