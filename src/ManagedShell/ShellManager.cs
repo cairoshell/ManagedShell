@@ -66,8 +66,8 @@ namespace ManagedShell
 
             AppBarManager.Dispose();
             FullScreenHelper.Dispose();
-            NotificationArea.Dispose();
-            Tasks.Dispose();
+            NotificationArea?.Dispose();
+            Tasks?.Dispose();
         }
 
         public NotificationArea NotificationArea { get; }

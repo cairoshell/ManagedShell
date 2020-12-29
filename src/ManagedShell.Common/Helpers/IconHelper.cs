@@ -6,7 +6,7 @@ using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
 {
-    public class IconHelper
+    public static class IconHelper
     {
         public static ComTaskScheduler IconScheduler = new ComTaskScheduler();
         public static object ComLock = new object();

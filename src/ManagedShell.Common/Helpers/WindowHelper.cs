@@ -4,7 +4,7 @@ using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
 {
-    public class WindowHelper
+    public static class WindowHelper
     {
         public static void ShowWindowBottomMost(IntPtr handle)
         {

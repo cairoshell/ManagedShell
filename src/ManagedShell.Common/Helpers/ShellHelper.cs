@@ -8,7 +8,7 @@ using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
 {
-    public class ShellHelper
+    public static class ShellHelper
     {
         private const int MAX_PATH = 260;
 
@@ -344,6 +344,22 @@ namespace ManagedShell.Common.Helpers
             }
 
             return outFileName.ToString();
+        }
+
+        /// <summary>
+        /// Calls the LockWorkStation method on the User32 API.
+        /// </summary>
+        public static void Lock()
+        {
+            LockWorkStation();
+        }
+
+        /// <summary>
+        /// Calls the logoff method on the Win32 API.
+        /// </summary>
+        public static void Logoff()
+        {
+            ExitWindowsEx((uint)ExitWindows.Logoff, 0x0);
         }
 
         private static bool IsDesktopVisible()

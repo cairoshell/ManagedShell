@@ -1,6 +1,6 @@
 ﻿namespace ManagedShell.Common.Helpers
 {
-    public class MouseHelper
+    public static class MouseHelper
     {
         public static uint GetCursorPositionParam()
         {

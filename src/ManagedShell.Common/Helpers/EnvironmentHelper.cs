@@ -3,7 +3,7 @@ using Microsoft.Win32;
 
 namespace ManagedShell.Common.Helpers
 {
-    public class EnvironmentHelper
+    public static class EnvironmentHelper
     {
         private static int osVersionMajor = 0;
         private static int osVersionMinor = 0;

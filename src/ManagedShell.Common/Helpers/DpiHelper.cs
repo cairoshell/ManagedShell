@@ -3,7 +3,7 @@ using System.Drawing;
 
 namespace ManagedShell.Common.Helpers
 {
-    public class DpiHelper
+    public static class DpiHelper
     {
         // DPI at user logon to the system
         private static double? _oldDpiScale;
