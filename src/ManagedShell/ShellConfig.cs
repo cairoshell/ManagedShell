@@ -1,4 +1,4 @@
-﻿using ManagedShell.Common.Helpers;
+﻿using ManagedShell.Common.Enums;
 
 namespace ManagedShell
 {

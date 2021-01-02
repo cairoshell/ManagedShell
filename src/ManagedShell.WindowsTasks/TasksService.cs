@@ -8,6 +8,7 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
+using ManagedShell.Common.Enums;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.WindowsTasks

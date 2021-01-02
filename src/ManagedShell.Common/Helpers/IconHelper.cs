@@ -2,6 +2,7 @@
 using System;
 using System.IO;
 using System.Runtime.InteropServices;
+using ManagedShell.Common.Enums;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
@@ -127,5 +128,38 @@ namespace ManagedShell.Common.Helpers
             return filename;
         }
 
+        public static IconSize ParseSize(int size)
+        {
+            if (Enum.IsDefined(typeof(IconSize), size))
+            {
+                return (IconSize)size;
+            }
+            
+            return IconSize.Small;
+        }
+
+        public static int GetSize(int size)
+        {
+            return GetSize(ParseSize(size));
+        }
+
+        public static int GetSize(IconSize size)
+        {
+            switch (size)
+            {
+                case IconSize.Large:
+                    return 32;
+                case IconSize.Small:
+                    return 16;
+                case IconSize.Medium:
+                    return 24;
+                case IconSize.ExtraLarge:
+                    return 48;
+                case IconSize.Jumbo:
+                    return 96;
+                default:
+                    return 16;
+            }
+        }
     }
 }

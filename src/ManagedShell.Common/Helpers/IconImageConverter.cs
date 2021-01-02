@@ -2,6 +2,7 @@
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows;
+using ManagedShell.Common.Enums;
 using ManagedShell.Interop;
 
 namespace ManagedShell.Common.Helpers
