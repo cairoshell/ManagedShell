@@ -336,8 +336,8 @@ namespace ManagedShell.AppBar
 
         protected virtual void SetScreenProperties(ScreenSetupReason reason)
         {
-            // use reflection to empty screens cache
-            typeof(Screen).GetField("screens", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, null);
+            _fullScreenHelper.NotifyScreensChanged();
+
             Screen = Screen.PrimaryScreen;
             SetScreenPosition();
         }

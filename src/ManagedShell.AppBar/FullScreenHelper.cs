@@ -90,47 +90,60 @@ namespace ManagedShell.AppBar
             }
 
             // check if this is a fullscreen app
-            Screen screen = Screen.PrimaryScreen;
-
-            if (rect.Top == screen.Bounds.Top && rect.Left == screen.Bounds.Left && rect.Bottom == screen.Bounds.Bottom && rect.Right == screen.Bounds.Right)
+            foreach (Screen screen in Screen.AllScreens)
             {
-                // make sure this is not us
-                GetWindowThreadProcessId(hWnd, out uint hwndProcId);
-                if (hwndProcId == GetCurrentProcessId())
+                if (rect.Top == screen.Bounds.Top && rect.Left == screen.Bounds.Left &&
+                    rect.Bottom == screen.Bounds.Bottom && rect.Right == screen.Bounds.Right)
                 {
-                    return null;
-                }
-
-                // make sure this is fullscreen-able
-                if (!IsWindow(hWnd) || !IsWindowVisible(hWnd) || IsIconic(hWnd))
-                {
-                    return null;
-                }
-
-                // make sure this is not the shell desktop
-                StringBuilder cName = new StringBuilder(256);
-                GetClassName(hWnd, cName, cName.Capacity);
-                if (cName.ToString() == "Progman" || cName.ToString() == "WorkerW")
-                {
-                    return null;
-                }
-
-                // make sure this is not a cloaked window
-                if (EnvironmentHelper.IsWindows8OrBetter)
-                {
-                    int cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-                    DwmGetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out uint cloaked, cbSize);
-                    if (cloaked > 0)
+                    // make sure this is not us
+                    GetWindowThreadProcessId(hWnd, out uint hwndProcId);
+                    if (hwndProcId == GetCurrentProcessId())
                     {
                         return null;
                     }
-                }
 
-                // this is a full screen app on this screen
-                return new FullScreenApp { hWnd = hWnd, screen = screen, rect = rect };
+                    // make sure this is fullscreen-able
+                    if (!IsWindow(hWnd) || !IsWindowVisible(hWnd) || IsIconic(hWnd))
+                    {
+                        return null;
+                    }
+
+                    // make sure this is not the shell desktop
+                    StringBuilder cName = new StringBuilder(256);
+                    GetClassName(hWnd, cName, cName.Capacity);
+                    if (cName.ToString() == "Progman" || cName.ToString() == "WorkerW")
+                    {
+                        return null;
+                    }
+
+                    // make sure this is not a cloaked window
+                    if (EnvironmentHelper.IsWindows8OrBetter)
+                    {
+                        int cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
+                        DwmGetWindowAttribute(hWnd, DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out uint cloaked, cbSize);
+                        if (cloaked > 0)
+                        {
+                            return null;
+                        }
+                    }
+
+                    // this is a full screen app on this screen
+                    return new FullScreenApp { hWnd = hWnd, screen = screen, rect = rect };
+                }
             }
 
             return null;
+        }
+
+        private void ResetScreenCache()
+        {
+            // use reflection to empty screens cache
+            typeof(Screen).GetField("screens", System.Reflection.BindingFlags.Static | System.Reflection.BindingFlags.NonPublic).SetValue(null, null);
+        }
+
+        public void NotifyScreensChanged()
+        {
+            ResetScreenCache();
         }
 
         public void Dispose()
