@@ -320,7 +320,9 @@ namespace ManagedShell.WindowsTray
                 }
 
                 SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONUP | (hiWord << 16));
-                if (Version >= 4) SendNotifyMessage(HWnd, CallbackMessage, mouse, NIN_SELECT | (hiWord << 16));
+
+                // This is documented as version 4, but Explorer does this for version 3 as well
+                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_SELECT | (hiWord << 16));
 
                 _lastLClick = DateTime.Now;
             }
@@ -336,7 +338,9 @@ namespace ManagedShell.WindowsTray
                 }
 
                 SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONUP | (hiWord << 16));
-                if (Version >= 4) SendNotifyMessage(HWnd, CallbackMessage, mouse, (uint)WM.CONTEXTMENU | (hiWord << 16));
+
+                // This is documented as version 4, but Explorer does this for version 3 as well
+                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.CONTEXTMENU | (hiWord << 16));
 
                 _lastRClick = DateTime.Now;
             }
