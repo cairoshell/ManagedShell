@@ -171,6 +171,7 @@ namespace ManagedShell.WindowsTray
             PinnedIcons.SortDescriptions.Add(new SortDescription("PinOrder", ListSortDirection.Ascending));
             var pinnedIconsView = PinnedIcons as ICollectionViewLiveShaping;
             pinnedIconsView.IsLiveFiltering = true;
+            pinnedIconsView.LiveFilteringProperties.Add("IsHidden");
             pinnedIconsView.LiveFilteringProperties.Add("IsPinned");
             pinnedIconsView.IsLiveSorting = true;
             pinnedIconsView.LiveSortingProperties.Add("PinOrder");
@@ -180,6 +181,7 @@ namespace ManagedShell.WindowsTray
             UnpinnedIcons.Filter = UnpinnedIcons_Filter;
             var unpinnedIconsView = UnpinnedIcons as ICollectionViewLiveShaping;
             unpinnedIconsView.IsLiveFiltering = true;
+            unpinnedIconsView.LiveFilteringProperties.Add("IsHidden");
             unpinnedIconsView.LiveFilteringProperties.Add("IsPinned");
         }
 
@@ -307,12 +309,6 @@ namespace ManagedShell.WindowsTray
                         if ((NIF.GUID & nicData.uFlags) != 0)
                             trayIcon.GUID = nicData.guidItem;
 
-                        // guess version in case we are receiving icons that aren't sending NIM_SETVERSION to new explorers
-                        if ((NIF.VISTA_MASK & nicData.uFlags) != 0)
-                            trayIcon.Version = 4;
-                        else if ((NIF.XP_MASK & nicData.uFlags) != 0)
-                            trayIcon.Version = 3;
-
                         if (nicData.uVersion > 0 && nicData.uVersion <= 4)
                             trayIcon.Version = nicData.uVersion;
 
@@ -352,15 +348,19 @@ namespace ManagedShell.WindowsTray
                 {
                     try
                     {
-                        if (!TrayIcons.Contains(trayIcon))
+                        foreach (var icon in TrayIcons)
                         {
-                            // Nothing to remove.
-                            return false;
+                            if (icon.Equals(trayIcon))
+                            {
+                                TrayIcons.Remove(trayIcon);
+
+                                ShellLogger.Debug($"NotificationArea: Removed: {icon.Title}");
+
+                                return true;
+                            }
                         }
 
-                        TrayIcons.Remove(trayIcon);
-
-                        ShellLogger.Debug($"NotificationArea: Removed: {nicData.szTip}");
+                        return false;
                     }
                     catch (Exception ex)
                     {
@@ -369,6 +369,11 @@ namespace ManagedShell.WindowsTray
                 }
                 else if ((NIM)message == NIM.NIM_SETVERSION)
                 {
+                    if (nicData.uVersion > 4)
+                    {
+                        return false;
+                    }
+
                     foreach (NotifyIcon ti in TrayIcons)
                     {
                         if (ti.Equals(nicData))
