@@ -110,7 +110,7 @@ namespace ManagedShell.Common.Helpers
                     string userShell = userShellKey?.GetValue("Shell") as string;
                     if (userShell != null)
                     {
-                        isAppConfiguredAsShell = userShell.ToLower().Contains(AppDomain.CurrentDomain.FriendlyName);
+                        isAppConfiguredAsShell = userShell.ToLower().Contains(AppDomain.CurrentDomain.FriendlyName.ToLower());
                     }
                     else
                     {
@@ -119,7 +119,7 @@ namespace ManagedShell.Common.Helpers
                         string systemShell = systemShellKey?.GetValue("Shell") as string;
                         if (systemShell != null)
                         {
-                            isAppConfiguredAsShell = systemShell.ToLower().Contains(AppDomain.CurrentDomain.FriendlyName);
+                            isAppConfiguredAsShell = systemShell.ToLower().Contains(AppDomain.CurrentDomain.FriendlyName.ToLower());
                         }
                         else
                         {
