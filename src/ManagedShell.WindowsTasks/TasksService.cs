@@ -9,6 +9,7 @@ using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Forms;
 using ManagedShell.Common.Enums;
+using ManagedShell.Common.SupportingClasses;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.WindowsTasks

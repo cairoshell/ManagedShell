@@ -193,6 +193,34 @@ namespace ManagedShell.Common.Helpers
             return menuDropAlignment;
         }
 
+        public static bool GetFileExtensionsVisible()
+        {
+            RegistryKey hideFileExt =
+                Registry.CurrentUser.OpenSubKey("SOFTWARE\\Microsoft\\Windows\\CurrentVersion\\Explorer\\Advanced",
+                    false);
+            object hideFileExtValue = hideFileExt?.GetValue("HideFileExt");
+            
+            return hideFileExtValue != null && hideFileExtValue.ToString() == "0";
+        }
+
+        public static bool IsFileVisible(string fileName)
+        {
+            if (Exists(fileName))
+            {
+                try
+                {
+                    FileAttributes attributes = File.GetAttributes(fileName);
+                    return (((attributes & FileAttributes.Hidden) != FileAttributes.Hidden) && ((attributes & FileAttributes.System) != FileAttributes.System) && ((attributes & FileAttributes.Temporary) != FileAttributes.Temporary));
+                }
+                catch
+                {
+                    return false;
+                }
+            }
+
+            return false;
+        }
+
         public static bool ShowFileProperties(string Filename)
         {
             SHELLEXECUTEINFO info = new SHELLEXECUTEINFO();
