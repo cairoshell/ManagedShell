@@ -1,6 +1,6 @@
 ﻿using System.Windows.Forms;
 
-namespace ManagedShell.Common.Helpers
+namespace ManagedShell.Common.SupportingClasses
 {
     public class NativeWindowEx : NativeWindow
     {
