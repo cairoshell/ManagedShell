@@ -22,8 +22,6 @@ namespace ManagedShell.Common.Helpers
         const string CONNECTION_STRING =
             "provider=Search.CollatorDSO.1;EXTENDED PROPERTIES=\"Application=Windows\"";
 
-        static SearchObjectState searchObjState = new SearchObjectState();
-
         static SearchHelper()
         {
             m_results = new ThreadSafeObservableCollection<SearchResult>();
@@ -38,26 +36,30 @@ namespace ManagedShell.Common.Helpers
             SearchString = e.NewValue.ToString();
 
             m_results.Clear();
+            IncrementQueryNum();
 
             if (SearchString.Length > 0)
             {
                 Task.Run(DoSearch);
             }
         }
-
-        static void DoSearch()
+        
+        static void IncrementQueryNum()
         {
-            int localQueryNum = 0;
             if (QueryNum < int.MaxValue)
             {
                 QueryNum++;
-                localQueryNum = QueryNum;
             }
             else
             {
                 QueryNum = 0;
             }
-            
+        }
+
+        static void DoSearch()
+        {
+            int localQueryNum = QueryNum;
+
             // check if user wants to show file extensions. always show on windows < 8 due to property missing
             string displayNameColumn = "System.ItemNameDisplayWithoutExtension";
             if (ShellHelper.GetFileExtensionsVisible() || !EnvironmentHelper.IsWindows8OrBetter)
@@ -124,7 +126,17 @@ namespace ManagedShell.Common.Helpers
 
                     foreach (var result in results)
                     {
+                        if (QueryNum != localQueryNum)
+                        {
+                            break;
+                        }
+                        
                         m_results.Add(result);
+                    }
+
+                    if (QueryNum != localQueryNum)
+                    {
+                        m_results.Clear();
                     }
                 }
             }
