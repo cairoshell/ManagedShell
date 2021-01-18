@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Diagnostics;
+using ManagedShell.Interop;
 using Microsoft.Win32;
 
 namespace ManagedShell.Common.Helpers
@@ -177,5 +179,61 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        private static string windowsProductName;
+
+        public static string WindowsProductName
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(windowsProductName))
+                {
+                    RegistryKey versionKey = Registry.LocalMachine.OpenSubKey("SOFTWARE\\Microsoft\\Windows NT\\CurrentVersion", false);
+                    windowsProductName = versionKey?.GetValue("ProductName") as string;
+                }
+
+                return windowsProductName;
+            }
+        }
+
+        private static bool? isWow64;
+
+        public static bool IsWow64
+        {
+            get
+            {
+                if (isWow64 == null)
+                {
+                    if ((Environment.OSVersion.Version.Major == 5 && Environment.OSVersion.Version.Minor >= 1) || Environment.OSVersion.Version.Major >= 6)
+                    {
+                        using (Process p = Process.GetCurrentProcess())
+                        {
+                            try
+                            {
+                                bool retVal;
+                                
+                                if (!NativeMethods.IsWow64Process(p.Handle, out retVal))
+                                {
+                                    isWow64 = false;
+                                }
+                                else
+                                {
+                                    isWow64 = retVal;
+                                }
+                            }
+                            catch (Exception)
+                            {
+                                isWow64 = false;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        isWow64 = false;
+                    }
+                }
+
+                return (bool)isWow64;
+            }
+        }
     }
 }

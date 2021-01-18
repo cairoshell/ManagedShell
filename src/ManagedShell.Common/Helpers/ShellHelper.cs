@@ -451,5 +451,16 @@ namespace ManagedShell.Common.Helpers
 
             SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
         }
+
+        public static void SetShellReadyEvent()
+        {
+            int hShellReadyEvent = OpenEvent(EVENT_MODIFY_STATE, true, @"ShellDesktopSwitchEvent");
+
+            if (hShellReadyEvent != 0)
+            {
+                SetEvent(hShellReadyEvent);
+                CloseHandle(hShellReadyEvent);
+            }
+        }
     }
 }
