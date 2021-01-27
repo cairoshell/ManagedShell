@@ -2,6 +2,7 @@
 using ManagedShell.WindowsTray;
 using System;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.AppBar
@@ -98,16 +99,19 @@ namespace ManagedShell.AppBar
 
         public void SetTaskbarState(TaskbarState state)
         {
-            APPBARDATA abd = new APPBARDATA
+            Task.Run(() =>
             {
-                cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = FindTaskbarHwnd(),
-                lParam = (IntPtr)state
-            };
+                APPBARDATA abd = new APPBARDATA
+                {
+                    cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
+                    hWnd = FindTaskbarHwnd(),
+                    lParam = (IntPtr) state
+                };
 
-            SuspendTrayService();
-            SHAppBarMessage((int)ABMsg.ABM_SETSTATE, ref abd);
-            ResumeTrayService();
+                SuspendTrayService();
+                SHAppBarMessage((int) ABMsg.ABM_SETSTATE, ref abd);
+                ResumeTrayService();
+            });
         }
 
         public TaskbarState GetTaskbarState()
