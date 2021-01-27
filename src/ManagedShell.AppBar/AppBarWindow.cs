@@ -4,7 +4,6 @@ using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
@@ -16,7 +15,7 @@ namespace ManagedShell.AppBar
         protected readonly AppBarManager _appBarManager;
         protected readonly ExplorerHelper _explorerHelper;
         protected readonly FullScreenHelper _fullScreenHelper;
-        public Screen Screen;
+        public AppBarScreen Screen;
         public double DpiScale = 1.0;
         protected bool ProcessScreenChanges = true;
 
@@ -31,11 +30,11 @@ namespace ManagedShell.AppBar
 
         // AppBar properties
         private int AppBarMessageId = -1;
-        public NativeMethods.ABEdge AppBarEdge;
+        public AppBarEdge AppBarEdge;
         protected internal bool EnableAppBar = true;
         protected internal bool RequiresScreenEdge;
 
-        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, Screen screen, NativeMethods.ABEdge edge, double height)
+        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, AppBarScreen screen, AppBarEdge edge, double height)
         {
             _explorerHelper = explorerHelper;
             _fullScreenHelper = fullScreenHelper;
@@ -338,7 +337,7 @@ namespace ManagedShell.AppBar
         {
             _fullScreenHelper.NotifyScreensChanged();
 
-            Screen = Screen.PrimaryScreen;
+            Screen = AppBarScreen.FromPrimaryScreen();
             SetScreenPosition();
         }
 
@@ -356,7 +355,7 @@ namespace ManagedShell.AppBar
             Width = Screen.Bounds.Width / DpiScale;
             Height = DesiredHeight;
 
-            if (AppBarEdge == NativeMethods.ABEdge.ABE_TOP)
+            if (AppBarEdge == AppBarEdge.Top)
             {
                 Top = (Screen.Bounds.Top / DpiScale) + edgeOffset;
             }

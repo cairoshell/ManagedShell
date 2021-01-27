@@ -38,7 +38,7 @@ namespace ManagedShell.AppBar
         }
 
         #region AppBar message helpers
-        public int RegisterBar(AppBarWindow abWindow, double width, double height, ABEdge edge = ABEdge.ABE_TOP)
+        public int RegisterBar(AppBarWindow abWindow, double width, double height, AppBarEdge edge = AppBarEdge.Top)
         {
             lock (appBarLock)
             {
@@ -134,7 +134,7 @@ namespace ManagedShell.AppBar
             }
         }
 
-        public void ABSetPos(AppBarWindow abWindow, double width, double height, ABEdge edge, bool isCreate = false)
+        public void ABSetPos(AppBarWindow abWindow, double width, double height, AppBarEdge edge, bool isCreate = false)
         {
             lock (appBarLock)
             {
@@ -161,11 +161,11 @@ namespace ManagedShell.AppBar
                     bottom = abWindow.Screen.Bounds.Bottom;
                 }
 
-                if (abd.uEdge == (int)ABEdge.ABE_LEFT || abd.uEdge == (int)ABEdge.ABE_RIGHT)
+                if (abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right)
                 {
                     abd.rc.Top = top;
                     abd.rc.Bottom = bottom;
-                    if (abd.uEdge == (int)ABEdge.ABE_LEFT)
+                    if (abd.uEdge == (int)AppBarEdge.Left)
                     {
                         abd.rc.Left = left;
                         abd.rc.Right = abd.rc.Left + sWidth;
@@ -180,11 +180,11 @@ namespace ManagedShell.AppBar
                 {
                     abd.rc.Left = left;
                     abd.rc.Right = right;
-                    if (abd.uEdge == (int)ABEdge.ABE_TOP)
+                    if (abd.uEdge == (int)AppBarEdge.Top)
                     {
                         if (!abWindow.RequiresScreenEdge)
                         {
-                            abd.rc.Top = top + Convert.ToInt32(GetAppBarEdgeWindowsHeight((ABEdge)abd.uEdge, abWindow.Screen));
+                            abd.rc.Top = top + Convert.ToInt32(GetAppBarEdgeWindowsHeight((AppBarEdge)abd.uEdge, abWindow.Screen));
                         }
                         else
                         {
@@ -197,7 +197,7 @@ namespace ManagedShell.AppBar
                     {
                         if (!abWindow.RequiresScreenEdge)
                         {
-                            abd.rc.Bottom = bottom - Convert.ToInt32(GetAppBarEdgeWindowsHeight((ABEdge)abd.uEdge, abWindow.Screen));
+                            abd.rc.Bottom = bottom - Convert.ToInt32(GetAppBarEdgeWindowsHeight((AppBarEdge)abd.uEdge, abWindow.Screen));
                         }
                         else
                         {
@@ -215,16 +215,16 @@ namespace ManagedShell.AppBar
                 // system doesn't adjust all edges for us, do some adjustments
                 switch (abd.uEdge)
                 {
-                    case (int)ABEdge.ABE_LEFT:
+                    case (int)AppBarEdge.Left:
                         abd.rc.Right = abd.rc.Left + sWidth;
                         break;
-                    case (int)ABEdge.ABE_RIGHT:
+                    case (int)AppBarEdge.Right:
                         abd.rc.Left = abd.rc.Right - sWidth;
                         break;
-                    case (int)ABEdge.ABE_TOP:
+                    case (int)AppBarEdge.Top:
                         abd.rc.Bottom = abd.rc.Top + sHeight;
                         break;
-                    case (int)ABEdge.ABE_BOTTOM:
+                    case (int)AppBarEdge.Bottom:
                         abd.rc.Top = abd.rc.Bottom - sHeight;
                         break;
                 }
@@ -265,7 +265,7 @@ namespace ManagedShell.AppBar
         #endregion
 
         #region Work area
-        public double GetAppBarEdgeWindowsHeight(ABEdge edge, Screen screen)
+        public double GetAppBarEdgeWindowsHeight(AppBarEdge edge, AppBarScreen screen)
         {
             double edgeHeight = 0;
             double dpiScale = 1;
@@ -273,16 +273,16 @@ namespace ManagedShell.AppBar
 
             switch (edge)
             {
-                case ABEdge.ABE_TOP:
+                case AppBarEdge.Top:
                     edgeHeight += workAreaRect.Top / dpiScale;
                     break;
-                case ABEdge.ABE_BOTTOM:
+                case AppBarEdge.Bottom:
                     edgeHeight += (screen.Bounds.Bottom - workAreaRect.Bottom) / dpiScale;
                     break;
-                case ABEdge.ABE_LEFT:
+                case AppBarEdge.Left:
                     edgeHeight += workAreaRect.Left / dpiScale;
                     break;
-                case ABEdge.ABE_RIGHT:
+                case AppBarEdge.Right:
                     edgeHeight += (screen.Bounds.Right - workAreaRect.Right) / dpiScale;
                     break;
             }
@@ -290,7 +290,7 @@ namespace ManagedShell.AppBar
             return edgeHeight;
         }
 
-        public Rect GetWorkArea(ref double dpiScale, Screen screen, bool edgeBarsOnly, bool enabledBarsOnly)
+        public Rect GetWorkArea(ref double dpiScale, AppBarScreen screen, bool edgeBarsOnly, bool enabledBarsOnly)
         {
             double topEdgeWindowHeight = 0;
             double bottomEdgeWindowHeight = 0;
@@ -305,19 +305,19 @@ namespace ManagedShell.AppBar
                 {
                     if ((window.EnableAppBar || !enabledBarsOnly) && (window.RequiresScreenEdge || !edgeBarsOnly))
                     {
-                        if (window.AppBarEdge == ABEdge.ABE_TOP)
+                        if (window.AppBarEdge == AppBarEdge.Top)
                         {
                             topEdgeWindowHeight += window.ActualHeight;
                         }
-                        else if (window.AppBarEdge == ABEdge.ABE_BOTTOM)
+                        else if (window.AppBarEdge == AppBarEdge.Bottom)
                         {
                             bottomEdgeWindowHeight += window.ActualHeight;
                         }
-                        else if (window.AppBarEdge == ABEdge.ABE_LEFT)
+                        else if (window.AppBarEdge == AppBarEdge.Left)
                         {
                             leftEdgeWindowWidth += window.ActualWidth;
                         }
-                        else if (window.AppBarEdge == ABEdge.ABE_RIGHT)
+                        else if (window.AppBarEdge == AppBarEdge.Right)
                         {
                             rightEdgeWindowWidth += window.ActualWidth;
                         }
@@ -335,7 +335,7 @@ namespace ManagedShell.AppBar
             return rc;
         }
 
-        public void SetWorkArea(Screen screen)
+        public void SetWorkArea(AppBarScreen screen)
         {
             double dpiScale = 1;
             Rect rc = GetWorkArea(ref dpiScale, screen, false, true);

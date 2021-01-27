@@ -407,7 +407,7 @@ namespace ManagedShell.Common.Helpers
                         if (child != IntPtr.Zero)
                         {
                             hWnd = FindWindowEx(child, IntPtr.Zero, "SysListView32", "FolderView");
-                            return true;
+                            return false;
                         }
                     }
                     return true;
