@@ -77,45 +77,47 @@ namespace ManagedShell.Common.Helpers
                     SHFILEINFO shinfo = new SHFILEINFO();
                     shinfo.szDisplayName = string.Empty;
                     shinfo.szTypeName = string.Empty;
-                    IntPtr hIconInfo;
 
                     if (!filename.StartsWith("\\") && (File.GetAttributes(filename) & FileAttributes.Directory) == FileAttributes.Directory)
                     {
-                        hIconInfo = SHGetFileInfo(filename, FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_DIRECTORY, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.SysIconIndex));
+                        SHGetFileInfo(filename, FILE_ATTRIBUTE_NORMAL | FILE_ATTRIBUTE_DIRECTORY, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.SysIconIndex));
                     }
                     else
                     {
-                        hIconInfo = SHGetFileInfo(filename, FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.UseFileAttributes | SHGFI.SysIconIndex));
+                        SHGetFileInfo(filename, FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.UseFileAttributes | SHGFI.SysIconIndex));
                     }
 
-                    var iconIndex = shinfo.iIcon;
-
-                    // Initialize the IImageList object
-                    initIml(size);
-
-                    IntPtr hIcon = IntPtr.Zero;
-                    int ILD_TRANSPARENT = 1;
-
-                    switch (size)
-                    {
-                        case 0:
-                            iml0.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
-                            break;
-                        case 1:
-                            iml1.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
-                            break;
-                        case 2:
-                            iml2.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
-                            break;
-                    }
-
-                    return hIcon;
+                    return getFromImageList(shinfo.iIcon, size);
                 }
                 catch
                 {
                     return IntPtr.Zero;
                 }
             }
+        }
+
+        private static IntPtr getFromImageList(int iconIndex, int size)
+        {
+            // Initialize the IImageList object
+            initIml(size);
+
+            IntPtr hIcon = IntPtr.Zero;
+            int ILD_TRANSPARENT = 1;
+
+            switch (size)
+            {
+                case 0:
+                    iml0.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                    break;
+                case 1:
+                    iml1.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                    break;
+                case 2:
+                    iml2.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                    break;
+            }
+
+            return hIcon;
         }
 
         private static string translateIconExceptions(string filename)

@@ -21,6 +21,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagedShell.WindowsTasks",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagedShell.WindowsTray", "src\ManagedShell.WindowsTray\ManagedShell.WindowsTray.csproj", "{914706E2-16E2-4775-9F60-F10B306493D6}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "ManagedShell.ShellFolders", "src\ManagedShell.ShellFolders\ManagedShell.ShellFolders.csproj", "{96306CDC-4BB7-4371-A298-44D81C36E4A6}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -55,6 +57,10 @@ Global
 		{914706E2-16E2-4775-9F60-F10B306493D6}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{914706E2-16E2-4775-9F60-F10B306493D6}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{914706E2-16E2-4775-9F60-F10B306493D6}.Release|Any CPU.Build.0 = Release|Any CPU
+		{96306CDC-4BB7-4371-A298-44D81C36E4A6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{96306CDC-4BB7-4371-A298-44D81C36E4A6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{96306CDC-4BB7-4371-A298-44D81C36E4A6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{96306CDC-4BB7-4371-A298-44D81C36E4A6}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -67,6 +73,7 @@ Global
 		{B2EE7AB2-369E-45CA-948A-F5CC18594FC9} = {EB508A35-9131-40D5-995B-851D54C4F65D}
 		{8AE1EE70-4821-4561-A2E3-02EB641514AB} = {EB508A35-9131-40D5-995B-851D54C4F65D}
 		{914706E2-16E2-4775-9F60-F10B306493D6} = {EB508A35-9131-40D5-995B-851D54C4F65D}
+		{96306CDC-4BB7-4371-A298-44D81C36E4A6} = {EB508A35-9131-40D5-995B-851D54C4F65D}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {CE462340-9393-41BF-94FC-6A212538AE99}

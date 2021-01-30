@@ -19,6 +19,7 @@
     <ProjectReference Include="..\ManagedShell.AppBar\ManagedShell.AppBar.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.Common\ManagedShell.Common.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.Interop\ManagedShell.Interop.csproj" PrivateAssets="all" />
+    <ProjectReference Include="..\ManagedShell.ShellFolders\ManagedShell.ShellFolders.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.UWPInterop\ManagedShell.UWPInterop.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.WindowsTasks\ManagedShell.WindowsTasks.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.WindowsTray\ManagedShell.WindowsTray.csproj" PrivateAssets="all" />
