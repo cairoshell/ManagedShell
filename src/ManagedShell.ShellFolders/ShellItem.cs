@@ -39,7 +39,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private ShellItem _parentItem;
+        protected ShellItem _parentItem;
 
         public ShellItem ParentItem
         {
@@ -51,6 +51,36 @@ namespace ManagedShell.ShellFolders
                 }
 
                 return _parentItem;
+            }
+        }
+
+        private IShellFolder _parentFolder;
+
+        public IShellFolder ParentFolder
+        {
+            get
+            {
+                if (_parentFolder == null)
+                {
+                    GetParentAndItem();
+                }
+
+                return _parentFolder;
+            }
+        }
+
+        private IntPtr _parentAbsolutePidl;
+
+        public IntPtr ParentAbsolutePidl
+        {
+            get
+            {
+                if (_parentAbsolutePidl == IntPtr.Zero)
+                {
+                    GetParentAndItem();
+                }
+
+                return _parentAbsolutePidl;
             }
         }
 
@@ -70,6 +100,21 @@ namespace ManagedShell.ShellFolders
             protected set
             {
                 _absolutePidl = value;
+            }
+        }
+
+        private IntPtr _relativePidl;
+
+        public IntPtr RelativePidl
+        {
+            get
+            {
+                if (_relativePidl == IntPtr.Zero)
+                {
+                    GetParentAndItem();
+                }
+
+                return _relativePidl;
             }
         }
 
@@ -227,7 +272,11 @@ namespace ManagedShell.ShellFolders
 
         public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl)
         {
-            _shellItem = GetShellItem(parentPidl, parentShellFolder, relativePidl);
+            _parentAbsolutePidl = parentPidl;
+            _parentFolder = parentShellFolder;
+            _relativePidl = relativePidl;
+            
+            _shellItem = GetShellItem(_parentAbsolutePidl, _parentFolder, _relativePidl);
         }
 
         #region Retrieve interfaces
@@ -282,6 +331,21 @@ namespace ManagedShell.ShellFolders
             {
                 ShellLogger.Error($"ShellItem: Unable to get shell item image factory for {absolutePidl}: {e.Message}");
                 return null;
+            }
+        }
+
+        private void GetParentAndItem()
+        {
+            IParentAndItem pni = _shellItem as IParentAndItem;
+
+            if (pni == null)
+            {
+                return;
+            }
+            
+            if (pni.GetParentAndItem(out _parentAbsolutePidl, out _parentFolder, out _relativePidl) != NativeMethods.S_OK)
+            {
+                ShellLogger.Error($"ShellItem: Unable to get shell item parent for {Path}");
             }
         }
         #endregion
@@ -386,9 +450,24 @@ namespace ManagedShell.ShellFolders
                 Marshal.FinalReleaseComObject(_imageFactory);
             }
 
+            if (_parentFolder != null)
+            {
+                Marshal.FinalReleaseComObject(_parentFolder);
+            }
+
             if (_absolutePidl != IntPtr.Zero)
             {
                 Marshal.FreeCoTaskMem(_absolutePidl);
+            }
+
+            if (_parentAbsolutePidl != IntPtr.Zero)
+            {
+                Marshal.FreeCoTaskMem(_parentAbsolutePidl);
+            }
+
+            if (_relativePidl != IntPtr.Zero)
+            {
+                Marshal.FreeCoTaskMem(_relativePidl);
             }
         }
         #endregion

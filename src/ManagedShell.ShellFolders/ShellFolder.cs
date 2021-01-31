@@ -78,7 +78,7 @@ namespace ManagedShell.ShellFolders
 
                 while (enumIdList.Next(1, out var pidlChild, out var numFetched) == NativeMethods.S_OK && numFetched == 1)
                 {
-                    Files.Add(new ShellFile(AbsolutePidl, _shellFolder, pidlChild));
+                    Files.Add(new ShellFile(this, _shellFolder, pidlChild));
                 }
 
                 Marshal.FinalReleaseComObject(enumIdList);

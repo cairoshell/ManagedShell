@@ -21,13 +21,15 @@ namespace ManagedShell.ShellFolders
             }
         }
         
-        public ShellFile(string parsingName) : base(parsingName)
+        public ShellFile(ShellFolder parentFolder, string parsingName) : base(parsingName)
         {
+            _parentItem = parentFolder;
             ShellLogger.Info($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
-        public ShellFile(IntPtr absolutePidl, IShellFolder parentShellFolder, IntPtr relativePidl) : base(absolutePidl, parentShellFolder, relativePidl)
+        public ShellFile(ShellFolder parentFolder, IShellFolder parentShellFolder, IntPtr relativePidl) : base(parentFolder.AbsolutePidl, parentShellFolder, relativePidl)
         {
+            _parentItem = parentFolder;
             ShellLogger.Info($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
