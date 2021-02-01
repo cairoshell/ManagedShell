@@ -35,8 +35,4 @@
     </ItemGroup>
   </Target>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
-    <Exec Command="C:\Users\johns\source\repos\clear-managedshell.bat" />
-  </Target>
-
 </Project>
