@@ -30,10 +30,10 @@ namespace ManagedShell.ShellFolders
         private readonly int x;
         private readonly int y;
         
-        public ShellContextMenu(ShellItem[] files, ItemSelectAction itemSelected, bool isInteractive) : this(files, itemSelected, isInteractive, new ShellCommandBuilder(), new ShellCommandBuilder())
+        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, hwndOwner, itemSelected, isInteractive, new ShellCommandBuilder(), new ShellCommandBuilder())
         { }
 
-        public ShellContextMenu(ShellItem[] files, ItemSelectAction itemSelected, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
+        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
         {
             if (files == null || files.Length < 1)
             {
@@ -42,22 +42,12 @@ namespace ManagedShell.ShellFolders
 
             lock (IconHelper.ComLock)
             {
-                if (isInteractive)
-                {
-                    CreateHandle(new CreateParams());
-                }
-
                 x = Cursor.Position.X;
                 y = Cursor.Position.Y;
                 
                 this.itemSelected = itemSelected;
 
-                SetupContextMenu(files, isInteractive, preBuilder, postBuilder);
-
-                if (isInteractive)
-                {
-                    DestroyHandle();
-                }
+                SetupContextMenu(files, hwndOwner, isInteractive, preBuilder, postBuilder);
             }
         }
 
@@ -70,16 +60,12 @@ namespace ManagedShell.ShellFolders
 
             lock (IconHelper.ComLock)
             {
-                CreateHandle(new CreateParams());
-                    
                 x = Cursor.Position.X;
                 y = Cursor.Position.Y;
 
                 this.folderItemSelected = folderItemSelected;
                 
                 SetupContextMenu(folder, builder);
-
-                DestroyHandle();
             }
         }
 
@@ -120,7 +106,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private void SetupContextMenu(ShellItem[] files, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
+        private void SetupContextMenu(ShellItem[] files, IntPtr hwndOwner, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
         {
             IntPtr contextMenu = IntPtr.Zero,
                 iContextMenuPtr = IntPtr.Zero,
@@ -129,12 +115,13 @@ namespace ManagedShell.ShellFolders
 
             try
             {
-                if (GetIContextMenu(files, out iContextMenuPtr, out iContextMenu))
+                if (GetIContextMenu(files, hwndOwner, out iContextMenuPtr, out iContextMenu))
                 {
                     // get some properties about our file(s)
                     bool allFolders = ItemsAllFolders(files);
 
                     CMF flags = CMF.EXPLORE |
+                        CMF.ITEMMENU |
                         CMF.CANRENAME |
                         ((Control.ModifierKeys & Keys.Shift) != 0 ? CMF.EXTENDEDVERBS : 0);
 
@@ -279,6 +266,8 @@ namespace ManagedShell.ShellFolders
 
         private void ShowMenu(ShellItem[] files, IntPtr contextMenu, bool allFolders)
         {
+            CreateHandle(new CreateParams());
+            
             uint selected = Interop.TrackPopupMenuEx(
                 contextMenu,
                 TPM.RETURNCMD,
@@ -288,6 +277,8 @@ namespace ManagedShell.ShellFolders
                 IntPtr.Zero);
 
             HandleMenuCommand(files, selected, allFolders);
+            
+            DestroyHandle();
         }
 
         private void HandleMenuCommand(ShellItem[] files, uint selected, bool allFolders)
@@ -321,6 +312,8 @@ namespace ManagedShell.ShellFolders
 
         private void ShowMenu(ShellFolder folder, IntPtr contextMenu)
         {
+            CreateHandle(new CreateParams());
+            
             uint selected = Interop.TrackPopupMenuEx(
                 contextMenu,
                 TPM.RETURNCMD,
@@ -348,6 +341,8 @@ namespace ManagedShell.ShellFolders
 
                 folderItemSelected?.Invoke(selected, folder.Path);
             }
+            
+            DestroyHandle();
         }
 
         #region Helpers
@@ -461,7 +456,7 @@ namespace ManagedShell.ShellFolders
             iContextMenu.InvokeCommand(ref invoke);
         }
 
-        private bool GetIContextMenu(ShellItem[] items, out IntPtr icontextMenuPtr, out IContextMenu iContextMenu)
+        private bool GetIContextMenu(ShellItem[] items, IntPtr hwndOwner, out IntPtr icontextMenuPtr, out IContextMenu iContextMenu)
         {
             if (items.Length < 1)
             {
@@ -480,7 +475,7 @@ namespace ManagedShell.ShellFolders
             }
 
             if (parent.GetUIObjectOf(
-                        IntPtr.Zero,
+                        hwndOwner,
                         (uint)pidls.Length,
                         pidls,
                         ref Interop.IID_IContextMenu,
