@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using ManagedShell.Interop;
 using ManagedShell.ShellFolders.Enums;
 using ManagedShell.ShellFolders.Interfaces;
 using ManagedShell.ShellFolders.Structs;
@@ -8,7 +9,6 @@ namespace ManagedShell.ShellFolders
 {
     class Interop
     {
-        public const int MAX_PATH = 260;
         public const uint CMD_FIRST = 1;
         public const uint CMD_LAST = 30000;
         public static Guid IID_IContextMenu = new Guid("{000214e4-0000-0000-c000-000000000046}");
@@ -17,6 +17,7 @@ namespace ManagedShell.ShellFolders
         public static Guid IID_IShellExtInit = new Guid("{000214e8-0000-0000-c000-000000000046}");
         public static Guid CLSID_NewMenu = new Guid("{D969A300-E7FF-11d0-A93B-00A0C90F2719}");
         public static int cbInvokeCommand = Marshal.SizeOf(typeof(CMINVOKECOMMANDINFOEX));
+        public static ComTaskScheduler ShellItemScheduler = new ComTaskScheduler();
 
         /// <summary>
         /// Retrieves the High Word of a WParam of a WindowMessage

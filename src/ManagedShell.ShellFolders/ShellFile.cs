@@ -24,13 +24,13 @@ namespace ManagedShell.ShellFolders
         public ShellFile(ShellFolder parentFolder, string parsingName) : base(parsingName)
         {
             _parentItem = parentFolder;
-            ShellLogger.Info($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
+            ShellLogger.Debug($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
-        public ShellFile(ShellFolder parentFolder, IShellFolder parentShellFolder, IntPtr relativePidl) : base(parentFolder.AbsolutePidl, parentShellFolder, relativePidl)
+        public ShellFile(ShellFolder parentFolder, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false) : base(parentFolder.AbsolutePidl, parentShellFolder, relativePidl, isAsync)
         {
             _parentItem = parentFolder;
-            ShellLogger.Info($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
+            ShellLogger.Debug($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
         private long GetFileSize()

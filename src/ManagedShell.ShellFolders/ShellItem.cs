@@ -268,15 +268,34 @@ namespace ManagedShell.ShellFolders
         public ShellItem(string parsingName)
         {
             _shellItem = GetShellItem(parsingName);
+            
+            if (_shellItem == null && parsingName.StartsWith("{"))
+            {
+                parsingName = "::" + parsingName;
+                _shellItem = GetShellItem(parsingName);
+            }
+            
+            if (_shellItem == null && !parsingName.ToLower().StartsWith("shell:"))
+            {
+                parsingName = "shell:" + parsingName;
+                _shellItem = GetShellItem(parsingName);
+            }
         }
 
-        public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl)
+        public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false)
         {
             _parentAbsolutePidl = parentPidl;
-            _parentFolder = parentShellFolder;
             _relativePidl = relativePidl;
-            
-            _shellItem = GetShellItem(_parentAbsolutePidl, _parentFolder, _relativePidl);
+
+            if (!isAsync)
+            {
+                // If this ShellItem was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
+                // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
+                // IShellFolder from the background thread cannot be used.
+                _parentFolder = parentShellFolder;
+            }
+
+            _shellItem = GetShellItem(_parentAbsolutePidl, parentShellFolder, _relativePidl);
         }
 
         #region Retrieve interfaces
@@ -322,6 +341,11 @@ namespace ManagedShell.ShellFolders
 
         private IShellItemImageFactory GetImageFactory(IntPtr absolutePidl)
         {
+            if (_shellItem == null)
+            {
+                return null;
+            }
+            
             try
             {
                 Interop.SHCreateItemFromIDList(absolutePidl, typeof(IShellItemImageFactory).GUID, out IShellItemImageFactory ppv);
@@ -355,7 +379,10 @@ namespace ManagedShell.ShellFolders
         {
             IntPtr pidl = IntPtr.Zero;
 
-            Interop.SHGetIDListFromObject(_shellItem, out pidl);
+            if (_shellItem != null)
+            {
+                Interop.SHGetIDListFromObject(_shellItem, out pidl);
+            }
 
             return pidl;
         }
@@ -406,6 +433,11 @@ namespace ManagedShell.ShellFolders
                 _imageFactory = GetImageFactory(AbsolutePidl);
             }
 
+            if (_imageFactory == null)
+            {
+                return IconImageConverter.GetDefaultIcon();
+            }
+
             int iconPoints = IconHelper.GetSize(size);
             SIZE imageSize = new SIZE {cx = iconPoints, cy = iconPoints};
             
@@ -433,7 +465,7 @@ namespace ManagedShell.ShellFolders
                 ShellLogger.Error($"ShellItem: Unable to get icon: {e.Message}");
             }
 
-            return null;
+            return IconImageConverter.GetDefaultIcon();
         }
         #endregion
 

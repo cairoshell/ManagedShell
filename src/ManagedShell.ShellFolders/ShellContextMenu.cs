@@ -42,14 +42,22 @@ namespace ManagedShell.ShellFolders
 
             lock (IconHelper.ComLock)
             {
-                CreateHandle(new CreateParams());
-                
+                if (isInteractive)
+                {
+                    CreateHandle(new CreateParams());
+                }
+
                 x = Cursor.Position.X;
                 y = Cursor.Position.Y;
-
+                
                 this.itemSelected = itemSelected;
 
                 SetupContextMenu(files, isInteractive, preBuilder, postBuilder);
+
+                if (isInteractive)
+                {
+                    DestroyHandle();
+                }
             }
         }
 
@@ -70,6 +78,8 @@ namespace ManagedShell.ShellFolders
                 this.folderItemSelected = folderItemSelected;
                 
                 SetupContextMenu(folder, builder);
+
+                DestroyHandle();
             }
         }
 
@@ -132,7 +142,6 @@ namespace ManagedShell.ShellFolders
                     {
                         flags |= CMF.DEFAULTONLY;
                     }
-                    
 
                     contextMenu = Interop.CreatePopupMenu();
 
@@ -283,7 +292,7 @@ namespace ManagedShell.ShellFolders
 
         private void HandleMenuCommand(ShellItem[] files, uint selected, bool allFolders)
         {
-            if (selected >= Interop.CMD_FIRST)
+            if (selected >= Interop.CMD_FIRST && selected < uint.MaxValue)
             {
                 string command = GetCommandString(iContextMenu, selected - Interop.CMD_FIRST, true);
 
@@ -347,8 +356,9 @@ namespace ManagedShell.ShellFolders
             bool allFolders = true;
             foreach (var item in items)
             {
-                if (!item.IsFolder)
+                if (!item.IsFolder || (item.Attributes & SFGAO.FILESYSTEM) == 0)
                 {
+                    // If the item is a folder, but not a filesystem object, don't treat it as a folder.
                     allFolders = false;
                     break;
                 }
@@ -386,7 +396,7 @@ namespace ManagedShell.ShellFolders
                 (executeString ? GCS.VERBA : GCS.HELPTEXTA),
                 0,
                 bytes,
-                Interop.MAX_PATH);
+                256);
 
             index = 0;
             while (index < bytes.Length && bytes[index] != 0)
@@ -417,7 +427,7 @@ namespace ManagedShell.ShellFolders
                 (executeString ? GCS.VERBW : GCS.HELPTEXTW),
                 0,
                 bytes,
-                Interop.MAX_PATH);
+                256);
 
             index = 0;
             while (index < bytes.Length - 1 && (bytes[index] != 0 || bytes[index + 1] != 0))

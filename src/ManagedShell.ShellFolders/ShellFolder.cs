@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Threading;
+using System.Threading.Tasks;
 using ManagedShell.Common.Common;
 using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
@@ -34,7 +35,7 @@ namespace ManagedShell.ShellFolders
             }
         }
         
-        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync) : base(parsingName)
+        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync = false) : base(parsingName)
         {
             _hwndInput = hwndInput;
             _loadAsync = loadAsync;
@@ -46,12 +47,10 @@ namespace ManagedShell.ShellFolders
             {
                 // Enumerate the directory on a new thread so that we don't block the UI during a potentially long operation
                 // Because files is an ObservableCollection, we don't need to do anything special for the UI to update
-                var thread = new Thread(() =>
+                Task.Factory.StartNew(() =>
                 {
                     Enumerate(_hwndInput);
-                });
-                thread.IsBackground = true;
-                thread.Start();
+                }, CancellationToken.None, TaskCreationOptions.None, Interop.ShellItemScheduler);
             }
             else
             {
@@ -63,9 +62,14 @@ namespace ManagedShell.ShellFolders
         {
             IntPtr hEnum = IntPtr.Zero;
 
-            if (_shellFolder == null)
+            if (_shellFolder == null && AbsolutePidl != IntPtr.Zero)
             {
                 _shellFolder = GetShellFolder(AbsolutePidl);
+            }
+
+            if (_shellFolder == null)
+            {
+                return;
             }
 
             Files.Clear();
@@ -78,7 +82,7 @@ namespace ManagedShell.ShellFolders
 
                 while (enumIdList.Next(1, out var pidlChild, out var numFetched) == NativeMethods.S_OK && numFetched == 1)
                 {
-                    Files.Add(new ShellFile(this, _shellFolder, pidlChild));
+                    Files.Add(new ShellFile(this, _shellFolder, pidlChild, _loadAsync));
                 }
 
                 Marshal.FinalReleaseComObject(enumIdList);
