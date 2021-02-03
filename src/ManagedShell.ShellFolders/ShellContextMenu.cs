@@ -351,7 +351,7 @@ namespace ManagedShell.ShellFolders
             bool allFolders = true;
             foreach (var item in items)
             {
-                if (!item.IsFolder || (item.Attributes & SFGAO.FILESYSTEM) == 0)
+                if (!item.IsFolder || !item.IsFileSystem)
                 {
                     // If the item is a folder, but not a filesystem object, don't treat it as a folder.
                     allFolders = false;

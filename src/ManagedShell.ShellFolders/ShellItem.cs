@@ -16,14 +16,31 @@ namespace ManagedShell.ShellFolders
 {
     public class ShellItem : INotifyPropertyChanged, IDisposable
     {
-        private IShellItemImageFactory _imageFactory;
-        protected readonly IShellItem _shellItem;
+        protected IShellItem _shellItem;
 
         private bool _smallIconLoading;
         private bool _largeIconLoading;
         private bool _extraLargeIconLoading;
 
         #region Properties
+
+        public bool Loaded => _shellItem != null;
+        
+        private bool? _isFileSystem;
+
+        public bool IsFileSystem
+        {
+            get
+            {
+                if (_isFileSystem == null)
+                {
+                    _isFileSystem = ((Attributes & SFGAO.FILESYSTEM) != 0);
+                }
+                
+                return (bool)_isFileSystem;
+            }
+        }
+
         private bool? _isFolder;
 
         public bool IsFolder
@@ -34,7 +51,7 @@ namespace ManagedShell.ShellFolders
                 {
                     _isFolder = ((Attributes & SFGAO.FOLDER) != 0);
                 }
-                
+
                 return (bool)_isFolder;
             }
         }
@@ -54,7 +71,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private IShellFolder _parentFolder;
+        protected IShellFolder _parentFolder;
 
         public IShellFolder ParentFolder
         {
@@ -69,7 +86,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private IntPtr _parentAbsolutePidl;
+        protected IntPtr _parentAbsolutePidl;
 
         public IntPtr ParentAbsolutePidl
         {
@@ -268,18 +285,6 @@ namespace ManagedShell.ShellFolders
         public ShellItem(string parsingName)
         {
             _shellItem = GetShellItem(parsingName);
-            
-            if (_shellItem == null && parsingName.StartsWith("{"))
-            {
-                parsingName = "::" + parsingName;
-                _shellItem = GetShellItem(parsingName);
-            }
-            
-            if (_shellItem == null && !parsingName.ToLower().StartsWith("shell:"))
-            {
-                parsingName = "shell:" + parsingName;
-                _shellItem = GetShellItem(parsingName);
-            }
         }
 
         public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false)
@@ -298,6 +303,39 @@ namespace ManagedShell.ShellFolders
             _shellItem = GetShellItem(_parentAbsolutePidl, parentShellFolder, _relativePidl);
         }
 
+        public void Refresh(bool newPath = false)
+        {
+            _displayName = null;
+            if (newPath)
+            {
+                _fileName = null;
+                _path = null;
+            }
+            
+            _attributes = 0;
+            _isFileSystem = null;
+            _isFolder = null;
+            
+            _smallIcon = null;
+            _largeIcon = null;
+            _extraLargeIcon = null;
+            
+            OnPropertyChanged("DisplayName");
+            if (newPath)
+            {
+                OnPropertyChanged("FileName");
+                OnPropertyChanged("Path");
+            }
+
+            OnPropertyChanged("Attributes");
+            OnPropertyChanged("IsFileSystem");
+            OnPropertyChanged("IsFolder");
+            
+            OnPropertyChanged("SmallIcon");
+            OnPropertyChanged("LargeIcon");
+            OnPropertyChanged("ExtraLargeIcon");
+        }
+
         #region Retrieve interfaces
         private IShellItem GetParentShellItem()
         {
@@ -311,7 +349,7 @@ namespace ManagedShell.ShellFolders
             return parent;
         }
 
-        private IShellItem GetShellItem(string parsingName)
+        protected IShellItem GetShellItem(string parsingName)
         {
             try
             {
@@ -366,7 +404,7 @@ namespace ManagedShell.ShellFolders
             {
                 return;
             }
-            
+
             if (pni.GetParentAndItem(out _parentAbsolutePidl, out _parentFolder, out _relativePidl) != NativeMethods.S_OK)
             {
                 ShellLogger.Error($"ShellItem: Unable to get shell item parent for {Path}");
@@ -379,9 +417,16 @@ namespace ManagedShell.ShellFolders
         {
             IntPtr pidl = IntPtr.Zero;
 
-            if (_shellItem != null)
+            try
             {
-                Interop.SHGetIDListFromObject(_shellItem, out pidl);
+                if (_shellItem != null)
+                {
+                    Interop.SHGetIDListFromObject(_shellItem, out pidl);
+                }
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ShellItem: Unable to get absolute pidl: {e.Message}");
             }
 
             return pidl;
@@ -391,7 +436,8 @@ namespace ManagedShell.ShellFolders
         {
             SFGAO attrs = 0;
 
-            if (_shellItem?.GetAttributes(SFGAO.FILESYSTEM | SFGAO.FOLDER | SFGAO.HIDDEN, out attrs) != NativeMethods.S_OK)
+            if (_shellItem?.GetAttributes(SFGAO.FILESYSTEM | SFGAO.FOLDER | SFGAO.HIDDEN, out attrs) !=
+                NativeMethods.S_OK)
             {
                 attrs = 0;
             }
@@ -428,44 +474,51 @@ namespace ManagedShell.ShellFolders
 
         private ImageSource GetDisplayIcon(IconSize size)
         {
-            if (_imageFactory == null)
+            ImageSource icon = null;
+            IShellItemImageFactory imageFactory = GetImageFactory(AbsolutePidl);
+
+            if (imageFactory == null)
             {
-                _imageFactory = GetImageFactory(AbsolutePidl);
+                icon = IconImageConverter.GetDefaultIcon();
             }
-
-            if (_imageFactory == null)
+            else
             {
-                return IconImageConverter.GetDefaultIcon();
-            }
+                int iconPoints = IconHelper.GetSize(size);
+                SIZE imageSize = new SIZE { cx = iconPoints, cy = iconPoints };
 
-            int iconPoints = IconHelper.GetSize(size);
-            SIZE imageSize = new SIZE {cx = iconPoints, cy = iconPoints};
-            
-            IntPtr hBitmap = IntPtr.Zero;
-            try
-            {
-                SIIGBF flags = 0;
+                IntPtr hBitmap = IntPtr.Zero;
+                try
+                {
+                    SIIGBF flags = 0;
 
-                if (size == IconSize.Small)
-                {
-                    // for 16pt icons, thumbnails are too small
-                    flags = SIIGBF.ICONONLY;
-                }
-                
-                if (_imageFactory?.GetImage(imageSize, flags, out hBitmap) == NativeMethods.S_OK)
-                {
-                    if (hBitmap != IntPtr.Zero)
+                    if (size == IconSize.Small)
                     {
-                        return IconImageConverter.GetImageFromHBitmap(hBitmap);
+                        // for 16pt icons, thumbnails are too small
+                        flags = SIIGBF.ICONONLY;
+                    }
+
+                    if (imageFactory?.GetImage(imageSize, flags, out hBitmap) == NativeMethods.S_OK)
+                    {
+                        if (hBitmap != IntPtr.Zero)
+                        {
+                            icon = IconImageConverter.GetImageFromHBitmap(hBitmap);
+                        }
                     }
                 }
-            }
-            catch (Exception e)
-            {
-                ShellLogger.Error($"ShellItem: Unable to get icon: {e.Message}");
+                catch (Exception e)
+                {
+                    ShellLogger.Error($"ShellItem: Unable to get icon: {e.Message}");
+                }
+
+                Marshal.FinalReleaseComObject(imageFactory);
             }
 
-            return IconImageConverter.GetDefaultIcon();
+            if (icon == null)
+            {
+                icon = IconImageConverter.GetDefaultIcon();
+            }
+            
+            return icon;
         }
         #endregion
 
@@ -474,32 +527,26 @@ namespace ManagedShell.ShellFolders
         {
             if (_shellItem != null)
             {
-                Marshal.FinalReleaseComObject(_shellItem);
-            }
-
-            if (_imageFactory != null)
-            {
-                Marshal.FinalReleaseComObject(_imageFactory);
+                Marshal.ReleaseComObject(_shellItem);
+                _shellItem = null;
             }
 
             if (_parentFolder != null)
             {
-                Marshal.FinalReleaseComObject(_parentFolder);
+                Marshal.ReleaseComObject(_parentFolder);
+                _parentFolder = null;
             }
 
             if (_absolutePidl != IntPtr.Zero)
             {
                 Marshal.FreeCoTaskMem(_absolutePidl);
-            }
-
-            if (_parentAbsolutePidl != IntPtr.Zero)
-            {
-                Marshal.FreeCoTaskMem(_parentAbsolutePidl);
+                _absolutePidl = IntPtr.Zero;
             }
 
             if (_relativePidl != IntPtr.Zero)
             {
                 Marshal.FreeCoTaskMem(_relativePidl);
+                _relativePidl = IntPtr.Zero;
             }
         }
         #endregion

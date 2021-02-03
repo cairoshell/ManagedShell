@@ -1,6 +1,5 @@
 ﻿using System;
 using System.IO;
-using ManagedShell.Common.Logging;
 using ManagedShell.ShellFolders.Interfaces;
 
 namespace ManagedShell.ShellFolders
@@ -24,13 +23,11 @@ namespace ManagedShell.ShellFolders
         public ShellFile(ShellFolder parentFolder, string parsingName) : base(parsingName)
         {
             _parentItem = parentFolder;
-            ShellLogger.Debug($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
         public ShellFile(ShellFolder parentFolder, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false) : base(parentFolder.AbsolutePidl, parentShellFolder, relativePidl, isAsync)
         {
             _parentItem = parentFolder;
-            ShellLogger.Debug($"Found {DisplayName} : {FileName} : {Path} | {Attributes}");
         }
 
         private long GetFileSize()
