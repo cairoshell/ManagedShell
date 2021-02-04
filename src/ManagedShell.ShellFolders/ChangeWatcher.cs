@@ -49,8 +49,15 @@ namespace ManagedShell.ShellFolders
                 ShellLogger.Error("ChangeWatcher: Unable to start watching directory.");
                 return;
             }
-            
-            _watcher.EnableRaisingEvents = true;
+
+            try
+            {
+                _watcher.EnableRaisingEvents = true;
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ChangeWatcher: Unable to start watching directory: {e.Message}");
+            }
         }
 
         public void Dispose()
