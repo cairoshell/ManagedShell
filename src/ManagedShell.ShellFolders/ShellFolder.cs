@@ -19,6 +19,7 @@ namespace ManagedShell.ShellFolders
 
         private bool _isDisposed;
         private IShellFolder _shellFolder;
+        private IntPtr _shellFolderPtr;
 
         private ThreadSafeObservableCollection<ShellFile> _files;
 
@@ -92,26 +93,37 @@ namespace ManagedShell.ShellFolders
             }
 
             Files.Clear();
-
+            
             try
             {
                 if (_shellFolder?.EnumObjects(_hwndInput, SHCONTF.FOLDERS | SHCONTF.NONFOLDERS,
                     out hEnum) == NativeMethods.S_OK)
                 {
-                    IEnumIDList enumIdList =
-                        (IEnumIDList)Marshal.GetTypedObjectForIUnknown(hEnum, typeof(IEnumIDList));
-
-                    while (enumIdList.Next(1, out var pidlChild, out var numFetched) == NativeMethods.S_OK && numFetched == 1)
+                    try
                     {
-                        if (_isDisposed)
+                        IEnumIDList enumIdList =
+                            (IEnumIDList)Marshal.GetTypedObjectForIUnknown(hEnum, typeof(IEnumIDList));
+
+                        while (enumIdList.Next(1, out var pidlChild, out var numFetched) == NativeMethods.S_OK && numFetched == 1)
                         {
-                            break;
+                            if (_isDisposed)
+                            {
+                                break;
+                            }
+
+                            AddFile(pidlChild);
                         }
 
-                        AddFile(pidlChild);
+                        Marshal.FinalReleaseComObject(enumIdList);
                     }
-
-                    Marshal.FinalReleaseComObject(enumIdList);
+                    catch (Exception e)
+                    {
+                        ShellLogger.Error($"ShellFolder: Exception while enumerating IShellFolder: {e.Message}");
+                    }
+                    finally
+                    {
+                        Marshal.Release(hEnum);
+                    }
                 }
                 else
                 {
@@ -204,10 +216,10 @@ namespace ManagedShell.ShellFolders
             IShellFolder desktop = GetShellFolder();
             Guid guid = typeof(IShellFolder).GUID;
 
-            if (desktop.BindToObject(folderPidl, IntPtr.Zero, ref guid, out IntPtr folderPtr) == NativeMethods.S_OK)
+            if (desktop.BindToObject(folderPidl, IntPtr.Zero, ref guid, out _shellFolderPtr) == NativeMethods.S_OK)
             {
                 Marshal.FinalReleaseComObject(desktop);
-                return (IShellFolder)Marshal.GetTypedObjectForIUnknown(folderPtr, typeof(IShellFolder));
+                return (IShellFolder)Marshal.GetTypedObjectForIUnknown(_shellFolderPtr, typeof(IShellFolder));
             }
 
             ShellLogger.Error($"ShellFolder: Unable to bind IShellFolder for {folderPidl}");
@@ -316,13 +328,14 @@ namespace ManagedShell.ShellFolders
 
             if (_shellFolder != null)
             {
-                Marshal.ReleaseComObject(_shellFolder);
+                Marshal.FinalReleaseComObject(_shellFolder);
                 _shellFolder = null;
             }
 
-            if (_parentAbsolutePidl != IntPtr.Zero)
+            if (_shellFolderPtr != IntPtr.Zero)
             {
-                Marshal.FreeCoTaskMem(_parentAbsolutePidl);
+                Marshal.Release(_shellFolderPtr);
+                _shellFolderPtr = IntPtr.Zero;
             }
             
             base.Dispose();

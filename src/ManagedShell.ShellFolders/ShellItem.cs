@@ -86,21 +86,6 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        protected IntPtr _parentAbsolutePidl;
-
-        public IntPtr ParentAbsolutePidl
-        {
-            get
-            {
-                if (_parentAbsolutePidl == IntPtr.Zero)
-                {
-                    GetParentAndItem();
-                }
-
-                return _parentAbsolutePidl;
-            }
-        }
-
         private IntPtr _absolutePidl;
         
         public IntPtr AbsolutePidl
@@ -289,7 +274,6 @@ namespace ManagedShell.ShellFolders
 
         public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false)
         {
-            _parentAbsolutePidl = parentPidl;
             _relativePidl = relativePidl;
 
             if (!isAsync)
@@ -300,7 +284,7 @@ namespace ManagedShell.ShellFolders
                 _parentFolder = parentShellFolder;
             }
 
-            _shellItem = GetShellItem(_parentAbsolutePidl, parentShellFolder, _relativePidl);
+            _shellItem = GetShellItem(parentPidl, parentShellFolder, _relativePidl);
         }
 
         public void Refresh(bool newPath = false)
@@ -405,9 +389,14 @@ namespace ManagedShell.ShellFolders
                 return;
             }
 
-            if (pni.GetParentAndItem(out _parentAbsolutePidl, out _parentFolder, out _relativePidl) != NativeMethods.S_OK)
+            if (pni.GetParentAndItem(out IntPtr parentAbsolutePidl, out _parentFolder, out _relativePidl) != NativeMethods.S_OK)
             {
                 ShellLogger.Error($"ShellItem: Unable to get shell item parent for {Path}");
+            }
+
+            if (parentAbsolutePidl != IntPtr.Zero)
+            {
+                Marshal.FreeCoTaskMem(parentAbsolutePidl);
             }
         }
         #endregion
@@ -483,12 +472,12 @@ namespace ManagedShell.ShellFolders
             }
             else
             {
-                int iconPoints = IconHelper.GetSize(size);
-                SIZE imageSize = new SIZE { cx = iconPoints, cy = iconPoints };
-
-                IntPtr hBitmap = IntPtr.Zero;
                 try
                 {
+                    int iconPoints = IconHelper.GetSize(size);
+                    SIZE imageSize = new SIZE { cx = iconPoints, cy = iconPoints };
+
+                    IntPtr hBitmap = IntPtr.Zero;
                     SIIGBF flags = 0;
 
                     if (size == IconSize.Small)
@@ -509,8 +498,10 @@ namespace ManagedShell.ShellFolders
                 {
                     ShellLogger.Error($"ShellItem: Unable to get icon: {e.Message}");
                 }
-
-                Marshal.FinalReleaseComObject(imageFactory);
+                finally
+                {
+                    Marshal.FinalReleaseComObject(imageFactory);
+                }
             }
 
             if (icon == null)
@@ -527,12 +518,13 @@ namespace ManagedShell.ShellFolders
         {
             if (_shellItem != null)
             {
-                Marshal.ReleaseComObject(_shellItem);
+                Marshal.FinalReleaseComObject(_shellItem);
                 _shellItem = null;
             }
 
             if (_parentFolder != null)
             {
+                // Other ShellItems may reference this IShellFolder so don't set refcount to 0
                 Marshal.ReleaseComObject(_parentFolder);
                 _parentFolder = null;
             }
