@@ -6,6 +6,10 @@
     <UseWindowsForms>true</UseWindowsForms>
   </PropertyGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net471'">
+    <Reference Include="Microsoft.VisualBasic" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\ManagedShell.Common\ManagedShell.Common.csproj" />
   </ItemGroup>
