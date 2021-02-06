@@ -4,8 +4,6 @@ using System.Drawing;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Windows.Forms;
-using ManagedShell.Common.Helpers;
-using ManagedShell.Common.Logging;
 using ManagedShell.ShellFolders.Interfaces;
 using ManagedShell.ShellFolders.Enums;
 using ManagedShell.ShellFolders.Structs;
@@ -16,317 +14,68 @@ namespace ManagedShell.ShellFolders
     public class ShellContextMenu : NativeWindow
     {
         // Properties
-        public delegate void ItemSelectAction(string item, ShellItem[] items);
-        public delegate void FolderItemSelectAction(uint uid, string path);
-        private ItemSelectAction itemSelected;
-        private FolderItemSelectAction folderItemSelected;
-
-        private List<NativeContextMenu> NativeMenus = new List<NativeContextMenu>();
+        protected List<ShellNewMenuCommand> ShellNewMenus = new List<ShellNewMenuCommand>();
         
-        private readonly int x;
-        private readonly int y;
-        
-        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
-        { }
+        internal IContextMenu iContextMenu;
+        internal IContextMenu2 iContextMenu2;
+        internal IContextMenu3 iContextMenu3;
 
-        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
-        {
-            if (files == null || files.Length < 1)
-            {
-                return;
-            }
+        internal IntPtr iContextMenuPtr;
+        internal IntPtr iContextMenu2Ptr;
+        internal IntPtr iContextMenu3Ptr;
 
-            lock (IconHelper.ComLock)
-            {
-                x = Cursor.Position.X;
-                y = Cursor.Position.Y;
-                
-                this.itemSelected = itemSelected;
+        internal IntPtr nativeMenuPtr;
 
-                SetupContextMenu(files, hwndOwner, isInteractive, preBuilder, postBuilder);
-            }
-        }
-
-        public ShellContextMenu(ShellFolder folder, FolderItemSelectAction folderItemSelected, ShellMenuCommandBuilder builder)
-        {
-            if (folder == null)
-            {
-                return;
-            }
-
-            lock (IconHelper.ComLock)
-            {
-                x = Cursor.Position.X;
-                y = Cursor.Position.Y;
-
-                this.folderItemSelected = folderItemSelected;
-                
-                SetupContextMenu(folder, builder);
-            }
-        }
-
-        private uint ConfigureMenuItems(bool allFolders, IntPtr contextMenu, ShellMenuCommandBuilder builder)
-        {
-            uint numAdded = 0;
-
-            foreach (var command in builder.Commands)
-            {
-                if (allFolders || !command.FoldersOnly)
-                {
-                    Interop.AppendMenu(contextMenu, command.Flags, command.UID, command.Label);
-                }
-
-                numAdded++;
-            }
-
-            return numAdded;
-        }
-
-        private void ConfigureMenuItems(ShellFolder folder, IntPtr contextMenu, ShellMenuCommandBuilder builder)
-        {
-            int numAdded = 0;
-            NativeMenus.Clear();
-
-            foreach (var command in builder.Commands)
-            {
-                if (command is ShellNewMenuCommand shellNewCommand)
-                {
-                    NativeMenus.Add(shellNewCommand.AddSubMenu(folder, numAdded, ref contextMenu));
-                }
-                else
-                {
-                    Interop.AppendMenu(contextMenu, command.Flags, command.UID, command.Label);
-                }
-
-                numAdded++;
-            }
-        }
-
-        private void SetupContextMenu(ShellItem[] files, IntPtr hwndOwner, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
-        {
-            NativeContextMenu menu = new NativeContextMenu();
-            NativeMenus.Add(menu);
-            
-            try
-            {
-                if (GetIContextMenu(files, hwndOwner, out menu.iContextMenuPtr, out menu.iContextMenu))
-                {
-                    // get some properties about our file(s)
-                    bool allFolders = ItemsAllFolders(files);
-
-                    CMF flags = CMF.EXPLORE |
-                        CMF.ITEMMENU |
-                        CMF.CANRENAME |
-                        ((Control.ModifierKeys & Keys.Shift) != 0 ? CMF.EXTENDEDVERBS : 0);
-
-                    if (!isInteractive)
-                    {
-                        flags |= CMF.DEFAULTONLY;
-                    }
-
-                    menu.nativeMenuPtr = Interop.CreatePopupMenu();
-
-                    uint numPrepended = ConfigureMenuItems(allFolders, menu.nativeMenuPtr, preBuilder);
-
-                    menu.iContextMenu.QueryContextMenu(
-                        menu.nativeMenuPtr,
-                        numPrepended,
-                        Interop.CMD_FIRST,
-                        Interop.CMD_LAST,
-                        flags);
-
-                    ConfigureMenuItems(allFolders, menu.nativeMenuPtr, postBuilder);
-
-                    if (isInteractive)
-                    {
-                        if (Marshal.QueryInterface(menu.iContextMenuPtr, ref Interop.IID_IContextMenu2,
-                            out menu.iContextMenu2Ptr) == NativeMethods.S_OK)
-                        {
-                            if (menu.iContextMenu2Ptr != IntPtr.Zero)
-                            {
-                                try
-                                {
-                                    menu.iContextMenu2 =
-                                        (IContextMenu2)Marshal.GetTypedObjectForIUnknown(menu.iContextMenu2Ptr, typeof(IContextMenu2));
-                                }
-                                catch (Exception e)
-                                {
-                                    ShellLogger.Error($"ShellContextMenu: Error retrieving IContextMenu2 interface: {e.Message}");
-                                }
-                            }
-                        }
-
-                        if (Marshal.QueryInterface(menu.iContextMenuPtr, ref Interop.IID_IContextMenu3,
-                            out menu.iContextMenu3Ptr) == NativeMethods.S_OK)
-                        {
-                            if (menu.iContextMenu3Ptr != IntPtr.Zero)
-                            {
-                                try
-                                {
-                                    menu.iContextMenu3 =
-                                        (IContextMenu3)Marshal.GetTypedObjectForIUnknown(menu.iContextMenu3Ptr, typeof(IContextMenu3));
-                                }
-                                catch (Exception e)
-                                {
-                                    ShellLogger.Error($"ShellContextMenu: Error retrieving IContextMenu3 interface: {e.Message}");
-                                }
-                            }
-                        }
-
-                        ShowMenu(files, menu, allFolders);
-                    }
-                    else
-                    {
-                        uint selected = Interop.GetMenuDefaultItem(menu.nativeMenuPtr, 0, 0);
-
-                        HandleMenuCommand(files, menu, selected, allFolders);
-                    }
-                }
-                else
-                {
-                    ShellLogger.Debug("Error retrieving IContextMenu");
-                }
-            }
-            catch (Exception e)
-            {
-                ShellLogger.Error($"ShellContextMenu: Error building context menu: {e.Message}");
-            }
-            finally
-            {
-                foreach (var subMenu in NativeMenus)
-                {
-                    subMenu.FreeResources();
-                }
-            }
-        }
-
-        private void SetupContextMenu(ShellFolder folder, ShellMenuCommandBuilder builder)
-        {
-            IntPtr contextMenu = IntPtr.Zero;
-
-            try
-            {
-                contextMenu = Interop.CreatePopupMenu();
-                
-                ConfigureMenuItems(folder, contextMenu, builder);
-                
-                ShowMenu(folder, contextMenu);
-            }
-            catch (Exception e)
-            {
-                ShellLogger.Error($"ShellContextMenu: Error building folder context menu: {e.Message}");
-            }
-            finally
-            {
-                if (contextMenu != IntPtr.Zero)
-                    Interop.DestroyMenu(contextMenu);
-
-                foreach (var subMenu in NativeMenus)
-                {
-                    subMenu.FreeResources();
-                }
-            }
-        }
-
-        private void ShowMenu(ShellItem[] files, NativeContextMenu menu, bool allFolders)
-        {
-            CreateHandle(new CreateParams());
-            
-            uint selected = Interop.TrackPopupMenuEx(
-                menu.nativeMenuPtr,
-                TPM.RETURNCMD,
-                x,
-                y,
-                Handle,
-                IntPtr.Zero);
-
-            HandleMenuCommand(files, menu, selected, allFolders);
-            
-            DestroyHandle();
-        }
-
-        private void HandleMenuCommand(ShellItem[] files, NativeContextMenu menu, uint selected, bool allFolders)
-        {
-            if (selected >= Interop.CMD_FIRST && selected < uint.MaxValue)
-            {
-                string command = GetCommandString(menu.iContextMenu, selected - Interop.CMD_FIRST, true);
-
-                if (command == "open" && allFolders)
-                {
-                    // suppress running system code
-                    command = "openFolder";
-                }
-                else
-                {
-                    InvokeCommand(
-                        menu.iContextMenu,
-                        selected - Interop.CMD_FIRST,
-                        new Point(x, y));
-                }
-
-                if (string.IsNullOrEmpty(command))
-                {
-                    // custom commands only have an ID, so pass that instead
-                    command = selected.ToString();
-                }
-
-                itemSelected?.Invoke(command, files);
-            }
-        }
-
-        private void ShowMenu(ShellFolder folder, IntPtr contextMenu)
-        {
-            CreateHandle(new CreateParams());
-            
-            uint selected = Interop.TrackPopupMenuEx(
-                contextMenu,
-                TPM.RETURNCMD,
-                x,
-                y,
-                Handle,
-                IntPtr.Zero);
-
-            if (selected >= Interop.CMD_FIRST)
-            {
-                if (selected <= Interop.CMD_LAST)
-                {
-                    // custom commands are greater than CMD_LAST, so this must be a sub menu item
-                    foreach (var subMenu in NativeMenus)
-                    {
-                        if (subMenu.iContextMenu != null)
-                        {
-                            InvokeCommand(
-                                subMenu.iContextMenu,
-                                selected - Interop.CMD_FIRST,
-                                new Point(x, y));
-                        }
-                    }
-                }
-
-                folderItemSelected?.Invoke(selected, folder.Path);
-            }
-            
-            DestroyHandle();
-        }
+        protected int x;
+        protected int y;
 
         #region Helpers
-        private bool ItemsAllFolders(ShellItem[] items)
+        internal void FreeResources()
         {
-            bool allFolders = true;
-            foreach (var item in items)
+            if (iContextMenu != null)
             {
-                if (!item.IsFolder || !item.IsFileSystem)
-                {
-                    // If the item is a folder, but not a filesystem object, don't treat it as a folder.
-                    allFolders = false;
-                    break;
-                }
+                Marshal.FinalReleaseComObject(iContextMenu);
+                iContextMenu = null;
             }
 
-            return allFolders;
+            if (iContextMenu2 != null)
+            {
+                Marshal.FinalReleaseComObject(iContextMenu2);
+                iContextMenu2 = null;
+            }
+
+            if (iContextMenu3 != null)
+            {
+                Marshal.FinalReleaseComObject(iContextMenu3);
+                iContextMenu3 = null;
+            }
+
+            if (iContextMenuPtr != IntPtr.Zero)
+            {
+                Marshal.Release(iContextMenuPtr);
+                iContextMenuPtr = IntPtr.Zero;
+            }
+
+            if (iContextMenu2Ptr != IntPtr.Zero)
+            {
+                Marshal.Release(iContextMenu2Ptr);
+                iContextMenu2Ptr = IntPtr.Zero;
+            }
+
+            if (iContextMenu3Ptr != IntPtr.Zero)
+            {
+                Marshal.Release(iContextMenu3Ptr);
+                iContextMenu3Ptr = IntPtr.Zero;
+            }
+
+            if (nativeMenuPtr != IntPtr.Zero)
+            {
+                Interop.DestroyMenu(nativeMenuPtr);
+                nativeMenuPtr = IntPtr.Zero;
+            }
         }
         
-        private string GetCommandString(IContextMenu iContextMenu, uint idcmd, bool executeString)
+        protected string GetCommandString(IContextMenu iContextMenu, uint idcmd, bool executeString)
         {
             string command = GetCommandStringW(iContextMenu, idcmd, executeString);
 
@@ -405,7 +154,7 @@ namespace ManagedShell.ShellFolders
         /// <param name="cmd">the index of the command to invoke</param>
         /// <param name="parentDir">the parent directory from where to invoke</param>
         /// <param name="ptInvoke">the point (in screen coordinates) from which to invoke</param>
-        private void InvokeCommand(IContextMenu iContextMenu, uint cmd, Point ptInvoke)
+        protected void InvokeCommand(IContextMenu iContextMenu, uint cmd, Point ptInvoke)
         {
             CMINVOKECOMMANDINFOEX invoke = new CMINVOKECOMMANDINFOEX();
             invoke.cbSize = Interop.cbInvokeCommand;
@@ -419,45 +168,6 @@ namespace ManagedShell.ShellFolders
 
             iContextMenu.InvokeCommand(ref invoke);
         }
-
-        private bool GetIContextMenu(ShellItem[] items, IntPtr hwndOwner, out IntPtr icontextMenuPtr, out IContextMenu iContextMenu)
-        {
-            if (items.Length < 1)
-            {
-                icontextMenuPtr = IntPtr.Zero;
-                iContextMenu = null;
-
-                return false;
-            }
-
-            IShellFolder parent = items[0].ParentFolder;
-            IntPtr[] pidls = new IntPtr[items.Length];
-
-            for (int i = 0; i < items.Length; i++)
-            {
-                pidls[i] = items[i].RelativePidl;
-            }
-
-            if (parent.GetUIObjectOf(
-                        hwndOwner,
-                        (uint)pidls.Length,
-                        pidls,
-                        ref Interop.IID_IContextMenu,
-                        IntPtr.Zero,
-                        out icontextMenuPtr) == NativeMethods.S_OK)
-            {
-                iContextMenu =
-                    (IContextMenu)Marshal.GetTypedObjectForIUnknown(
-                        icontextMenuPtr, typeof(IContextMenu));
-
-                return true;
-            }
-
-            icontextMenuPtr = IntPtr.Zero;
-            iContextMenu = null;
-
-            return false;
-        }
         #endregion
 
         /// <summary>
@@ -468,22 +178,44 @@ namespace ManagedShell.ShellFolders
         /// <returns>true if the message has been handled, false otherwise</returns>
         protected override void WndProc(ref Message m)
         {
-            foreach (var subMenu in NativeMenus)
+            if (iContextMenu != null &&
+                m.Msg == (int)NativeMethods.WM.MENUSELECT &&
+                ((int)Interop.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
+                ((int)Interop.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
             {
-                if (subMenu.iContextMenu != null &&
-                    m.WParam == subMenu.nativeMenuPtr &&
-                    m.Msg == (int)NativeMethods.WM.MENUSELECT &&
-                    ((int)Interop.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
-                    ((int)Interop.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
+                string info = GetCommandString(
+                    iContextMenu,
+                    (uint)Interop.LoWord(m.WParam) - Interop.CMD_FIRST,
+                    false);
+            }
+
+            if (iContextMenu2 != null &&
+                (m.Msg == (int)NativeMethods.WM.INITMENUPOPUP ||
+                    m.Msg == (int)NativeMethods.WM.MEASUREITEM ||
+                    m.Msg == (int)NativeMethods.WM.DRAWITEM))
+            {
+                if (iContextMenu2.HandleMenuMsg(
+                    (uint)m.Msg, m.WParam, m.LParam) == NativeMethods.S_OK)
+                    return;
+            }
+
+            if (iContextMenu3 != null &&
+                m.Msg == (int)NativeMethods.WM.MENUCHAR)
+            {
+                if (iContextMenu3.HandleMenuMsg2(
+                    (uint)m.Msg, m.WParam, m.LParam, IntPtr.Zero) == NativeMethods.S_OK)
+                    return;
+            }
+            
+            foreach (var subMenu in ShellNewMenus)
+            {
+                if (m.WParam != subMenu.nativeMenuPtr)
                 {
-                    string info = GetCommandString(
-                        subMenu.iContextMenu,
-                        (uint)Interop.LoWord(m.WParam) - Interop.CMD_FIRST,
-                        false);
+                    continue;
                 }
                 
                 if (subMenu.iContextMenu2 != null &&
-                    ((m.Msg == (int)NativeMethods.WM.INITMENUPOPUP && m.WParam == subMenu.nativeMenuPtr) ||
+                    (m.Msg == (int)NativeMethods.WM.INITMENUPOPUP ||
                         m.Msg == (int)NativeMethods.WM.MEASUREITEM ||
                         m.Msg == (int)NativeMethods.WM.DRAWITEM))
                 {
@@ -493,7 +225,6 @@ namespace ManagedShell.ShellFolders
                 }
 
                 if (subMenu.iContextMenu3 != null &&
-                    m.WParam == subMenu.nativeMenuPtr &&
                     m.Msg == (int)NativeMethods.WM.MENUCHAR)
                 {
                     if (subMenu.iContextMenu3.HandleMenuMsg2(
