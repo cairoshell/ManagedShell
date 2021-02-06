@@ -86,21 +86,6 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        protected IShellFolder _parentFolder;
-
-        public IShellFolder ParentFolder
-        {
-            get
-            {
-                if (_parentFolder == null)
-                {
-                    GetParentAndItem();
-                }
-
-                return _parentFolder;
-            }
-        }
-
         private IntPtr _absolutePidl;
         
         public IntPtr AbsolutePidl
@@ -290,15 +275,7 @@ namespace ManagedShell.ShellFolders
         public ShellItem(IntPtr parentPidl, IShellFolder parentShellFolder, IntPtr relativePidl, bool isAsync = false)
         {
             _relativePidl = relativePidl;
-
-            if (!isAsync)
-            {
-                // If this ShellItem was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
-                // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
-                // IShellFolder from the background thread cannot be used.
-                _parentFolder = parentShellFolder;
-            }
-
+            
             _shellItem = GetShellItem(parentPidl, parentShellFolder, _relativePidl);
         }
 
@@ -404,7 +381,7 @@ namespace ManagedShell.ShellFolders
                 return;
             }
 
-            if (pni.GetParentAndItem(out IntPtr parentAbsolutePidl, out _parentFolder, out _relativePidl) != NativeMethods.S_OK)
+            if (pni.GetParentAndItem(out IntPtr parentAbsolutePidl, out IShellFolder parentFolder, out _relativePidl) != NativeMethods.S_OK)
             {
                 ShellLogger.Error($"ShellItem: Unable to get shell item parent for {Path}");
             }
@@ -412,6 +389,12 @@ namespace ManagedShell.ShellFolders
             if (parentAbsolutePidl != IntPtr.Zero)
             {
                 Marshal.FreeCoTaskMem(parentAbsolutePidl);
+            }
+
+            if (parentFolder != null)
+            {
+                // Other ShellItems may reference this IShellFolder so don't set refcount to 0
+                Marshal.ReleaseComObject(parentFolder);
             }
         }
         #endregion
@@ -535,13 +518,6 @@ namespace ManagedShell.ShellFolders
             {
                 Marshal.FinalReleaseComObject(_shellItem);
                 _shellItem = null;
-            }
-
-            if (_parentFolder != null)
-            {
-                // Other ShellItems may reference this IShellFolder so don't set refcount to 0
-                Marshal.ReleaseComObject(_parentFolder);
-                _parentFolder = null;
             }
 
             if (_absolutePidl != IntPtr.Zero)

@@ -15,10 +15,10 @@ namespace ManagedShell.ShellFolders
         public delegate void ItemSelectAction(string item, ShellItem[] items);
         private readonly ItemSelectAction itemSelected;
 
-        public ShellItemContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, parentFolder, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
         { }
 
-        public ShellItemContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             if (files == null || files.Length < 1)
             {
@@ -32,7 +32,7 @@ namespace ManagedShell.ShellFolders
 
                 this.itemSelected = itemSelected;
 
-                SetupContextMenu(files, hwndOwner, isInteractive, preBuilder, postBuilder);
+                SetupContextMenu(files, parentFolder, hwndOwner, isInteractive, preBuilder, postBuilder);
             }
         }
 
@@ -53,11 +53,11 @@ namespace ManagedShell.ShellFolders
             return numAdded;
         }
 
-        private void SetupContextMenu(ShellItem[] files, IntPtr hwndOwner, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
+        private void SetupContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             try
             {
-                if (GetIContextMenu(files, hwndOwner, out iContextMenuPtr, out iContextMenu))
+                if (GetIContextMenu(files, parentFolder, hwndOwner, out iContextMenuPtr, out iContextMenu))
                 {
                     // get some properties about our file(s)
                     bool allFolders = ItemsAllFolders(files);
@@ -99,7 +99,7 @@ namespace ManagedShell.ShellFolders
                                 }
                                 catch (Exception e)
                                 {
-                                    ShellLogger.Error($"ShellContextMenu: Error retrieving IContextMenu2 interface: {e.Message}");
+                                    ShellLogger.Error($"ShellItemContextMenu: Error retrieving IContextMenu2 interface: {e.Message}");
                                 }
                             }
                         }
@@ -116,7 +116,7 @@ namespace ManagedShell.ShellFolders
                                 }
                                 catch (Exception e)
                                 {
-                                    ShellLogger.Error($"ShellContextMenu: Error retrieving IContextMenu3 interface: {e.Message}");
+                                    ShellLogger.Error($"ShellItemContextMenu: Error retrieving IContextMenu3 interface: {e.Message}");
                                 }
                             }
                         }
@@ -132,12 +132,12 @@ namespace ManagedShell.ShellFolders
                 }
                 else
                 {
-                    ShellLogger.Debug("Error retrieving IContextMenu");
+                    ShellLogger.Error("ShellItemContextMenu: Error retrieving IContextMenu");
                 }
             }
             catch (Exception e)
             {
-                ShellLogger.Error($"ShellContextMenu: Error building context menu: {e.Message}");
+                ShellLogger.Error($"ShellItemContextMenu: Error building context menu: {e.Message}");
             }
             finally
             {
@@ -213,7 +213,7 @@ namespace ManagedShell.ShellFolders
             return allFolders;
         }
         
-        protected bool GetIContextMenu(ShellItem[] items, IntPtr hwndOwner, out IntPtr icontextMenuPtr, out IContextMenu iContextMenu)
+        protected bool GetIContextMenu(ShellItem[] items, ShellFolder parentFolder, IntPtr hwndOwner, out IntPtr icontextMenuPtr, out IContextMenu iContextMenu)
         {
             if (items.Length < 1)
             {
@@ -222,8 +222,7 @@ namespace ManagedShell.ShellFolders
 
                 return false;
             }
-
-            IShellFolder parent = items[0].ParentFolder;
+            
             IntPtr[] pidls = new IntPtr[items.Length];
 
             for (int i = 0; i < items.Length; i++)
@@ -231,7 +230,7 @@ namespace ManagedShell.ShellFolders
                 pidls[i] = items[i].RelativePidl;
             }
 
-            if (parent.GetUIObjectOf(
+            if (parentFolder.ShellFolderInterface.GetUIObjectOf(
                 hwndOwner,
                 (uint)pidls.Length,
                 pidls,

@@ -18,8 +18,22 @@ namespace ManagedShell.ShellFolders
         private readonly ChangeWatcher _changeWatcher;
 
         private bool _isDisposed;
-        private IShellFolder _shellFolder;
         private IntPtr _shellFolderPtr;
+
+        private IShellFolder _shellFolder;
+        
+        public IShellFolder ShellFolderInterface
+        {
+            get
+            {
+                if (_shellFolder == null && AbsolutePidl != IntPtr.Zero)
+                {
+                    _shellFolder = GetShellFolder(AbsolutePidl);
+                }
+
+                return _shellFolder;
+            }
+        }
 
         private ThreadSafeObservableCollection<ShellFile> _files;
 
@@ -64,6 +78,14 @@ namespace ManagedShell.ShellFolders
 
         private void Initialize()
         {
+            // If this ShellFolder was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
+            // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
+            // IShellFolder from the background thread cannot be used.
+            if (ShellFolderInterface == null)
+            {
+                return;
+            }
+            
             _changeWatcher?.StartWatching();
             
             if (_loadAsync)
@@ -82,21 +104,11 @@ namespace ManagedShell.ShellFolders
         {
             IntPtr hEnum = IntPtr.Zero;
 
-            if (_shellFolder == null && AbsolutePidl != IntPtr.Zero)
-            {
-                _shellFolder = GetShellFolder(AbsolutePidl);
-            }
-
-            if (_shellFolder == null)
-            {
-                return;
-            }
-
             Files.Clear();
             
             try
             {
-                if (_shellFolder?.EnumObjects(_hwndInput, SHCONTF.FOLDERS | SHCONTF.NONFOLDERS,
+                if (ShellFolderInterface?.EnumObjects(_hwndInput, SHCONTF.FOLDERS | SHCONTF.NONFOLDERS,
                     out hEnum) == NativeMethods.S_OK)
                 {
                     try
@@ -236,7 +248,7 @@ namespace ManagedShell.ShellFolders
 
         private bool AddFile(IntPtr relPidl, int position = -1)
         {
-            ShellFile file = new ShellFile(this, _shellFolder, relPidl, _loadAsync);
+            ShellFile file = new ShellFile(this, ShellFolderInterface, relPidl, _loadAsync);
 
             return AddFile(file, position);
         }
