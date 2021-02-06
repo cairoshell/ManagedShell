@@ -4,7 +4,7 @@ using ManagedShell.ShellFolders.Interfaces;
 
 namespace ManagedShell.ShellFolders
 {
-    public class SubMenu
+    public class NativeContextMenu
     {
         internal IContextMenu iContextMenu;
         internal IContextMenu2 iContextMenu2;
@@ -14,7 +14,7 @@ namespace ManagedShell.ShellFolders
         internal IntPtr iContextMenu2Ptr;
         internal IntPtr iContextMenu3Ptr;
         
-        internal IntPtr subMenuPtr;
+        internal IntPtr nativeMenuPtr;
         
         internal void FreeResources()
         {
@@ -37,15 +37,28 @@ namespace ManagedShell.ShellFolders
             }
 
             if (iContextMenuPtr != IntPtr.Zero)
+            {
                 Marshal.Release(iContextMenuPtr);
+                iContextMenuPtr = IntPtr.Zero;
+            }
 
             if (iContextMenu2Ptr != IntPtr.Zero)
+            {
                 Marshal.Release(iContextMenu2Ptr);
+                iContextMenu2Ptr = IntPtr.Zero;
+            }
 
             if (iContextMenu3Ptr != IntPtr.Zero)
+            {
                 Marshal.Release(iContextMenu3Ptr);
+                iContextMenu3Ptr = IntPtr.Zero;
+            }
 
-            subMenuPtr = IntPtr.Zero;
+            if (nativeMenuPtr != IntPtr.Zero)
+            {
+                Interop.DestroyMenu(nativeMenuPtr);
+                nativeMenuPtr = IntPtr.Zero;
+            }
         }
     }
 }

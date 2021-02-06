@@ -20,7 +20,7 @@ namespace ManagedShell.Common.Helpers
         /// <returns>The icon as an ImageSource, otherwise a default image.</returns>
         public static ImageSource GetImageFromAssociatedIcon(string filename, IconSize size)
         {
-            IntPtr hIcon = IconHelper.GetIconByFilename(filename, (int)size);
+            IntPtr hIcon = IconHelper.GetIconByFilename(filename, size);
 
             return GetImageFromHIcon(hIcon);
         }

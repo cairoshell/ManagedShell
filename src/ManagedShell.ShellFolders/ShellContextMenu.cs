@@ -21,19 +21,15 @@ namespace ManagedShell.ShellFolders
         private ItemSelectAction itemSelected;
         private FolderItemSelectAction folderItemSelected;
 
-        private IContextMenu iContextMenu;
-        private IContextMenu2 iContextMenu2;
-        private IContextMenu3 iContextMenu3;
-
-        private List<SubMenu> SubMenus = new List<SubMenu>();
+        private List<NativeContextMenu> NativeMenus = new List<NativeContextMenu>();
         
         private readonly int x;
         private readonly int y;
         
-        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, hwndOwner, itemSelected, isInteractive, new ShellCommandBuilder(), new ShellCommandBuilder())
+        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
         { }
 
-        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
+        public ShellContextMenu(ShellItem[] files, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             if (files == null || files.Length < 1)
             {
@@ -51,7 +47,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        public ShellContextMenu(ShellFolder folder, FolderItemSelectAction folderItemSelected, ShellCommandBuilder builder)
+        public ShellContextMenu(ShellFolder folder, FolderItemSelectAction folderItemSelected, ShellMenuCommandBuilder builder)
         {
             if (folder == null)
             {
@@ -69,7 +65,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private uint ConfigureMenuItems(bool allFolders, IntPtr contextMenu, ShellCommandBuilder builder)
+        private uint ConfigureMenuItems(bool allFolders, IntPtr contextMenu, ShellMenuCommandBuilder builder)
         {
             uint numAdded = 0;
 
@@ -86,16 +82,16 @@ namespace ManagedShell.ShellFolders
             return numAdded;
         }
 
-        private void ConfigureMenuItems(ShellFolder folder, IntPtr contextMenu, ShellCommandBuilder builder)
+        private void ConfigureMenuItems(ShellFolder folder, IntPtr contextMenu, ShellMenuCommandBuilder builder)
         {
             int numAdded = 0;
-            SubMenus.Clear();
+            NativeMenus.Clear();
 
             foreach (var command in builder.Commands)
             {
-                if (command is ShellNewCommand shellNewCommand)
+                if (command is ShellNewMenuCommand shellNewCommand)
                 {
-                    SubMenus.Add(shellNewCommand.AddSubMenu(folder, numAdded, ref contextMenu));
+                    NativeMenus.Add(shellNewCommand.AddSubMenu(folder, numAdded, ref contextMenu));
                 }
                 else
                 {
@@ -106,16 +102,14 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private void SetupContextMenu(ShellItem[] files, IntPtr hwndOwner, bool isInteractive, ShellCommandBuilder preBuilder, ShellCommandBuilder postBuilder)
+        private void SetupContextMenu(ShellItem[] files, IntPtr hwndOwner, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
-            IntPtr contextMenu = IntPtr.Zero,
-                iContextMenuPtr = IntPtr.Zero,
-                iContextMenuPtr2 = IntPtr.Zero,
-                iContextMenuPtr3 = IntPtr.Zero;
-
+            NativeContextMenu menu = new NativeContextMenu();
+            NativeMenus.Add(menu);
+            
             try
             {
-                if (GetIContextMenu(files, hwndOwner, out iContextMenuPtr, out iContextMenu))
+                if (GetIContextMenu(files, hwndOwner, out menu.iContextMenuPtr, out menu.iContextMenu))
                 {
                     // get some properties about our file(s)
                     bool allFolders = ItemsAllFolders(files);
@@ -130,30 +124,30 @@ namespace ManagedShell.ShellFolders
                         flags |= CMF.DEFAULTONLY;
                     }
 
-                    contextMenu = Interop.CreatePopupMenu();
+                    menu.nativeMenuPtr = Interop.CreatePopupMenu();
 
-                    uint numPrepended = ConfigureMenuItems(allFolders, contextMenu, preBuilder);
+                    uint numPrepended = ConfigureMenuItems(allFolders, menu.nativeMenuPtr, preBuilder);
 
-                    iContextMenu.QueryContextMenu(
-                        contextMenu,
+                    menu.iContextMenu.QueryContextMenu(
+                        menu.nativeMenuPtr,
                         numPrepended,
                         Interop.CMD_FIRST,
                         Interop.CMD_LAST,
                         flags);
 
-                    ConfigureMenuItems(allFolders, contextMenu, postBuilder);
+                    ConfigureMenuItems(allFolders, menu.nativeMenuPtr, postBuilder);
 
                     if (isInteractive)
                     {
-                        if (Marshal.QueryInterface(iContextMenuPtr, ref Interop.IID_IContextMenu2,
-                            out iContextMenuPtr2) == NativeMethods.S_OK)
+                        if (Marshal.QueryInterface(menu.iContextMenuPtr, ref Interop.IID_IContextMenu2,
+                            out menu.iContextMenu2Ptr) == NativeMethods.S_OK)
                         {
-                            if (iContextMenuPtr2 != IntPtr.Zero)
+                            if (menu.iContextMenu2Ptr != IntPtr.Zero)
                             {
                                 try
                                 {
-                                    iContextMenu2 =
-                                        (IContextMenu2)Marshal.GetTypedObjectForIUnknown(iContextMenuPtr2, typeof(IContextMenu2));
+                                    menu.iContextMenu2 =
+                                        (IContextMenu2)Marshal.GetTypedObjectForIUnknown(menu.iContextMenu2Ptr, typeof(IContextMenu2));
                                 }
                                 catch (Exception e)
                                 {
@@ -162,15 +156,15 @@ namespace ManagedShell.ShellFolders
                             }
                         }
 
-                        if (Marshal.QueryInterface(iContextMenuPtr, ref Interop.IID_IContextMenu3,
-                            out iContextMenuPtr3) == NativeMethods.S_OK)
+                        if (Marshal.QueryInterface(menu.iContextMenuPtr, ref Interop.IID_IContextMenu3,
+                            out menu.iContextMenu3Ptr) == NativeMethods.S_OK)
                         {
-                            if (iContextMenuPtr3 != IntPtr.Zero)
+                            if (menu.iContextMenu3Ptr != IntPtr.Zero)
                             {
                                 try
                                 {
-                                    iContextMenu3 =
-                                        (IContextMenu3)Marshal.GetTypedObjectForIUnknown(iContextMenuPtr3, typeof(IContextMenu3));
+                                    menu.iContextMenu3 =
+                                        (IContextMenu3)Marshal.GetTypedObjectForIUnknown(menu.iContextMenu3Ptr, typeof(IContextMenu3));
                                 }
                                 catch (Exception e)
                                 {
@@ -179,13 +173,13 @@ namespace ManagedShell.ShellFolders
                             }
                         }
 
-                        ShowMenu(files, contextMenu, allFolders);
+                        ShowMenu(files, menu, allFolders);
                     }
                     else
                     {
-                        uint selected = Interop.GetMenuDefaultItem(contextMenu, 0, 0);
+                        uint selected = Interop.GetMenuDefaultItem(menu.nativeMenuPtr, 0, 0);
 
-                        HandleMenuCommand(files, selected, allFolders);
+                        HandleMenuCommand(files, menu, selected, allFolders);
                     }
                 }
                 else
@@ -199,44 +193,14 @@ namespace ManagedShell.ShellFolders
             }
             finally
             {
-                if (iContextMenu != null)
-                {
-                    Marshal.FinalReleaseComObject(iContextMenu);
-                    iContextMenu = null;
-                }
-
-                if (iContextMenu2 != null)
-                {
-                    Marshal.FinalReleaseComObject(iContextMenu2);
-                    iContextMenu2 = null;
-                }
-
-                if (iContextMenu3 != null)
-                {
-                    Marshal.FinalReleaseComObject(iContextMenu3);
-                    iContextMenu3 = null;
-                }
-
-                if (contextMenu != IntPtr.Zero)
-                    Interop.DestroyMenu(contextMenu);
-
-                if (iContextMenuPtr != IntPtr.Zero)
-                    Marshal.Release(iContextMenuPtr);
-
-                if (iContextMenuPtr2 != IntPtr.Zero)
-                    Marshal.Release(iContextMenuPtr2);
-
-                if (iContextMenuPtr3 != IntPtr.Zero)
-                    Marshal.Release(iContextMenuPtr3);
-
-                foreach (var subMenu in SubMenus)
+                foreach (var subMenu in NativeMenus)
                 {
                     subMenu.FreeResources();
                 }
             }
         }
 
-        private void SetupContextMenu(ShellFolder folder, ShellCommandBuilder builder)
+        private void SetupContextMenu(ShellFolder folder, ShellMenuCommandBuilder builder)
         {
             IntPtr contextMenu = IntPtr.Zero;
 
@@ -257,35 +221,35 @@ namespace ManagedShell.ShellFolders
                 if (contextMenu != IntPtr.Zero)
                     Interop.DestroyMenu(contextMenu);
 
-                foreach (var subMenu in SubMenus)
+                foreach (var subMenu in NativeMenus)
                 {
                     subMenu.FreeResources();
                 }
             }
         }
 
-        private void ShowMenu(ShellItem[] files, IntPtr contextMenu, bool allFolders)
+        private void ShowMenu(ShellItem[] files, NativeContextMenu menu, bool allFolders)
         {
             CreateHandle(new CreateParams());
             
             uint selected = Interop.TrackPopupMenuEx(
-                contextMenu,
+                menu.nativeMenuPtr,
                 TPM.RETURNCMD,
                 x,
                 y,
                 Handle,
                 IntPtr.Zero);
 
-            HandleMenuCommand(files, selected, allFolders);
+            HandleMenuCommand(files, menu, selected, allFolders);
             
             DestroyHandle();
         }
 
-        private void HandleMenuCommand(ShellItem[] files, uint selected, bool allFolders)
+        private void HandleMenuCommand(ShellItem[] files, NativeContextMenu menu, uint selected, bool allFolders)
         {
             if (selected >= Interop.CMD_FIRST && selected < uint.MaxValue)
             {
-                string command = GetCommandString(iContextMenu, selected - Interop.CMD_FIRST, true);
+                string command = GetCommandString(menu.iContextMenu, selected - Interop.CMD_FIRST, true);
 
                 if (command == "open" && allFolders)
                 {
@@ -295,7 +259,7 @@ namespace ManagedShell.ShellFolders
                 else
                 {
                     InvokeCommand(
-                        iContextMenu,
+                        menu.iContextMenu,
                         selected - Interop.CMD_FIRST,
                         new Point(x, y));
                 }
@@ -327,7 +291,7 @@ namespace ManagedShell.ShellFolders
                 if (selected <= Interop.CMD_LAST)
                 {
                     // custom commands are greater than CMD_LAST, so this must be a sub menu item
-                    foreach (var subMenu in SubMenus)
+                    foreach (var subMenu in NativeMenus)
                     {
                         if (subMenu.iContextMenu != null)
                         {
@@ -504,39 +468,22 @@ namespace ManagedShell.ShellFolders
         /// <returns>true if the message has been handled, false otherwise</returns>
         protected override void WndProc(ref Message m)
         {
-            if (iContextMenu != null &&
-                m.Msg == (int)NativeMethods.WM.MENUSELECT &&
-                ((int)Interop.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
-                ((int)Interop.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
+            foreach (var subMenu in NativeMenus)
             {
-                string info = GetCommandString(
-                    iContextMenu,
-                    (uint)Interop.LoWord(m.WParam) - Interop.CMD_FIRST,
-                    false);
-            }
-
-            if (iContextMenu2 != null &&
-                (m.Msg == (int)NativeMethods.WM.INITMENUPOPUP ||
-                 m.Msg == (int)NativeMethods.WM.MEASUREITEM ||
-                 m.Msg == (int)NativeMethods.WM.DRAWITEM))
-            {
-                if (iContextMenu2.HandleMenuMsg(
-                    (uint)m.Msg, m.WParam, m.LParam) == NativeMethods.S_OK)
-                    return;
-            }
-
-            if (iContextMenu3 != null &&
-                m.Msg == (int)NativeMethods.WM.MENUCHAR)
-            {
-                if (iContextMenu3.HandleMenuMsg2(
-                    (uint)m.Msg, m.WParam, m.LParam, IntPtr.Zero) == NativeMethods.S_OK)
-                    return;
-            }
-
-            foreach (var subMenu in SubMenus)
-            {
+                if (subMenu.iContextMenu != null &&
+                    m.WParam == subMenu.nativeMenuPtr &&
+                    m.Msg == (int)NativeMethods.WM.MENUSELECT &&
+                    ((int)Interop.HiWord(m.WParam) & (int)MFT.SEPARATOR) == 0 &&
+                    ((int)Interop.HiWord(m.WParam) & (int)MFT.POPUP) == 0)
+                {
+                    string info = GetCommandString(
+                        subMenu.iContextMenu,
+                        (uint)Interop.LoWord(m.WParam) - Interop.CMD_FIRST,
+                        false);
+                }
+                
                 if (subMenu.iContextMenu2 != null &&
-                    ((m.Msg == (int)NativeMethods.WM.INITMENUPOPUP && m.WParam == subMenu.subMenuPtr) ||
+                    ((m.Msg == (int)NativeMethods.WM.INITMENUPOPUP && m.WParam == subMenu.nativeMenuPtr) ||
                         m.Msg == (int)NativeMethods.WM.MEASUREITEM ||
                         m.Msg == (int)NativeMethods.WM.DRAWITEM))
                 {
@@ -546,7 +493,7 @@ namespace ManagedShell.ShellFolders
                 }
 
                 if (subMenu.iContextMenu3 != null &&
-                    m.WParam == subMenu.subMenuPtr &&
+                    m.WParam == subMenu.nativeMenuPtr &&
                     m.Msg == (int)NativeMethods.WM.MENUCHAR)
                 {
                     if (subMenu.iContextMenu3.HandleMenuMsg2(

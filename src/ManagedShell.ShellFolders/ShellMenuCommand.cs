@@ -2,7 +2,7 @@
 
 namespace ManagedShell.ShellFolders
 {
-    public class ShellCommand
+    public class ShellMenuCommand
     {
         public MFT Flags;
         public uint UID;

@@ -3,6 +3,7 @@ using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using ManagedShell.Common.Enums;
+using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
@@ -14,25 +15,29 @@ namespace ManagedShell.Common.Helpers
         
         // IImageList references
         private static Guid iidImageList = new Guid("46EB5926-582E-4017-9FDF-E8998DAA0950");
-        private static IImageList iml0; // 32pt
-        private static IImageList iml1; // 16pt
-        private static IImageList iml2; // 48pt
+        private static IImageList imlLarge; // 32pt
+        private static IImageList imlSmall; // 16pt
+        private static IImageList imlExtraLarge; // 48pt
 
-        private static void initIml(int size)
+        private static void initIml(IconSize size)
         {
             // Initialize the appropriate IImageList for the desired icon size if it hasn't been already
 
-            if (size == 0 && iml0 == null)
+            if (size == IconSize.Large && imlLarge == null)
             {
-                SHGetImageList(0, ref iidImageList, out iml0);
+                SHGetImageList((int)size, ref iidImageList, out imlLarge);
             }
-            else if (size == 1 && iml1 == null)
+            else if (size == IconSize.Small && imlSmall == null)
             {
-                SHGetImageList(1, ref iidImageList, out iml1);
+                SHGetImageList((int)size, ref iidImageList, out imlSmall);
             }
-            else if (size == 2 && iml2 == null)
+            else if (size == IconSize.ExtraLarge && imlExtraLarge == null)
             {
-                SHGetImageList(2, ref iidImageList, out iml2);
+                SHGetImageList((int)size, ref iidImageList, out imlExtraLarge);
+            }
+            else
+            {
+                ShellLogger.Error($"IconHelper: Unsupported icon size {size}");
             }
         }
 
@@ -43,30 +48,30 @@ namespace ManagedShell.Common.Helpers
 
             lock (ComLock)
             {
-                if (iml0 != null)
+                if (imlLarge != null)
                 {
-                    Marshal.ReleaseComObject(iml0);
-                    iml0 = null;
+                    Marshal.ReleaseComObject(imlLarge);
+                    imlLarge = null;
                 }
-                if (iml1 != null)
+                if (imlSmall != null)
                 {
-                    Marshal.ReleaseComObject(iml1);
-                    iml1 = null;
+                    Marshal.ReleaseComObject(imlSmall);
+                    imlSmall = null;
                 }
-                if (iml2 != null)
+                if (imlExtraLarge != null)
                 {
-                    Marshal.ReleaseComObject(iml2);
-                    iml2 = null;
+                    Marshal.ReleaseComObject(imlExtraLarge);
+                    imlExtraLarge = null;
                 }
             }
         }
 
-        public static IntPtr GetIconByFilename(string fileName, int size)
+        public static IntPtr GetIconByFilename(string fileName, IconSize size)
         {
             return GetIcon(fileName, size);
         }
 
-        private static IntPtr GetIcon(string filename, int size)
+        private static IntPtr GetIcon(string filename, IconSize size)
         {
             lock (ComLock)
             {
@@ -96,7 +101,7 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
-        private static IntPtr getFromImageList(int iconIndex, int size)
+        private static IntPtr getFromImageList(int iconIndex, IconSize size)
         {
             // Initialize the IImageList object
             initIml(size);
@@ -106,14 +111,14 @@ namespace ManagedShell.Common.Helpers
 
             switch (size)
             {
-                case 0:
-                    iml0.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                case IconSize.Large:
+                    imlLarge.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
                     break;
-                case 1:
-                    iml1.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                case IconSize.Small:
+                    imlSmall.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
                     break;
-                case 2:
-                    iml2.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                case IconSize.ExtraLarge:
+                    imlExtraLarge.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
                     break;
             }
 

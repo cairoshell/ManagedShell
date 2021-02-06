@@ -416,9 +416,9 @@ namespace ManagedShell.WindowsTasks
                             // last resort: find icon by executable. if we already have an icon from a previous fetch, then just skip this
                             if (ShellHelper.Exists(WinFileName))
                             {
-                                int size = 1;
-                                if (sizeSetting != IconSize.Small)
-                                    size = 0;
+                                IconSize size = IconSize.Small;
+                                if (sizeSetting != size)
+                                    size = IconSize.Large;
 
                                 hIco = IconHelper.GetIconByFilename(WinFileName, size);
                             }
