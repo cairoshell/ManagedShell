@@ -41,6 +41,21 @@ namespace ManagedShell.ShellFolders
             }
         }
 
+        private bool? _isNavigableFolder;
+
+        public bool IsNavigableFolder
+        {
+            get
+            {
+                if (_isNavigableFolder == null)
+                {
+                    _isNavigableFolder = ((Attributes & SFGAO.FOLDER) != 0);
+                }
+
+                return (bool)_isNavigableFolder;
+            }
+        }
+
         private bool? _isFolder;
 
         public bool IsFolder
@@ -49,7 +64,7 @@ namespace ManagedShell.ShellFolders
             {
                 if (_isFolder == null)
                 {
-                    _isFolder = ((Attributes & SFGAO.FOLDER) != 0);
+                    _isFolder = ((Attributes & SFGAO.FOLDER) != 0 && (Attributes & SFGAO.STREAM) == 0);
                 }
 
                 return (bool)_isFolder;
@@ -425,7 +440,7 @@ namespace ManagedShell.ShellFolders
         {
             SFGAO attrs = 0;
 
-            if (_shellItem?.GetAttributes(SFGAO.FILESYSTEM | SFGAO.FOLDER | SFGAO.HIDDEN, out attrs) !=
+            if (_shellItem?.GetAttributes(SFGAO.FILESYSTEM | SFGAO.FOLDER | SFGAO.HIDDEN | SFGAO.STREAM, out attrs) !=
                 NativeMethods.S_OK)
             {
                 attrs = 0;
