@@ -11,7 +11,7 @@ using NativeMethods = ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.ShellFolders
 {
-    public class ShellContextMenu : NativeWindow
+    public abstract class ShellContextMenu : NativeWindow
     {
         // Properties
         protected List<ShellNewMenuCommand> ShellNewMenus = new List<ShellNewMenuCommand>();
