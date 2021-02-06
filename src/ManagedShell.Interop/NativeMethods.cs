@@ -31,6 +31,12 @@ namespace ManagedShell.Interop
 
         public struct POINT
         {
+            public POINT(long x, long y)
+            {
+                this.x = x;
+                this.y = y;
+            }
+            
             public long x;
             public long y;
         }

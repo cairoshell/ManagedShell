@@ -7,6 +7,7 @@ namespace ManagedShell.Interop
     public partial class NativeMethods
     {
         const string Shell32_DllName = "shell32.dll";
+        public const int S_OK = 0;
 
         [StructLayout(LayoutKind.Sequential)]
         public struct APPBARDATA

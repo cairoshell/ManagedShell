@@ -18,21 +18,46 @@ namespace ManagedShell.Common.Helpers
         /// <param name="filename">The filename of the file to query the Icon for.</param>
         /// <param name="size">0 = 32px, 1 = 16px, 2 = 48px</param>
         /// <returns>The icon as an ImageSource, otherwise a default image.</returns>
-        public static ImageSource GetImageFromAssociatedIcon(string filename, IconSize size) 
+        public static ImageSource GetImageFromAssociatedIcon(string filename, IconSize size)
         {
-            BitmapSource bs = null;
-            
-            IntPtr hIcon = IconHelper.GetIconByFilename(filename, (int)size);
-                
-            if (hIcon == IntPtr.Zero || hIcon == null)
-            {
-                return GetDefaultIcon();
-            }
+            IntPtr hIcon = IconHelper.GetIconByFilename(filename, size);
 
-            bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(hIcon, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+            return GetImageFromHIcon(hIcon);
+        }
+
+        /// <summary>
+        /// Retrieves the Icon for the Handle provided as an ImageSource.
+        /// </summary>
+        /// <param name="hBitmap">The icon's handle (HBITMAP).</param>
+        /// <returns>The Icon, or a default icon if not found.</returns>
+        public static ImageSource GetImageFromHBitmap(IntPtr hBitmap, bool returnDefault = true)
+        {
+            BitmapSource bs;
+            if (hBitmap != IntPtr.Zero)
+            {
+                try
+                {
+                    bs = System.Windows.Interop.Imaging.CreateBitmapSourceFromHBitmap(hBitmap, IntPtr.Zero, Int32Rect.Empty, BitmapSizeOptions.FromEmptyOptions());
+                    bs.Freeze();
+                    NativeMethods.DeleteObject(hBitmap);
+                }
+                catch
+                {
+                    if (returnDefault)
+                        bs = GetDefaultIcon();
+                    else
+                        return null;
+                }
+            }
+            else
+            {
+                if (returnDefault)
+                    bs = GetDefaultIcon();
+                else
+                    return null;
+            }
             bs.Freeze();
-            NativeMethods.DestroyIcon(hIcon);
-            
+
             return bs;
         }
 
@@ -43,7 +68,7 @@ namespace ManagedShell.Common.Helpers
         /// <returns>The Icon, or a default icon if not found.</returns>
         public static ImageSource GetImageFromHIcon(IntPtr hIcon, bool returnDefault = true) 
         {
-            BitmapSource bs = null;
+            BitmapSource bs;
             if (hIcon != IntPtr.Zero)
             {
                 try
