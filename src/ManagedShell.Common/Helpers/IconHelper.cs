@@ -35,7 +35,7 @@ namespace ManagedShell.Common.Helpers
             {
                 SHGetImageList((int)size, ref iidImageList, out imlExtraLarge);
             }
-            else
+            else if (size != IconSize.Small && size != IconSize.Large && size != IconSize.ExtraLarge)
             {
                 ShellLogger.Error($"IconHelper: Unsupported icon size {size}");
             }

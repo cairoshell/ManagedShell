@@ -78,6 +78,8 @@ namespace ManagedShell.ShellFolders
 
         private void Initialize()
         {
+            // If this method is called outside of the main thread, deadlocks may occur
+            
             // If this ShellFolder was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
             // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
             // IShellFolder from the background thread cannot be used.
@@ -152,7 +154,7 @@ namespace ManagedShell.ShellFolders
         {
             Task.Factory.StartNew(() =>
             {
-                ShellLogger.Info($"{e.ChangeType}: {e.Name} ({e.FullPath})");
+                ShellLogger.Info($"ShellFolder: Item {e.ChangeType}: {e.Name} ({e.FullPath})");
 
                 bool exists = false;
 
@@ -183,7 +185,7 @@ namespace ManagedShell.ShellFolders
         {
             Task.Factory.StartNew(() =>
             {
-                ShellLogger.Info($"{e.ChangeType}: {e.Name} ({e.FullPath})");
+                ShellLogger.Info($"ShellFolder: Item {e.ChangeType}: {e.Name} ({e.FullPath})");
 
                 if (!FileExists(e.FullPath))
                 {
@@ -196,7 +198,7 @@ namespace ManagedShell.ShellFolders
         {
             Task.Factory.StartNew(() =>
             {
-                ShellLogger.Info($"{e.ChangeType}: {e.Name} ({e.FullPath})");
+                ShellLogger.Info($"ShellFolder: Item {e.ChangeType}: {e.Name} ({e.FullPath})");
 
                 RemoveFile(e.FullPath);
             }, CancellationToken.None, TaskCreationOptions.None, Interop.ShellItemScheduler);
@@ -206,7 +208,7 @@ namespace ManagedShell.ShellFolders
         {
             Task.Factory.StartNew(() =>
             {
-                ShellLogger.Info($"{e.ChangeType}: From {e.OldName} ({e.OldFullPath}) to {e.Name} ({e.FullPath})");
+                ShellLogger.Info($"ShellFolder: Item {e.ChangeType}: From {e.OldName} ({e.OldFullPath}) to {e.Name} ({e.FullPath})");
 
                 int existing = RemoveFile(e.OldFullPath);
 

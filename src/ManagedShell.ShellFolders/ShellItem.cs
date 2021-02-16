@@ -1,5 +1,6 @@
 ﻿using System;
 using System.ComponentModel;
+using System.IO;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -508,6 +509,21 @@ namespace ManagedShell.ShellFolders
             }
             
             return icon;
+        }
+        #endregion
+
+        #region Modify item
+        public void Rename(string newName)
+        {
+            string newFilePathName = System.IO.Path.GetDirectoryName(Path) + "\\" + newName;
+            
+            if (newFilePathName != Path)
+            {
+                if (IsFolder)
+                    Directory.Move(Path, newFilePathName);
+                else
+                    File.Move(Path, newFilePathName);
+            }
         }
         #endregion
 
