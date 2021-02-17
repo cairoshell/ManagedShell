@@ -4,21 +4,31 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ManagedShell.Common.Common;
+using ManagedShell.Common.Extensions;
 using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using ManagedShell.ShellFolders.Enums;
 using ManagedShell.ShellFolders.Interfaces;
+using Microsoft.Win32;
 
 namespace ManagedShell.ShellFolders
 {
     public class ShellFolder : ShellItem, IDisposable
     {
+        private static string _userDesktopPath;
+        private static bool _isUserDesktopPathSet;
+
+        private const string DESKTOP_PATH_GUID = "shell:::{b4bfcc3a-db2c-424c-b029-7fe99a87c641}";
+        private const string DESKTOP_PATH_REGKEY = @"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders";
+
         private readonly IntPtr _hwndInput;
         private readonly bool _loadAsync;
         private readonly ChangeWatcher _changeWatcher;
 
         private bool _isDisposed;
         private IntPtr _shellFolderPtr;
+
+        public bool IsDesktop { get; private set; }
 
         private IShellFolder _shellFolder;
         
@@ -58,6 +68,8 @@ namespace ManagedShell.ShellFolders
             _hwndInput = hwndInput;
             _loadAsync = loadAsync;
 
+            HandleDesktopFolder(parsingName);
+
             if (_shellItem == null && parsingName.StartsWith("{"))
             {
                 parsingName = "::" + parsingName;
@@ -76,11 +88,61 @@ namespace ManagedShell.ShellFolders
             }
         }
 
+        private void HandleDesktopFolder(string parsingName)
+        {
+            // The Desktop can only be acquired via SHGetDesktopFolder*. If our parsing name matches the desktop directory, use this logic.
+            // * This isn't true on Windows 10, but we should use this logic anyway to provide consistency with SHCreateDesktop behavior.
+            
+            if (!_isUserDesktopPathSet)
+            {
+                SetUserDesktopPath();
+            }
+
+            if ((!string.IsNullOrEmpty(_userDesktopPath) && parsingName.ToLower() == _userDesktopPath.ToLower()) || parsingName.ToLower() == DESKTOP_PATH_GUID)
+            {
+                IsDesktop = true;
+
+                // Dispose of things that may have been created as part of the ShellItem constructor
+                if (_shellItem != null)
+                {
+                    Marshal.FinalReleaseComObject(_shellItem);
+                    _shellItem = null;
+                }
+
+                // Set properties based on SHGetDesktopFolder
+                _shellFolder = GetShellFolder();
+                Interop.SHGetIDListFromObject(_shellFolder, out _absolutePidl);
+                Interop.SHCreateItemFromIDList(_absolutePidl, typeof(IShellItem).GUID, out _shellItem);
+            }
+        }
+
+        private void SetUserDesktopPath()
+        {
+            try
+            {
+                string userDesktopRegistryPath =
+                    Registry.CurrentUser.GetSubKeyValue<string>(DESKTOP_PATH_REGKEY, "Desktop");
+
+                if (!string.IsNullOrEmpty(userDesktopRegistryPath))
+                {
+                    _userDesktopPath = Environment.ExpandEnvironmentVariables(userDesktopRegistryPath);
+                }
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ShellFolder: Unable to get user desktop path from the registry: {e.Message}");
+            }
+            finally
+            {
+                _isUserDesktopPathSet = true; // set this true always so we don't re-attempt
+            }
+        }
+
         private void Initialize()
         {
             // If this method is called outside of the main thread, deadlocks may occur
             
-            // If this ShellFolder was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
+            // Even if this ShellFolder was instantiated within an async folder enumeration, set IShellFolder here instead of the new thread.
             // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
             // IShellFolder from the background thread cannot be used.
             if (ShellFolderInterface == null)

@@ -128,6 +128,9 @@ namespace ManagedShell.Interop
         [DllImport(Shell32_DllName, CharSet = CharSet.Unicode)]
         public static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
 
+        [DllImport(Shell32_DllName, CharSet = CharSet.Unicode)]
+        public static extern IntPtr SHGetFileInfo(IntPtr pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbSizeFileInfo, uint uFlags);
+
         [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
         public static extern bool ShellExecuteEx(ref SHELLEXECUTEINFO lpExecInfo);
 
