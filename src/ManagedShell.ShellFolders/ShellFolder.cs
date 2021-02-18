@@ -294,7 +294,7 @@ namespace ManagedShell.ShellFolders
 
             if (desktop.BindToObject(folderPidl, IntPtr.Zero, ref guid, out _shellFolderPtr) == NativeMethods.S_OK)
             {
-                Marshal.FinalReleaseComObject(desktop);
+                Marshal.ReleaseComObject(desktop);
                 return (IShellFolder)Marshal.GetTypedObjectForIUnknown(_shellFolderPtr, typeof(IShellFolder));
             }
 
@@ -404,7 +404,7 @@ namespace ManagedShell.ShellFolders
 
             if (_shellFolder != null)
             {
-                Marshal.FinalReleaseComObject(_shellFolder);
+                Marshal.ReleaseComObject(_shellFolder);
                 _shellFolder = null;
             }
 
