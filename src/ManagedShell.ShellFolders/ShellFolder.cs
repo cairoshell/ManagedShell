@@ -4,22 +4,16 @@ using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
 using ManagedShell.Common.Common;
-using ManagedShell.Common.Extensions;
 using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using ManagedShell.ShellFolders.Enums;
 using ManagedShell.ShellFolders.Interfaces;
-using Microsoft.Win32;
 
 namespace ManagedShell.ShellFolders
 {
     public class ShellFolder : ShellItem, IDisposable
     {
         private static string _userDesktopPath;
-        private static bool _isUserDesktopPathSet;
-
-        private const string DESKTOP_PATH_GUID = "shell:::{b4bfcc3a-db2c-424c-b029-7fe99a87c641}";
-        private const string DESKTOP_PATH_REGKEY = @"Software\Microsoft\Windows\CurrentVersion\Explorer\User Shell Folders";
 
         private readonly IntPtr _hwndInput;
         private readonly bool _loadAsync;
@@ -91,14 +85,14 @@ namespace ManagedShell.ShellFolders
         private void HandleDesktopFolder(string parsingName)
         {
             // The Desktop can only be acquired via SHGetDesktopFolder*. If our parsing name matches the desktop directory, use this logic.
-            // * This isn't true on Windows 10, but we should use this logic anyway to provide consistency with SHCreateDesktop behavior.
+            // *This isn't true on Windows 10, but we should use this logic anyway to provide consistency with SHCreateDesktop behavior.
             
-            if (!_isUserDesktopPathSet)
+            if (_userDesktopPath == null)
             {
                 SetUserDesktopPath();
             }
 
-            if ((!string.IsNullOrEmpty(_userDesktopPath) && parsingName.ToLower() == _userDesktopPath.ToLower()) || parsingName.ToLower() == DESKTOP_PATH_GUID)
+            if (!string.IsNullOrEmpty(_userDesktopPath) && parsingName.ToLower() == _userDesktopPath)
             {
                 IsDesktop = true;
 
@@ -118,24 +112,7 @@ namespace ManagedShell.ShellFolders
 
         private void SetUserDesktopPath()
         {
-            try
-            {
-                string userDesktopRegistryPath =
-                    Registry.CurrentUser.GetSubKeyValue<string>(DESKTOP_PATH_REGKEY, "Desktop");
-
-                if (!string.IsNullOrEmpty(userDesktopRegistryPath))
-                {
-                    _userDesktopPath = Environment.ExpandEnvironmentVariables(userDesktopRegistryPath);
-                }
-            }
-            catch (Exception e)
-            {
-                ShellLogger.Error($"ShellFolder: Unable to get user desktop path from the registry: {e.Message}");
-            }
-            finally
-            {
-                _isUserDesktopPathSet = true; // set this true always so we don't re-attempt
-            }
+            _userDesktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop, Environment.SpecialFolderOption.DoNotVerify).ToLower();
         }
 
         private void Initialize()
