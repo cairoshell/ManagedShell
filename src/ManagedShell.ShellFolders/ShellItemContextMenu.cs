@@ -12,13 +12,22 @@ namespace ManagedShell.ShellFolders
 {
     public class ShellItemContextMenu : ShellContextMenu
     {
-        public delegate void ItemSelectAction(string item, ShellItem[] items);
+        public delegate void ItemSelectAction(string command, ShellItem[] items);
         private readonly ItemSelectAction itemSelected;
+        
+        public delegate bool OpenFolderAction(ShellItem[] items);
+        private readonly OpenFolderAction openFolder;
 
         public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, parentFolder, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
         { }
 
-        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, OpenFolderAction openFolder, bool isInteractive) : this(files, parentFolder, hwndOwner, itemSelected, openFolder, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
+        { }
+
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder) : this(files, parentFolder, hwndOwner, itemSelected, null, isInteractive, preBuilder, postBuilder)
+        { }
+
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, OpenFolderAction openFolder, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             if (files == null || files.Length < 1)
             {
@@ -31,6 +40,7 @@ namespace ManagedShell.ShellFolders
                 y = Cursor.Position.Y;
 
                 this.itemSelected = itemSelected;
+                this.openFolder = openFolder;
 
                 SetupContextMenu(files, parentFolder, hwndOwner, isInteractive, preBuilder, postBuilder);
             }
@@ -45,6 +55,11 @@ namespace ManagedShell.ShellFolders
                 if (allFolders || !command.FoldersOnly)
                 {
                     Interop.AppendMenu(contextMenu, command.Flags, command.UID, command.Label);
+
+                    if (command.UID != 0 && command.UID == builder.DefaultItemUID)
+                    {
+                        Interop.SetMenuDefaultItem(contextMenu, command.UID, 0);
+                    }
                 }
 
                 numAdded++;
@@ -173,18 +188,19 @@ namespace ManagedShell.ShellFolders
             {
                 string command = GetCommandString(iContextMenu, selected - Interop.CMD_FIRST, true);
 
-                if (command == "open" && allFolders)
+                // if this is a folder, run the open folder action instead if provided
+                if (command == "open" && allFolders && openFolder != null)
                 {
-                    // suppress running system code
-                    command = "openFolder";
+                    if (openFolder.Invoke(files))
+                    {
+                        return;
+                    }
                 }
-                else
-                {
-                    InvokeCommand(
-                        iContextMenu,
-                        selected - Interop.CMD_FIRST,
-                        new Point(x, y));
-                }
+
+                InvokeCommand(
+                    iContextMenu,
+                    selected - Interop.CMD_FIRST,
+                    new Point(x, y));
 
                 if (string.IsNullOrEmpty(command))
                 {

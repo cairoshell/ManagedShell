@@ -91,6 +91,14 @@ namespace ManagedShell.ShellFolders
             uint uIDNewItem,
             [MarshalAs(UnmanagedType.LPTStr)]
             string lpNewItem);
+        
+        [DllImport("user32",
+            SetLastError = true,
+            CharSet = CharSet.Auto)]
+        public static extern bool SetMenuDefaultItem(
+            IntPtr hMenu,
+            uint uItem,
+            uint fByPos);
 
         // Retrieves a handle to the drop-down menu or submenu activated by the specified menu item
         [DllImport("user32",
