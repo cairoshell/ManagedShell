@@ -26,6 +26,19 @@ namespace ManagedShell.Common.Helpers
         }
 
         /// <summary>
+        /// Retrieves the Icon for the absolute PIDL as an ImageSource
+        /// </summary>
+        /// <param name="pidl">The PIDL to query the Icon for.</param>
+        /// <param name="size">0 = 32px, 1 = 16px, 2 = 48px</param>
+        /// <returns>The icon as an ImageSource, otherwise a default image.</returns>
+        public static ImageSource GetImageFromAssociatedIcon(IntPtr pidl, IconSize size)
+        {
+            IntPtr hIcon = IconHelper.GetIconByPidl(pidl, size);
+
+            return GetImageFromHIcon(hIcon);
+        }
+
+        /// <summary>
         /// Retrieves the Icon for the Handle provided as an ImageSource.
         /// </summary>
         /// <param name="hBitmap">The icon's handle (HBITMAP).</param>

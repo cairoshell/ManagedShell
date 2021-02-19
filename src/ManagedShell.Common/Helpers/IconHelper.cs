@@ -71,6 +71,11 @@ namespace ManagedShell.Common.Helpers
             return GetIcon(fileName, size);
         }
 
+        public static IntPtr GetIconByPidl(IntPtr pidl, IconSize size)
+        {
+            return GetIcon(pidl, size);
+        }
+
         private static IntPtr GetIcon(string filename, IconSize size)
         {
             lock (ComLock)
@@ -91,6 +96,27 @@ namespace ManagedShell.Common.Helpers
                     {
                         SHGetFileInfo(filename, FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.UseFileAttributes | SHGFI.SysIconIndex));
                     }
+
+                    return getFromImageList(shinfo.iIcon, size);
+                }
+                catch
+                {
+                    return IntPtr.Zero;
+                }
+            }
+        }
+
+        private static IntPtr GetIcon(IntPtr pidl, IconSize size)
+        {
+            lock (ComLock)
+            {
+                try
+                {
+                    SHFILEINFO shinfo = new SHFILEINFO();
+                    shinfo.szDisplayName = string.Empty;
+                    shinfo.szTypeName = string.Empty;
+
+                    SHGetFileInfo(pidl, FILE_ATTRIBUTE_NORMAL, ref shinfo, (uint)Marshal.SizeOf(shinfo), (uint)(SHGFI.PIDL | SHGFI.SysIconIndex));
 
                     return getFromImageList(shinfo.iIcon, size);
                 }

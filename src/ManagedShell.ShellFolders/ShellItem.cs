@@ -87,7 +87,7 @@ namespace ManagedShell.ShellFolders
             }
         }
 
-        private IntPtr _absolutePidl;
+        protected IntPtr _absolutePidl;
         
         public IntPtr AbsolutePidl
         {
@@ -318,9 +318,26 @@ namespace ManagedShell.ShellFolders
         {
             IShellItem parent = null;
 
-            if (_shellItem?.GetParent(out parent) != NativeMethods.S_OK)
+            try
             {
-                parent = null;
+                if (_shellItem?.GetParent(out parent) != NativeMethods.S_OK)
+                {
+                    parent = null;
+                }
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ShellItem: Unable to get parent shell item: {e.Message}");
+
+                // Fall back to the root shell item via empty string
+                try
+                {
+                    parent = GetShellItem(string.Empty);
+                }
+                catch (Exception exception)
+                {
+                    ShellLogger.Error($"ShellItem: Unable to get fallback parent shell item: {exception.Message}");
+                }
             }
 
             return parent;
@@ -495,12 +512,18 @@ namespace ManagedShell.ShellFolders
                 }
                 catch (Exception e)
                 {
-                    ShellLogger.Error($"ShellItem: Unable to get icon: {e.Message}");
+                    ShellLogger.Error($"ShellItem: Unable to get icon from ShellItemImageFactory: {e.Message}");
                 }
                 finally
                 {
                     Marshal.FinalReleaseComObject(imageFactory);
                 }
+            }
+
+            if (icon == null)
+            {
+                // Fall back to SHGetFileInfo
+                icon = IconImageConverter.GetImageFromAssociatedIcon(AbsolutePidl, size);
             }
 
             if (icon == null)

@@ -13,12 +13,16 @@ namespace ManagedShell.ShellFolders
 {
     public class ShellFolder : ShellItem, IDisposable
     {
+        private static string _userDesktopPath;
+
         private readonly IntPtr _hwndInput;
         private readonly bool _loadAsync;
         private readonly ChangeWatcher _changeWatcher;
 
         private bool _isDisposed;
         private IntPtr _shellFolderPtr;
+
+        public bool IsDesktop { get; private set; }
 
         private IShellFolder _shellFolder;
         
@@ -58,6 +62,8 @@ namespace ManagedShell.ShellFolders
             _hwndInput = hwndInput;
             _loadAsync = loadAsync;
 
+            HandleDesktopFolder(parsingName);
+
             if (_shellItem == null && parsingName.StartsWith("{"))
             {
                 parsingName = "::" + parsingName;
@@ -76,11 +82,44 @@ namespace ManagedShell.ShellFolders
             }
         }
 
+        private void HandleDesktopFolder(string parsingName)
+        {
+            // The Desktop can only be acquired via SHGetDesktopFolder*. If our parsing name matches the desktop directory, use this logic.
+            // *This isn't true on Windows 10, but we should use this logic anyway to provide consistency with SHCreateDesktop behavior.
+            
+            if (_userDesktopPath == null)
+            {
+                SetUserDesktopPath();
+            }
+
+            if (!string.IsNullOrEmpty(_userDesktopPath) && parsingName.ToLower() == _userDesktopPath)
+            {
+                IsDesktop = true;
+
+                // Dispose of things that may have been created as part of the ShellItem constructor
+                if (_shellItem != null)
+                {
+                    Marshal.FinalReleaseComObject(_shellItem);
+                    _shellItem = null;
+                }
+
+                // Set properties based on SHGetDesktopFolder
+                _shellFolder = GetShellFolder();
+                Interop.SHGetIDListFromObject(_shellFolder, out _absolutePidl);
+                Interop.SHCreateItemFromIDList(_absolutePidl, typeof(IShellItem).GUID, out _shellItem);
+            }
+        }
+
+        private void SetUserDesktopPath()
+        {
+            _userDesktopPath = Environment.GetFolderPath(Environment.SpecialFolder.Desktop, Environment.SpecialFolderOption.DoNotVerify).ToLower();
+        }
+
         private void Initialize()
         {
             // If this method is called outside of the main thread, deadlocks may occur
             
-            // If this ShellFolder was instantiated within an async folder enumeration, then don't store the IShellFolder from that thread.
+            // Even if this ShellFolder was instantiated within an async folder enumeration, set IShellFolder here instead of the new thread.
             // The IShellFolder is used later (such as in context menus) where we need to be running on the UI thread, and the
             // IShellFolder from the background thread cannot be used.
             if (ShellFolderInterface == null)
@@ -232,7 +271,7 @@ namespace ManagedShell.ShellFolders
 
             if (desktop.BindToObject(folderPidl, IntPtr.Zero, ref guid, out _shellFolderPtr) == NativeMethods.S_OK)
             {
-                Marshal.FinalReleaseComObject(desktop);
+                Marshal.ReleaseComObject(desktop);
                 return (IShellFolder)Marshal.GetTypedObjectForIUnknown(_shellFolderPtr, typeof(IShellFolder));
             }
 
@@ -342,7 +381,7 @@ namespace ManagedShell.ShellFolders
 
             if (_shellFolder != null)
             {
-                Marshal.FinalReleaseComObject(_shellFolder);
+                Marshal.ReleaseComObject(_shellFolder);
                 _shellFolder = null;
             }
 
