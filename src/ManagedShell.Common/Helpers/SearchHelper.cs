@@ -65,29 +65,54 @@ namespace ManagedShell.Common.Helpers
             if (ShellHelper.GetFileExtensionsVisible() || !EnvironmentHelper.IsWindows8OrBetter)
                 displayNameColumn = "System.ItemNameDisplay";
 
+            string query;
             OleDbConnection cConnection;
             List<SearchResult> results = new List<SearchResult>();
 
-            string query =
-                $@"SELECT TOP {MAX_RESULT} ""{displayNameColumn}"", ""System.ItemUrl"", ""System.ItemPathDisplay"", ""System.DateModified"", ""System.Search.Rank""
-                FROM ""SYSTEMINDEX""
-                WHERE WITH(System.ItemNameDisplay, System.ItemAuthors, System.Keywords, System.HighKeywords, System.MediumKeywords, System.Music.AlbumTitle, System.Title, System.Music.Genre, System.Message.FromName, System.Subject, System.Contact.FullName) AS #MRProps
-                (System.Shell.OmitFromView != 'TRUE'
-                AND ((System.ItemNameDisplayWithoutExtension = '{SearchString}' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 1000)
-                OR (System.ItemNameDisplay LIKE '{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 999)
-                OR (System.ItemNameDisplay LIKE '%{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 997)
-                OR System.ItemNameDisplay = '{SearchString}' RANK BY COERCION(ABSOLUTE, 998)
-                OR System.ItemNameDisplay LIKE '{SearchString}%' RANK BY COERCION(ABSOLUTE, 996)
-                OR System.HighKeywords = SOME ARRAY['{SearchString}'] RANK BY COERCION(MULTIPLY, 0.9)
-                OR System.MediumKeywords = SOME ARRAY['{SearchString}'] RANK BY COERCION(MULTIPLY, 0.9)
-                OR System.Title = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
-                OR System.Subject = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
-                OR CONTAINS(#MRProps,'""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
-                OR CONTAINS(#MRProps,'""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
-                OR CONTAINS(*, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
-                OR CONTAINS(*, '""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
-                OR FREETEXT(#MRProps, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)))
-                ORDER BY System.Search.Rank desc";
+            if (EnvironmentHelper.IsWindows81OrBetter)
+            {
+                // Some additional columns that we should use were added in later Windows versions
+                query =
+                    $@"SELECT TOP {MAX_RESULT} ""{displayNameColumn}"", ""System.ItemUrl"", ""System.ItemPathDisplay"", ""System.DateModified"", ""System.Search.Rank""
+                    FROM ""SYSTEMINDEX""
+                    WHERE WITH(System.ItemNameDisplay, System.ItemAuthors, System.Keywords, System.HighKeywords, System.MediumKeywords, System.Music.AlbumTitle, System.Title, System.Music.Genre, System.Message.FromName, System.Subject, System.Contact.FullName) AS #MRProps
+                    (System.Shell.OmitFromView != 'TRUE'
+                    AND ((System.ItemNameDisplayWithoutExtension = '{SearchString}' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 1000)
+                    OR (System.ItemNameDisplay LIKE '{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 999)
+                    OR (System.ItemNameDisplay LIKE '%{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 997)
+                    OR System.ItemNameDisplay = '{SearchString}' RANK BY COERCION(ABSOLUTE, 998)
+                    OR System.ItemNameDisplay LIKE '{SearchString}%' RANK BY COERCION(ABSOLUTE, 996)
+                    OR System.HighKeywords = SOME ARRAY['{SearchString}'] RANK BY COERCION(MULTIPLY, 0.9)
+                    OR System.MediumKeywords = SOME ARRAY['{SearchString}'] RANK BY COERCION(MULTIPLY, 0.9)
+                    OR System.Title = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
+                    OR System.Subject = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(#MRProps,'""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(#MRProps,'""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(*, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(*, '""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR FREETEXT(#MRProps, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)))
+                    ORDER BY System.Search.Rank desc";
+            }
+            else
+            {
+                query = 
+                    $@"SELECT TOP {MAX_RESULT} ""{displayNameColumn}"", ""System.ItemUrl"", ""System.ItemPathDisplay"", ""System.DateModified"", ""System.Search.Rank""
+                    FROM ""SYSTEMINDEX""
+                    WHERE WITH(System.ItemNameDisplay, System.ItemAuthors, System.Keywords, System.Music.AlbumTitle, System.Title, System.Music.Genre, System.Message.FromName, System.Subject, System.Contact.FullName) AS #MRProps
+                    (System.Shell.OmitFromView != 'TRUE'
+                    AND ((System.ItemNameDisplay LIKE '{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 999)
+                    OR (System.ItemNameDisplay LIKE '%{SearchString}%' AND System.ItemType = '.lnk') RANK BY COERCION(ABSOLUTE, 997)
+                    OR System.ItemNameDisplay = '{SearchString}' RANK BY COERCION(ABSOLUTE, 998)
+                    OR System.ItemNameDisplay LIKE '{SearchString}%' RANK BY COERCION(ABSOLUTE, 996)
+                    OR System.Title = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
+                    OR System.Subject = '{SearchString}' RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(#MRProps,'""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(#MRProps,'""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(*, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR CONTAINS(*, '""{SearchString}*""') RANK BY COERCION(MULTIPLY, 0.9)
+                    OR FREETEXT(#MRProps, '""{SearchString}""') RANK BY COERCION(MULTIPLY, 0.9)))
+                    ORDER BY System.Search.Rank desc";
+            }
 
             try
             {
