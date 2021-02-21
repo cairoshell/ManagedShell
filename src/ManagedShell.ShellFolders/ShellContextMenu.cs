@@ -160,7 +160,7 @@ namespace ManagedShell.ShellFolders
             invoke.cbSize = Interop.cbInvokeCommand;
             invoke.lpVerb = (IntPtr)cmd;
             invoke.lpVerbW = (IntPtr)cmd;
-            invoke.fMask = CMIC.ASYNCOK | CMIC.UNICODE | CMIC.PTINVOKE |
+            invoke.fMask = CMIC.ASYNCOK | CMIC.FLAG_LOG_USAGE | CMIC.UNICODE | CMIC.PTINVOKE |
                 ((Control.ModifierKeys & Keys.Control) != 0 ? CMIC.CONTROL_DOWN : 0) |
                 ((Control.ModifierKeys & Keys.Shift) != 0 ? CMIC.SHIFT_DOWN : 0);
             invoke.ptInvoke = new NativeMethods.POINT(ptInvoke.X, ptInvoke.Y);
