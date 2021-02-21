@@ -648,6 +648,7 @@ namespace ManagedShell.Interop
         [Flags]
         public enum KnownFolderFlags : uint
         {
+            None = 0,
             SimpleIDList = 0x00000100,
             NotParentRelative = 0x00000200,
             DefaultPath = 0x00000400,
