@@ -297,13 +297,11 @@ namespace ManagedShell.WindowsTray
             SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.MOUSEMOVE | (hiWord << 16));
         }
 
-        public void IconMouseClick(MouseButton button, uint mouse, int doubleClickTime)
+        public void IconMouseDown(MouseButton button, uint mouse, int doubleClickTime)
         {
-            ShellLogger.Debug(string.Format("{0} mouse button clicked icon: {1}", button.ToString(), Title));
-
-            // ensure focus so that menus go away after clicking outside
-            SetForegroundWindow(_notificationArea.Handle);
-            SetForegroundWindow(HWnd);
+            // allow notify icon to focus so that menus go away after clicking outside
+            GetWindowThreadProcessId(HWnd, out uint procId);
+            AllowSetForegroundWindow(procId);
 
             uint wparam = GetMessageWParam(mouse);
             uint hiWord = GetMessageHiWord();
@@ -319,11 +317,6 @@ namespace ManagedShell.WindowsTray
                     SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONDOWN | (hiWord << 16));
                 }
 
-                SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONUP | (hiWord << 16));
-
-                // This is documented as version 4, but Explorer does this for version 3 as well
-                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_SELECT | (hiWord << 16));
-
                 _lastLClick = DateTime.Now;
             }
             else if (button == MouseButton.Right)
@@ -337,6 +330,28 @@ namespace ManagedShell.WindowsTray
                     SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONDOWN | (hiWord << 16));
                 }
 
+                _lastRClick = DateTime.Now;
+            }
+        }
+
+        public void IconMouseUp(MouseButton button, uint mouse, int doubleClickTime)
+        {
+            ShellLogger.Debug($"NotifyIcon: {button} mouse button clicked: {Title}");
+
+            uint wparam = GetMessageWParam(mouse);
+            uint hiWord = GetMessageHiWord();
+
+            if (button == MouseButton.Left)
+            {
+                SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONUP | (hiWord << 16));
+
+                // This is documented as version 4, but Explorer does this for version 3 as well
+                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_SELECT | (hiWord << 16));
+
+                _lastLClick = DateTime.Now;
+            }
+            else if (button == MouseButton.Right)
+            {
                 SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONUP | (hiWord << 16));
 
                 // This is documented as version 4, but Explorer does this for version 3 as well
