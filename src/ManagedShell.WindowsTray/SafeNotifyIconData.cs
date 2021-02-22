@@ -1,4 +1,5 @@
 ﻿using System;
+using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.WindowsTray
@@ -30,7 +31,16 @@ namespace ManagedShell.WindowsTray
             uID = nid.uID;
             uFlags = nid.uFlags;
             uCallbackMessage = nid.uCallbackMessage;
-            hIcon = (IntPtr)nid.hIcon;
+
+            try
+            {
+                hIcon = (IntPtr)nid.hIcon;
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"SafeNotifyIconData: Unable to convert icon handle: {e.Message}");
+            }
+            
             szTip = nid.szTip;
             dwState = nid.dwState;
             dwStateMask = nid.dwStateMask;

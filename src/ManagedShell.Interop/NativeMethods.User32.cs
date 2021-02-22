@@ -307,6 +307,9 @@ namespace ManagedShell.Interop
         public static extern IntPtr GetClassLongPtr(IntPtr handle, int longClass);
 
         [DllImport(User32_DllName)]
+        public static extern bool AllowSetForegroundWindow(uint procId);
+
+        [DllImport(User32_DllName)]
         public static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport(User32_DllName)]
