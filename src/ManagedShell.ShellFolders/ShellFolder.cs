@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
@@ -76,9 +77,27 @@ namespace ManagedShell.ShellFolders
                 _shellItem = GetShellItem(parsingName);
             }
 
-            if (_shellItem != null && IsFileSystem)
+            if (_shellItem != null && IsFileSystem && IsFolder)
             {
-                _changeWatcher = new ChangeWatcher(Path, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+                List<string> watchList = new List<string>
+                {
+                    Path
+                };
+
+                if (IsDesktop)
+                {
+                    // The Desktop combines user and common desktop directories, so we need to watch both for changes.
+                    
+                    string publicDesktopPath = Environment.GetFolderPath(
+                        Environment.SpecialFolder.CommonDesktopDirectory, Environment.SpecialFolderOption.DoNotVerify);
+
+                    if (!string.IsNullOrEmpty(publicDesktopPath))
+                    {
+                        watchList.Add(publicDesktopPath);
+                    }
+                }
+                
+                _changeWatcher = new ChangeWatcher(watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
             }
         }
 

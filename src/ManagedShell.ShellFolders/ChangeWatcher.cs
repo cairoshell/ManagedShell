@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using ManagedShell.Common.Logging;
 
@@ -10,11 +11,11 @@ namespace ManagedShell.ShellFolders
         private readonly FileSystemEventHandler _createdEventHandler;
         private readonly FileSystemEventHandler _deletedEventHandler;
         private readonly RenamedEventHandler _renamedEventHandler;
-        private FileSystemWatcher _watcher;
-
-        public ChangeWatcher(string path, FileSystemEventHandler changedEventHandler, FileSystemEventHandler createdEventHandler, FileSystemEventHandler deletedEventHandler, RenamedEventHandler renamedEventHandler)
+        private List<FileSystemWatcher> _watchers = new List<FileSystemWatcher>();
+        
+        public ChangeWatcher(List<string> pathList, FileSystemEventHandler changedEventHandler, FileSystemEventHandler createdEventHandler, FileSystemEventHandler deletedEventHandler, RenamedEventHandler renamedEventHandler)
         {
-            if (string.IsNullOrEmpty(path))
+            if (pathList == null || pathList.Count < 1)
             {
                 return;
             }
@@ -26,15 +27,21 @@ namespace ManagedShell.ShellFolders
 
             try
             {
-                _watcher = new FileSystemWatcher(path)
+                foreach (string path in pathList)
                 {
-                    NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
-                };
+                    FileSystemWatcher watcher = new FileSystemWatcher(path)
+                    {
+                        NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
+                    };
 
-                _watcher.Changed += _changedEventHandler;
-                _watcher.Created += _createdEventHandler;
-                _watcher.Deleted += _deletedEventHandler;
-                _watcher.Renamed += _renamedEventHandler;
+                    watcher.Changed += _changedEventHandler;
+                    watcher.Created += _createdEventHandler;
+                    watcher.Deleted += _deletedEventHandler;
+                    watcher.Renamed += _renamedEventHandler;
+                    
+                    _watchers.Add(watcher);
+                }
+                
             }
             catch (Exception e)
             {
@@ -44,36 +51,43 @@ namespace ManagedShell.ShellFolders
 
         public void StartWatching()
         {
-            if (_watcher == null)
+            foreach (var watcher in _watchers)
             {
-                ShellLogger.Error("ChangeWatcher: Unable to start watching directory.");
-                return;
-            }
+                if (watcher == null)
+                {
+                    ShellLogger.Error("ChangeWatcher: Unable to start watching directory because the watcher is null.");
+                    return;
+                }
 
-            try
-            {
-                _watcher.EnableRaisingEvents = true;
-            }
-            catch (Exception e)
-            {
-                ShellLogger.Error($"ChangeWatcher: Unable to start watching directory: {e.Message}");
+                try
+                {
+                    watcher.EnableRaisingEvents = true;
+                }
+                catch (Exception e)
+                {
+                    ShellLogger.Error($"ChangeWatcher: Unable to start watching directory: {e.Message}");
+                }
             }
         }
 
         public void Dispose()
         {
-            if (_watcher == null)
+            foreach (var watcher in _watchers)
             {
-                return;
+                if (watcher == null)
+                {
+                    return;
+                }
+
+                watcher.Changed -= _changedEventHandler;
+                watcher.Created -= _createdEventHandler;
+                watcher.Deleted -= _deletedEventHandler;
+                watcher.Renamed -= _renamedEventHandler;
+
+                watcher.Dispose();
             }
 
-            _watcher.Changed -= _changedEventHandler;
-            _watcher.Created -= _createdEventHandler;
-            _watcher.Deleted -= _deletedEventHandler;
-            _watcher.Renamed -= _renamedEventHandler;
-
-            _watcher.Dispose();
-            _watcher = null;
+            _watchers = null;
         }
     }
 }
