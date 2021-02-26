@@ -3,6 +3,7 @@ using System.Drawing;
 using System.Windows.Forms;
 using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
+using ManagedShell.Interop;
 using ManagedShell.ShellFolders.Enums;
 
 namespace ManagedShell.ShellFolders
@@ -79,6 +80,11 @@ namespace ManagedShell.ShellFolders
         private void ShowMenu(ShellFolder folder, IntPtr contextMenu)
         {
             CreateHandle(new CreateParams());
+
+            if (EnvironmentHelper.IsWindows10DarkModeSupported)
+            {
+                NativeMethods.AllowDarkModeForWindow(Handle, true);
+            }
 
             uint selected = Interop.TrackPopupMenuEx(
                 contextMenu,

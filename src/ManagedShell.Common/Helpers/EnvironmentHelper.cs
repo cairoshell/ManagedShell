@@ -96,6 +96,25 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        public static bool IsWindows10DarkModeSupported
+        {
+            get
+            {
+                if (IsServerCore)
+                {
+                    return false;
+                }
+                
+                if (osVersionMajor == 0)
+                {
+                    getOSVersion();
+                }
+
+                // This has an upper-bound due to the volatility of the undocumented dark mode API
+                return (osVersionMajor >= 10 && osVersionBuild >= 18362 && osVersionBuild <= 19042);
+            }
+        }
+
         private static bool? isAppConfiguredAsShell;
 
         /// <summary>
