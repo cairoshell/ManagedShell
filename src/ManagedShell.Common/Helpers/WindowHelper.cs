@@ -167,5 +167,15 @@ namespace ManagedShell.Common.Helpers
                 Marshal.FreeHGlobal(accentPtr);
             }
         }
+
+        public static bool SetDarkModePreference(PreferredAppMode mode)
+        {
+            if (EnvironmentHelper.IsWindows10DarkModeSupported)
+            {
+                return SetPreferredAppMode(mode);
+            }
+
+            return false;
+        }
     }
 }

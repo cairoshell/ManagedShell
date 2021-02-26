@@ -18,7 +18,10 @@ namespace ManagedShell.ShellFolders
         public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive) : this(files, parentFolder, hwndOwner, itemSelected, isInteractive, new ShellMenuCommandBuilder(), new ShellMenuCommandBuilder())
         { }
 
-        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder) : this(files, parentFolder, hwndOwner, itemSelected, isInteractive, true, preBuilder, postBuilder)
+        { }
+
+        public ShellItemContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, ItemSelectAction itemSelected, bool isInteractive, bool canRename, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             if (files == null || files.Length < 1)
             {
@@ -32,7 +35,7 @@ namespace ManagedShell.ShellFolders
 
                 this.itemSelected = itemSelected;
 
-                SetupContextMenu(files, parentFolder, hwndOwner, isInteractive, preBuilder, postBuilder);
+                SetupContextMenu(files, parentFolder, hwndOwner, isInteractive, canRename, preBuilder, postBuilder);
             }
         }
 
@@ -58,7 +61,7 @@ namespace ManagedShell.ShellFolders
             return numAdded;
         }
 
-        private void SetupContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, bool isInteractive, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
+        private void SetupContextMenu(ShellItem[] files, ShellFolder parentFolder, IntPtr hwndOwner, bool isInteractive, bool canRename, ShellMenuCommandBuilder preBuilder, ShellMenuCommandBuilder postBuilder)
         {
             try
             {
@@ -69,8 +72,12 @@ namespace ManagedShell.ShellFolders
 
                     CMF flags = CMF.EXPLORE |
                         CMF.ITEMMENU |
-                        CMF.CANRENAME |
                         ((Control.ModifierKeys & Keys.Shift) != 0 ? CMF.EXTENDEDVERBS : 0);
+
+                    if (canRename)
+                    {
+                        flags |= CMF.CANRENAME;
+                    }
 
                     if (!isInteractive)
                     {
@@ -158,6 +165,11 @@ namespace ManagedShell.ShellFolders
         private void ShowMenu(ShellItem[] files, bool allFolders)
         {
             CreateHandle(new CreateParams());
+
+            if (EnvironmentHelper.IsWindows10DarkModeSupported)
+            {
+                NativeMethods.AllowDarkModeForWindow(Handle, true);
+            }
 
             uint selected = Interop.TrackPopupMenuEx(
                 nativeMenuPtr,
