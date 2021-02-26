@@ -100,6 +100,11 @@ namespace ManagedShell.Common.Helpers
         {
             get
             {
+                if (IsServerCore)
+                {
+                    return false;
+                }
+                
                 if (osVersionMajor == 0)
                 {
                     getOSVersion();
