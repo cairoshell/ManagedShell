@@ -194,7 +194,22 @@ namespace ManagedShell.ShellFolders
 
                     Task.Factory.StartNew(() =>
                     {
-                        SmallIcon = GetDisplayIcon(IconSize.Small);
+                        IconSize size = IconSize.Small;
+
+                        if (DpiHelper.DpiScale > 1.0 && DpiHelper.DpiScale <= 2.0)
+                        {
+                            size = IconSize.Large;
+                        }
+                        else if (DpiHelper.DpiScale > 2.0 && DpiHelper.DpiScale <= 3.0)
+                        {
+                            size = IconSize.ExtraLarge;
+                        }
+                        else if (DpiHelper.DpiScale > 3.0)
+                        {
+                            size = IconSize.Jumbo;
+                        }
+
+                        SmallIcon = GetDisplayIcon(size);
                         SmallIcon?.Freeze();
                         _smallIconLoading = false;
                     }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
@@ -221,7 +236,18 @@ namespace ManagedShell.ShellFolders
 
                     Task.Factory.StartNew(() =>
                     {
-                        LargeIcon = GetDisplayIcon(IconSize.Large);
+                        IconSize size = IconSize.Large;
+
+                        if (DpiHelper.DpiScale > 1.0 && DpiHelper.DpiScale <= 1.5)
+                        {
+                            size = IconSize.ExtraLarge;
+                        }
+                        else if (DpiHelper.DpiScale > 1.5)
+                        {
+                            size = IconSize.Jumbo;
+                        }
+                        
+                        LargeIcon = GetDisplayIcon(size);
                         LargeIcon?.Freeze();
                         _largeIconLoading = false;
                     }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
@@ -248,7 +274,14 @@ namespace ManagedShell.ShellFolders
 
                     Task.Factory.StartNew(() =>
                     {
-                        ExtraLargeIcon = GetDisplayIcon(IconSize.ExtraLarge);
+                        IconSize size = IconSize.ExtraLarge;
+
+                        if (DpiHelper.DpiScale > 1.0)
+                        {
+                            size = IconSize.Jumbo;
+                        }
+                        
+                        ExtraLargeIcon = GetDisplayIcon(size);
                         ExtraLargeIcon?.Freeze();
                         _extraLargeIconLoading = false;
                     }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
