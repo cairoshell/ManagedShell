@@ -22,6 +22,7 @@ namespace ManagedShell.ShellFolders
         private bool _smallIconLoading;
         private bool _largeIconLoading;
         private bool _extraLargeIconLoading;
+        private bool _jumboIconLoading;
 
         #region Properties
 
@@ -261,6 +262,33 @@ namespace ManagedShell.ShellFolders
                 OnPropertyChanged();
             }
         }
+
+        private ImageSource _jumboIcon;
+
+        public ImageSource JumboIcon
+        {
+            get
+            {
+                if (_jumboIcon == null && !_jumboIconLoading)
+                {
+                    _jumboIconLoading = true;
+
+                    Task.Factory.StartNew(() =>
+                    {
+                        JumboIcon = GetDisplayIcon(IconSize.Jumbo);
+                        JumboIcon?.Freeze();
+                        _jumboIconLoading = false;
+                    }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                }
+
+                return _jumboIcon;
+            }
+            private set
+            {
+                _jumboIcon = value;
+                OnPropertyChanged();
+            }
+        }
         #endregion
 
         public ShellItem(IShellItem shellItem)
@@ -296,7 +324,8 @@ namespace ManagedShell.ShellFolders
             _smallIcon = null;
             _largeIcon = null;
             _extraLargeIcon = null;
-            
+            _jumboIcon = null;
+
             OnPropertyChanged("DisplayName");
             if (newPath)
             {
@@ -311,6 +340,7 @@ namespace ManagedShell.ShellFolders
             OnPropertyChanged("SmallIcon");
             OnPropertyChanged("LargeIcon");
             OnPropertyChanged("ExtraLargeIcon");
+            OnPropertyChanged("JumboIcon");
         }
 
         #region Retrieve interfaces

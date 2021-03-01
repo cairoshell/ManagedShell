@@ -15,9 +15,10 @@ namespace ManagedShell.Common.Helpers
         
         // IImageList references
         private static Guid iidImageList = new Guid("46EB5926-582E-4017-9FDF-E8998DAA0950");
-        private static IImageList imlLarge; // 32pt
-        private static IImageList imlSmall; // 16pt
-        private static IImageList imlExtraLarge; // 48pt
+        private static IImageList imlLarge; // 32px
+        private static IImageList imlSmall; // 16px
+        private static IImageList imlExtraLarge; // 48px
+        private static IImageList imlJumbo; // 256px
 
         private static void initIml(IconSize size)
         {
@@ -35,7 +36,11 @@ namespace ManagedShell.Common.Helpers
             {
                 SHGetImageList((int)size, ref iidImageList, out imlExtraLarge);
             }
-            else if (size != IconSize.Small && size != IconSize.Large && size != IconSize.ExtraLarge)
+            else if (size == IconSize.Jumbo && imlJumbo == null)
+            {
+                SHGetImageList((int)size, ref iidImageList, out imlJumbo);
+            }
+            else if (size != IconSize.Small && size != IconSize.Large && size != IconSize.ExtraLarge && size != IconSize.Jumbo)
             {
                 ShellLogger.Error($"IconHelper: Unsupported icon size {size}");
             }
@@ -62,6 +67,11 @@ namespace ManagedShell.Common.Helpers
                 {
                     Marshal.ReleaseComObject(imlExtraLarge);
                     imlExtraLarge = null;
+                }
+                if (imlJumbo != null)
+                {
+                    Marshal.ReleaseComObject(imlJumbo);
+                    imlJumbo = null;
                 }
             }
         }
