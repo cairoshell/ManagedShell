@@ -27,7 +27,10 @@ namespace ManagedShell.ShellFolders
         #region Properties
 
         public bool Loaded => _shellItem != null;
+
+        public bool AllowAsync = true;
         
+
         private bool? _isFileSystem;
 
         public bool IsFileSystem
@@ -190,14 +193,22 @@ namespace ManagedShell.ShellFolders
             {
                 if (_smallIcon == null && !_smallIconLoading)
                 {
-                    _smallIconLoading = true;
-
-                    Task.Factory.StartNew(() =>
+                    if (AllowAsync)
                     {
-                        SmallIcon = GetDisplayIcon(IconSize.Small);
-                        SmallIcon?.Freeze();
-                        _smallIconLoading = false;
-                    }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                        _smallIconLoading = true;
+
+                        Task.Factory.StartNew(() =>
+                        {
+                            SmallIcon = GetDisplayIcon(IconSize.Small);
+                            SmallIcon?.Freeze();
+                            _smallIconLoading = false;
+                        }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                    }
+                    else
+                    {
+                        _smallIcon = GetDisplayIcon(IconSize.Small);
+                        _smallIcon?.Freeze();
+                    }
                 }
 
                 return _smallIcon;
@@ -217,14 +228,22 @@ namespace ManagedShell.ShellFolders
             {
                 if (_largeIcon == null && !_largeIconLoading)
                 {
-                    _largeIconLoading = true;
-
-                    Task.Factory.StartNew(() =>
+                    if (AllowAsync)
                     {
-                        LargeIcon = GetDisplayIcon(IconSize.Large);
-                        LargeIcon?.Freeze();
-                        _largeIconLoading = false;
-                    }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                        _largeIconLoading = true;
+
+                        Task.Factory.StartNew(() =>
+                        {
+                            LargeIcon = GetDisplayIcon(IconSize.Large);
+                            LargeIcon?.Freeze();
+                            _largeIconLoading = false;
+                        }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                    }
+                    else
+                    {
+                        _largeIcon = GetDisplayIcon(IconSize.Large);
+                        _largeIcon.Freeze();
+                    }
                 }
 
                 return _largeIcon;
@@ -244,14 +263,22 @@ namespace ManagedShell.ShellFolders
             {
                 if (_extraLargeIcon == null && !_extraLargeIconLoading)
                 {
-                    _extraLargeIconLoading = true;
-
-                    Task.Factory.StartNew(() =>
+                    if (AllowAsync)
                     {
-                        ExtraLargeIcon = GetDisplayIcon(IconSize.ExtraLarge);
-                        ExtraLargeIcon?.Freeze();
-                        _extraLargeIconLoading = false;
-                    }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                        _extraLargeIconLoading = true;
+
+                        Task.Factory.StartNew(() =>
+                        {
+                            ExtraLargeIcon = GetDisplayIcon(IconSize.ExtraLarge);
+                            ExtraLargeIcon?.Freeze();
+                            _extraLargeIconLoading = false;
+                        }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                    }
+                    else
+                    {
+                        _extraLargeIcon = GetDisplayIcon(IconSize.ExtraLarge);
+                        _extraLargeIcon?.Freeze();
+                    }
                 }
 
                 return _extraLargeIcon;
@@ -271,14 +298,22 @@ namespace ManagedShell.ShellFolders
             {
                 if (_jumboIcon == null && !_jumboIconLoading)
                 {
-                    _jumboIconLoading = true;
-
-                    Task.Factory.StartNew(() =>
+                    if (AllowAsync)
                     {
-                        JumboIcon = GetDisplayIcon(IconSize.Jumbo);
-                        JumboIcon?.Freeze();
-                        _jumboIconLoading = false;
-                    }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                        _jumboIconLoading = true;
+
+                        Task.Factory.StartNew(() =>
+                        {
+                            JumboIcon = GetDisplayIcon(IconSize.Jumbo);
+                            JumboIcon?.Freeze();
+                            _jumboIconLoading = false;
+                        }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+                    }
+                    else
+                    {
+                        _jumboIcon = GetDisplayIcon(IconSize.Jumbo);
+                        _jumboIcon?.Freeze();
+                    }
                 }
 
                 return _jumboIcon;
@@ -341,6 +376,11 @@ namespace ManagedShell.ShellFolders
             OnPropertyChanged("LargeIcon");
             OnPropertyChanged("ExtraLargeIcon");
             OnPropertyChanged("JumboIcon");
+        }
+
+        public override string ToString()
+        {
+            return $"{DisplayName} ({Path})";
         }
 
         #region Retrieve interfaces

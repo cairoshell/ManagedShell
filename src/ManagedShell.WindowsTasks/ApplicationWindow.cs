@@ -8,7 +8,6 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Media;
-using System.Windows.Media.Imaging;
 using ManagedShell.Common.Enums;
 
 namespace ManagedShell.WindowsTasks
@@ -325,7 +324,7 @@ namespace ManagedShell.WindowsTasks
                 NativeMethods.GetClassName(Handle, cName, cName.Capacity);
                 if (cName.ToString() == "ApplicationFrameWindow" || cName.ToString() == "Windows.UI.Core.CoreWindow" || cName.ToString() == "Shell_CharmWindow" || cName.ToString() == "ImmersiveLauncher")
                 {
-                    if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
+                    if (string.IsNullOrEmpty(AppUserModelID))
                     {
                         ShellLogger.Debug($"Hiding UWP non-window {Title}");
                         return false;
@@ -356,13 +355,16 @@ namespace ManagedShell.WindowsTasks
                         // UWP apps
                         try
                         {
-                            BitmapImage img = new BitmapImage();
-                            img.BeginInit();
-                            img.UriSource = new Uri(UWPInterop.StoreAppHelper.GetAppIcon(AppUserModelID, (int)_tasksService.TaskIconSize)[0], UriKind.Absolute);
-                            img.CacheOption = BitmapCacheOption.OnLoad;
-                            img.EndInit();
-                            img.Freeze();
-                            Icon = img;
+                            var storeApp = UWPInterop.StoreAppHelper.AppList.GetAppByAumid(AppUserModelID);
+
+                            if (storeApp != null)
+                            {
+                                Icon = storeApp.GetIconImageSource(_tasksService.TaskIconSize);
+                            }
+                            else
+                            {
+                                Icon = IconImageConverter.GetDefaultIcon();
+                            }
                         }
                         catch
                         {

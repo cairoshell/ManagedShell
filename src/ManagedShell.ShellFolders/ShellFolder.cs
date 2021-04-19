@@ -58,7 +58,10 @@ namespace ManagedShell.ShellFolders
             }
         }
         
-        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync = false) : base(parsingName)
+        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync = false) : this(parsingName, hwndInput, true, loadAsync)
+        {}
+
+        public ShellFolder(string parsingName, IntPtr hwndInput, bool watchChanges, bool loadAsync) : base(parsingName)
         {
             _hwndInput = hwndInput;
             _loadAsync = loadAsync;
@@ -87,7 +90,7 @@ namespace ManagedShell.ShellFolders
                 if (IsDesktop)
                 {
                     // The Desktop combines user and common desktop directories, so we need to watch both for changes.
-                    
+
                     string publicDesktopPath = Environment.GetFolderPath(
                         Environment.SpecialFolder.CommonDesktopDirectory, Environment.SpecialFolderOption.DoNotVerify);
 
@@ -96,8 +99,11 @@ namespace ManagedShell.ShellFolders
                         watchList.Add(publicDesktopPath);
                     }
                 }
-                
-                _changeWatcher = new ChangeWatcher(watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+
+                if (watchChanges)
+                {
+                    _changeWatcher = new ChangeWatcher(watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+                }
             }
         }
 
