@@ -58,10 +58,10 @@ namespace ManagedShell.ShellFolders
             }
         }
         
-        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync = false) : this(parsingName, hwndInput, true, loadAsync)
+        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync = false) : this(parsingName, hwndInput, loadAsync, true)
         {}
 
-        public ShellFolder(string parsingName, IntPtr hwndInput, bool watchChanges, bool loadAsync) : base(parsingName)
+        public ShellFolder(string parsingName, IntPtr hwndInput, bool loadAsync, bool watchChanges) : base(parsingName)
         {
             _hwndInput = hwndInput;
             _loadAsync = loadAsync;
