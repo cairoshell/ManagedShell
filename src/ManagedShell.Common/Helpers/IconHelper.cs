@@ -156,6 +156,9 @@ namespace ManagedShell.Common.Helpers
                 case IconSize.ExtraLarge:
                     imlExtraLarge.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
                     break;
+                case IconSize.Jumbo:
+                    imlJumbo.GetIcon(iconIndex, ILD_TRANSPARENT, ref hIcon);
+                    break;
             }
 
             return hIcon;
