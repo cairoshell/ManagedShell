@@ -24,17 +24,20 @@ namespace ManagedShell.Common.Helpers
                 throw new ApplicationException("Error attempting to open process token to raise level for shutdown.\nWin32 Error Code: " + Marshal.GetLastWin32Error());
             }
 
-            long pluid = new long();
-            bool privLookupResult = NativeMethods.LookupPrivilegeValue(null, "SeShutdownPrivilege", ref pluid);
+            NativeMethods.LUID luid = new NativeMethods.LUID();
+            bool privLookupResult = NativeMethods.LookupPrivilegeValue(null, "SeShutdownPrivilege", ref luid);
             if (!privLookupResult)
             {
                 throw new ApplicationException("Error attempting to lookup value for shutdown privilege.\n Win32 Error Code: " + Marshal.GetLastWin32Error());
             }
 
-            NativeMethods.TOKEN_PRIVILEGES newPriv = new NativeMethods.TOKEN_PRIVILEGES();
-            newPriv.Luid = pluid;
-            newPriv.PrivilegeCount = 1;
-            newPriv.Attributes = 0x00000002;
+            NativeMethods.TOKEN_PRIVILEGES newPriv = new NativeMethods.TOKEN_PRIVILEGES
+            {
+                PrivilegeCount = 1,
+                Privileges = new NativeMethods.LUID_AND_ATTRIBUTES[1]
+            };
+            newPriv.Privileges[0].Luid = luid;
+            newPriv.Privileges[0].Attributes = 0x00000002;
 
             bool tokenPrivResult = NativeMethods.AdjustTokenPrivileges(tokenHandle, false, ref newPriv, 0, IntPtr.Zero, IntPtr.Zero);
             if (!tokenPrivResult)
@@ -49,7 +52,7 @@ namespace ManagedShell.Common.Helpers
         public static void Shutdown()
         {
             AdjustTokenPrivilegesForShutdown();
-            NativeMethods.ExitWindowsEx((uint)(NativeMethods.ExitWindows.Shutdown | NativeMethods.ExitWindows.ForceIfHung), 0x0);
+            NativeMethods.ExitWindowsEx((uint)(NativeMethods.ExitWindows.Shutdown | NativeMethods.ExitWindows.ForceIfHung), 0x40000000);
         }
 
         /// <summary>
@@ -58,7 +61,7 @@ namespace ManagedShell.Common.Helpers
         public static void Reboot()
         {
             AdjustTokenPrivilegesForShutdown();
-            NativeMethods.ExitWindowsEx((uint)(NativeMethods.ExitWindows.Reboot | NativeMethods.ExitWindows.ForceIfHung), 0x0);
+            NativeMethods.ExitWindowsEx((uint)(NativeMethods.ExitWindows.Reboot | NativeMethods.ExitWindows.ForceIfHung), 0x40000000);
         }
 
         /// <summary>

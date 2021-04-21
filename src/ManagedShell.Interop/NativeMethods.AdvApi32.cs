@@ -12,23 +12,30 @@ namespace ManagedShell.Interop
         /// <summary>
         /// Structure for the token privileges request.
         /// </summary>
-        [StructLayout(LayoutKind.Sequential, Pack = 1)]
+        [StructLayout(LayoutKind.Sequential)]
         public struct TOKEN_PRIVILEGES
         {
             /// <summary>
             /// The number of privileges.
             /// </summary>
-            public uint PrivilegeCount;
+            public int PrivilegeCount;
 
-            /// <summary>
-            /// The local UID for the request.
-            /// </summary>
-            public long Luid;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1)]
+            public LUID_AND_ATTRIBUTES[] Privileges;
+        }
 
-            /// <summary>
-            /// Attributes for the request.
-            /// </summary>
+        [StructLayout(LayoutKind.Sequential, Pack = 4)]
+        public struct LUID_AND_ATTRIBUTES
+        {
+            public LUID Luid;
             public uint Attributes;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct LUID
+        {
+            public uint LowPart;
+            public int HighPart;
         }
 
         [DllImport(AdvApi32_DllName, SetLastError = true)]
@@ -38,6 +45,6 @@ namespace ManagedShell.Interop
         public static extern bool AdjustTokenPrivileges(IntPtr tokenHandle, bool disableAllPrivileges, ref TOKEN_PRIVILEGES newState, uint bufferLength, IntPtr previousState, IntPtr returnLength);
 
         [DllImport(AdvApi32_DllName, SetLastError = true)]
-        public static extern bool LookupPrivilegeValue(string host, string name, ref long pluid);
+        public static extern bool LookupPrivilegeValue(string host, string name, ref LUID pluid);
     }
 }

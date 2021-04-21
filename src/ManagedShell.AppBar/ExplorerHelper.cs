@@ -133,7 +133,7 @@ namespace ManagedShell.AppBar
         {
             IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", "");
 
-            if (_notificationArea != null && _notificationArea.Handle != null && _notificationArea.Handle != IntPtr.Zero)
+            if (_notificationArea != null && _notificationArea.Handle != IntPtr.Zero)
             {
                 while (taskbarHwnd == _notificationArea.Handle)
                 {
