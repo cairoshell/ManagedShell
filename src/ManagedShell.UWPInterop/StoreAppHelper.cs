@@ -5,7 +5,9 @@ using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
+using ManagedShell.Common.Enums;
 using ManagedShell.Common.Helpers;
+using ManagedShell.Common.Logging;
 
 namespace ManagedShell.UWPInterop
 {
@@ -13,60 +15,56 @@ namespace ManagedShell.UWPInterop
     {
         const string defaultColor = "#00111111";
 
-        private static string userSID = null;
-        private static double scale = 0;
+        private static string userSID;
+        private static double scale;
 
-        public static List<string[]> GetStoreApps()
+        public static StoreAppList AppList = new StoreAppList();
+
+        internal static List<StoreApp> GetStoreApps()
         {
-            List<string[]> ret = new List<string[]>();
+            List<StoreApp> apps = new List<StoreApp>();
 
             try
             {
-                Windows.Management.Deployment.PackageManager pman = new Windows.Management.Deployment.PackageManager();
-                IEnumerable<Windows.ApplicationModel.Package> packages = getPackages(pman);
-
-                foreach (Windows.ApplicationModel.Package package in packages)
+                foreach (Windows.ApplicationModel.Package package in getPackages(new Windows.Management.Deployment.PackageManager(), string.Empty))
                 {
-                    string path = "";
+                    string packagePath = getPackagePath(package);
 
-                    // need to catch a system-thrown exception...
-                    try
-                    {
-                        path = package.InstalledLocation.Path;
-                    }
-                    catch
+                    if (string.IsNullOrEmpty(packagePath))
                     {
                         continue;
                     }
 
-                    XmlDocument manifest = getManifest(path);
+                    XmlDocument manifest = getManifest(packagePath);
                     XmlNamespaceManager xmlnsManager = getNamespaceManager(manifest);
+                    XmlNodeList appNodeList = manifest.SelectNodes("/ns:Package/ns:Applications/ns:Application",
+                        xmlnsManager);
 
-                    foreach (XmlNode app in manifest.SelectNodes("/ns:Package/ns:Applications/ns:Application", xmlnsManager))
+                    if (appNodeList == null)
+                    {
+                        continue;
+                    }
+
+                    foreach (XmlNode appNode in appNodeList)
                     {
                         // packages can contain multiple apps
 
-                        XmlNode showEntry = getXmlNode("uap:VisualElements/@AppListEntry", app, xmlnsManager);
-                        if (showEntry == null || showEntry.Value.ToLower() == "true" || showEntry.Value.ToLower() == "default")
+                        XmlNode showEntry = getXmlnsNode("uap:VisualElements/@AppListEntry", appNode, xmlnsManager);
+                        if (showEntry == null || showEntry.Value.ToLower() == "true" ||
+                            showEntry.Value.ToLower() == "default")
                         {
-                            // App is visible in the applist
+                            // App is visible in the app list
+                            StoreApp storeApp = getAppFromNode(package, packagePath, appNode, xmlnsManager);
 
-                            // return values
-                            string appUserModelId = package.Id.FamilyName + "!" + app.SelectSingleNode("@Id", xmlnsManager).Value;
-                            string returnName = getDisplayName(package.Id.Name, path, app, xmlnsManager);
-                            string returnIcon = getIconPath(path, app, xmlnsManager, 1);
-                            string returnColor = "";
-
-                            if (returnIcon.EndsWith("_altform-unplated.png"))
-                                returnColor = defaultColor;
-                            else
-                                returnColor = getPlateColor(app, xmlnsManager);
-
-                            string[] toAdd = new string[] { appUserModelId, returnName, returnIcon, returnColor };
-                            bool canAdd = true;
-                            foreach (string[] added in ret)
+                            if (storeApp == null)
                             {
-                                if (added[0] == appUserModelId)
+                                continue;
+                            }
+
+                            bool canAdd = true;
+                            foreach (StoreApp added in apps)
+                            {
+                                if (added.AppUserModelId == storeApp.AppUserModelId)
                                 {
                                     canAdd = false;
                                     break;
@@ -74,14 +72,43 @@ namespace ManagedShell.UWPInterop
                             }
 
                             if (canAdd)
-                                ret.Add(toAdd);
+                                apps.Add(storeApp);
                         }
                     }
                 }
             }
-            catch { }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"StoreAppHelper: Exception retrieving apps: {e.Message}");
+            }
 
-            return ret;
+            return apps;
+        }
+
+        private static StoreApp getAppFromNode(Windows.ApplicationModel.Package package, string packagePath,
+            XmlNode appNode, XmlNamespaceManager xmlnsManager)
+        {
+            XmlNode appIdNode = appNode.SelectSingleNode("@Id", xmlnsManager);
+
+            if (appIdNode == null)
+            {
+                return null;
+            }
+
+            Dictionary<IconSize, string> icons = getIcons(packagePath, appNode, xmlnsManager);
+
+            StoreApp storeApp = new StoreApp(package.Id.FamilyName + "!" + appIdNode.Value)
+            {
+                DisplayName = getDisplayName(package.Id.Name, packagePath, appNode, xmlnsManager),
+                SmallIconPath = icons[IconSize.Small],
+                MediumIconPath = icons[IconSize.Medium],
+                LargeIconPath = icons[IconSize.Large],
+                ExtraLargeIconPath = icons[IconSize.ExtraLarge],
+                JumboIconPath = icons[IconSize.Jumbo],
+                IconColor = getPlateColor(icons[IconSize.Small], appNode, xmlnsManager)
+            };
+
+            return storeApp;
         }
 
         private static XmlDocument getManifest(string path)
@@ -108,7 +135,7 @@ namespace ManagedShell.UWPInterop
             return xmlnsManager;
         }
 
-        private static XmlNode getXmlNode(string nodeText, XmlNode app, XmlNamespaceManager xmlnsManager)
+        private static XmlNode getXmlnsNode(string nodeText, XmlNode app, XmlNamespaceManager xmlnsManager)
         {
             XmlNode node = app.SelectSingleNode(nodeText, xmlnsManager);
 
@@ -129,56 +156,67 @@ namespace ManagedShell.UWPInterop
 
         private static string getDisplayName(string packageName, string packagePath, XmlNode app, XmlNamespaceManager xmlnsManager)
         {
-            Uri nameUri;
-            XmlNode nameNode = getXmlNode("uap:VisualElements/@DisplayName", app, xmlnsManager);
+            XmlNode nameNode = getXmlnsNode("uap:VisualElements/@DisplayName", app, xmlnsManager);
 
             if (nameNode == null)
                 return packageName;
 
             string nameKey = nameNode.Value;
 
-            if (!Uri.TryCreate(nameKey, UriKind.Absolute, out nameUri))
+            if (!Uri.TryCreate(nameKey, UriKind.Absolute, out var nameUri))
                 return nameKey;
-            else
-            {
-                var resourceKey = string.Format("ms-resource://{0}/resources/{1}", packageName, nameUri.Segments.Last());
-                string name = ExtractStringFromPRIFile(packagePath + "\\resources.pri", resourceKey);
-                if (!string.IsNullOrEmpty(name))
-                    return name;
-                else
-                {
-                    resourceKey = string.Format("ms-resource://{0}/{1}", packageName, nameUri.Segments.Last());
-                    name = ExtractStringFromPRIFile(packagePath + "\\resources.pri", resourceKey);
-                    if (!string.IsNullOrEmpty(name))
-                        return name;
-                    else
-                    {
-                        return ExtractStringFromPRIFile(packagePath + "\\resources.pri", nameUri.ToString());
-                    }
-                }
-            }
+
+            var resourceKey = $"ms-resource://{packageName}/resources/{nameUri.Segments.Last()}";
+            string name = ExtractStringFromPRIFile(packagePath + "\\resources.pri", resourceKey);
+            if (!string.IsNullOrEmpty(name))
+                return name;
+
+            resourceKey = $"ms-resource://{packageName}/{nameUri.Segments.Last()}";
+            name = ExtractStringFromPRIFile(packagePath + "\\resources.pri", resourceKey);
+            if (!string.IsNullOrEmpty(name))
+                return name;
+
+            return ExtractStringFromPRIFile(packagePath + "\\resources.pri", nameUri.ToString());
         }
 
-        private static string getPlateColor(XmlNode app, XmlNamespaceManager xmlnsManager)
+        private static string getPlateColor(string iconPath, XmlNode app, XmlNamespaceManager xmlnsManager)
         {
-            XmlNode colorKey = getXmlNode("uap:VisualElements/@BackgroundColor", app, xmlnsManager);
+            if (iconPath.EndsWith("_altform-unplated.png"))
+                return defaultColor;
+
+            XmlNode colorKey = getXmlnsNode("uap:VisualElements/@BackgroundColor", app, xmlnsManager);
 
             if (colorKey != null && !string.IsNullOrEmpty(colorKey.Value) && colorKey.Value.ToLower() != "transparent")
                 return colorKey.Value;
-            else
-                return defaultColor;
+
+            return defaultColor;
         }
 
-        private static string getIconPath(string path, XmlNode app, XmlNamespaceManager xmlnsManager, int size)
+        private static Dictionary<IconSize, string> getIcons(string path, XmlNode app, XmlNamespaceManager xmlnsManager)
         {
-            // TODO rewrite this so that we build an ordered list of acceptable icons based on full contents of folder and snippets of file name (qualifiers)
-            XmlNode iconNode = getXmlNode("uap:VisualElements/@Square44x44Logo", app, xmlnsManager);
+            Dictionary<IconSize, string> icons = new Dictionary<IconSize, string>();
+            XmlNode iconNode = getXmlnsNode("uap:VisualElements/@Square44x44Logo", app, xmlnsManager);
 
             if (iconNode == null)
-                return "";
+                return icons;
 
             string iconPath = path + "\\" + (iconNode.Value).Replace(".png", "");
 
+            // get all resources, then use the first match
+            string[] files = Directory.GetFiles(path, "*.png", SearchOption.AllDirectories);
+            string baseName = Path.GetFileNameWithoutExtension(iconPath + ".png").ToLower();
+
+            icons[IconSize.Small] = getIconPath(files, baseName, IconSize.Small);
+            icons[IconSize.Medium] = getIconPath(files, baseName, IconSize.Medium);
+            icons[IconSize.Large] = getIconPath(files, baseName, IconSize.Large);
+            icons[IconSize.ExtraLarge] = getIconPath(files, baseName, IconSize.ExtraLarge);
+            icons[IconSize.Jumbo] = getIconPath(files, baseName, IconSize.Jumbo);
+
+            return icons;
+        }
+
+        private static string getIconPath(string[] files, string baseName, IconSize size)
+        {
             List<string> iconAssets = new List<string> {
                 ".targetsize-32_altform-unplated.png",
                 ".targetsize-32_altform-unplated_contrast-black.png",
@@ -225,10 +263,10 @@ namespace ManagedShell.UWPInterop
             int numMoved = 0;
             for (int i = 0; i < iconAssets.Count; i++)
             {
-                if ((scale < 1.25 && size == 1 && iconAssets[i].Contains("16")) || 
-                    (((scale >= 1.25 && scale < 1.75 && size == 1) || (scale < 1.25 && size == 10)) && iconAssets[i].Contains("24")) || 
-                    (((scale >= 1.5 && size == 10) || (scale >= 1.25 && scale <= 1.75 && size == 0)) && iconAssets[i].Contains("48")) || 
-                    (((scale >= 1.5 && size != 1) || (scale >= 1.25 && size == 0) || size == 4) && (iconAssets[i].Contains("200") || iconAssets[i].Contains("100") || iconAssets[i].Contains("256"))))
+                if ((scale < 1.25 && size == IconSize.Small && iconAssets[i].Contains("16")) ||
+                    (((scale >= 1.25 && scale < 1.75 && size == IconSize.Small) || (scale < 1.25 && size == IconSize.Medium)) && iconAssets[i].Contains("24")) ||
+                    (((scale >= 1.5 && size == IconSize.Medium) || (scale >= 1.25 && scale <= 1.75 && size == 0)) && iconAssets[i].Contains("48")) ||
+                    (((scale >= 1.5 && size != IconSize.Small) || (scale >= 1.25 && size == 0) || size == IconSize.Jumbo) && (iconAssets[i].Contains("200") || iconAssets[i].Contains("100") || iconAssets[i].Contains("256"))))
                 {
                     string copy = iconAssets[i];
                     iconAssets.RemoveAt(i);
@@ -237,46 +275,41 @@ namespace ManagedShell.UWPInterop
                 }
             }
 
-            // get all resources, then use the first match
-            string[] files = Directory.GetFiles(Path.GetDirectoryName(iconPath + ".png"), "*.png", SearchOption.AllDirectories);
-            string baseName = Path.GetFileNameWithoutExtension(iconPath + ".png");
-
             foreach (string iconName in iconAssets)
             {
+                string fullName = baseName + iconName;
+
                 foreach (string fileName in files)
                 {
-                    if (Path.GetFileName(fileName).ToLower() == (baseName + iconName).ToLower() && File.Exists(fileName))
+                    if (string.Equals(Path.GetFileName(fileName), fullName, StringComparison.OrdinalIgnoreCase) && File.Exists(fileName))
                     {
                         return fileName;
                     }
                 }
             }
 
-            return "";
-        }
-
-        private static IEnumerable<Windows.ApplicationModel.Package> getPackages(Windows.Management.Deployment.PackageManager pman)
-        {
-            if (userSID == null)
-                userSID = System.Security.Principal.WindowsIdentity.GetCurrent().User.ToString();
-
-            try
-            {
-                return pman.FindPackagesForUser(userSID);
-            }
-            catch
-            {
-                return Enumerable.Empty<Windows.ApplicationModel.Package>();
-            }
+            return string.Empty;
         }
 
         private static IEnumerable<Windows.ApplicationModel.Package> getPackages(Windows.Management.Deployment.PackageManager pman, string packageFamilyName)
         {
             if (userSID == null)
-                userSID = System.Security.Principal.WindowsIdentity.GetCurrent().User.ToString();
+            {
+                userSID = System.Security.Principal.WindowsIdentity.GetCurrent().User?.ToString();
+            }
+
+            if (userSID == null)
+            {
+                return Enumerable.Empty<Windows.ApplicationModel.Package>();
+            }
 
             try
             {
+                if (string.IsNullOrEmpty(packageFamilyName))
+                {
+                    return pman.FindPackagesForUser(userSID);
+                }
+                
                 return pman.FindPackagesForUser(userSID, packageFamilyName);
             }
             catch
@@ -285,76 +318,76 @@ namespace ManagedShell.UWPInterop
             }
         }
 
-        // returns [icon, color]
-        public static string[] GetAppIcon(string appUserModelId, int size)
+        private static string getPackagePath(Windows.ApplicationModel.Package package)
+        {
+            string path = "";
+
+            // need to catch a system-thrown exception...
+            try
+            {
+                path = package.InstalledLocation.Path;
+            }
+            catch {}
+
+            return path;
+        }
+
+        internal static StoreApp GetStoreApp(string appUserModelId)
         {
             string[] pkgAppId = appUserModelId.Split('!');
             string packageFamilyName = "";
             string appId = "";
-            string returnIcon = "";
-            string returnColor = "";
 
             if (pkgAppId.Count() > 1)
             {
                 packageFamilyName = pkgAppId[0];
                 appId = pkgAppId[1];
             }
-
-            Windows.Management.Deployment.PackageManager pman = new Windows.Management.Deployment.PackageManager();
-            IEnumerable<Windows.ApplicationModel.Package> packages = getPackages(pman, packageFamilyName);
-
-            foreach (Windows.ApplicationModel.Package package in packages)
+            else
             {
-                string path = "";
+                return null;
+            }
 
-                // need to catch a system-thrown exception...
-                try
-                {
-                    path = package.InstalledLocation.Path;
-                }
-                catch
+            foreach (Windows.ApplicationModel.Package package in getPackages(new Windows.Management.Deployment.PackageManager(), packageFamilyName))
+            {
+                string packagePath = getPackagePath(package);
+
+                if (string.IsNullOrEmpty(packagePath))
                 {
                     continue;
                 }
 
-                XmlDocument manifest = getManifest(path);
+                XmlDocument manifest = getManifest(packagePath);
                 XmlNamespaceManager xmlnsManager = getNamespaceManager(manifest);
+                XmlNodeList appNodeList =
+                    manifest.SelectNodes("/ns:Package/ns:Applications/ns:Application", xmlnsManager);
 
-                bool found = false;
+                if (appNodeList == null)
+                {
+                    return null;
+                }
 
-                foreach (XmlNode app in manifest.SelectNodes("/ns:Package/ns:Applications/ns:Application", xmlnsManager))
+                foreach (XmlNode appNode in appNodeList)
                 {
                     // get specific app in package
                     
-                    if (app.SelectSingleNode("@Id", xmlnsManager).Value == appId)
+                    if (appNode.SelectSingleNode("@Id", xmlnsManager)?.Value == appId)
                     {
                         // return values
-                        returnIcon = getIconPath(path, app, xmlnsManager, size);
-
-                        if (returnIcon.EndsWith("_altform-unplated.png"))
-                            returnColor = defaultColor;
-                        else
-                            returnColor = getPlateColor(app, xmlnsManager);
-
-                        found = true;
-
-                        break;
+                        return getAppFromNode(package, packagePath, appNode, xmlnsManager);
                     }
                 }
-
-                if (found)
-                    break;
             }
 
-            return new string[] { returnIcon, returnColor };
+            return null;
         }
 
         [DllImport("shlwapi.dll", BestFitMapping = false, CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = false, ThrowOnUnmappableChar = true)]
         private static extern int SHLoadIndirectString(string pszSource, StringBuilder pszOutBuf, int cchOutBuf, IntPtr ppvReserved);
 
-        static internal string ExtractStringFromPRIFile(string pathToPRI, string resourceKey)
+        internal static string ExtractStringFromPRIFile(string pathToPRI, string resourceKey)
         {
-            string sWin8ManifestString = string.Format("@{{{0}? {1}}}", pathToPRI, resourceKey);
+            string sWin8ManifestString = $"@{{{pathToPRI}? {resourceKey}}}";
             var outBuff = new StringBuilder(256);
             int result = SHLoadIndirectString(sWin8ManifestString, outBuff, outBuff.Capacity, IntPtr.Zero);
             return outBuff.ToString();
