@@ -117,13 +117,15 @@ namespace ManagedShell.WindowsTasks
         {
             EnumWindows((hwnd, lParam) =>
             {
-                ApplicationWindow win = new ApplicationWindow(this, hwnd);
+                var win = new ApplicationWindow(this, hwnd);
 
                 // set window category if provided by shell
                 win.Category = TaskCategoryProvider?.GetCategory(win);
 
                 if (win.CanAddToTaskbar && win.ShowInTaskbar && !Windows.Contains(win))
-                    Windows.Add(win);
+                {
+                    AddToWindows(win);
+                }
 
                 return true;
             }, 0);
@@ -135,6 +137,18 @@ namespace ManagedShell.WindowsTasks
                 win.State = ApplicationWindow.WindowState.Active;
                 win.SetShowInTaskbar();
             }
+        }
+
+        private void AddToWindows(ApplicationWindow win)
+        {
+            win.Index = GetNextIndex();
+            Windows.Add(win);
+        }
+
+        private int GetNextIndex()
+        {
+            if (!Windows.Any()) return 0;
+            return Windows.Select(e => e.Index).Max() + 1;
         }
 
         public void Dispose()
@@ -204,7 +218,8 @@ namespace ManagedShell.WindowsTasks
             if (initialState != ApplicationWindow.WindowState.Inactive) win.State = initialState;
 
             // add window unless we need to validate it is eligible to show in taskbar
-            if (!sanityCheck || win.CanAddToTaskbar) Windows.Add(win);
+            if (!sanityCheck || win.CanAddToTaskbar)
+                AddToWindows(win);
 
             // Only send TaskbarButtonCreated if we are shell, and if OS is not Server Core
             // This is because if Explorer is running, it will send the message, so we don't need to
@@ -521,14 +536,8 @@ namespace ManagedShell.WindowsTasks
 
         internal ObservableCollection<ApplicationWindow> Windows
         {
-            get
-            {
-                return base.GetValue(windowsProperty) as ObservableCollection<ApplicationWindow>;
-            }
-            set
-            {
-                SetValue(windowsProperty, value);
-            }
+            get => GetValue(windowsProperty) as ObservableCollection<ApplicationWindow>;
+            set => SetValue(windowsProperty, value);
         }
 
         private DependencyProperty windowsProperty = DependencyProperty.Register("Windows",

@@ -108,6 +108,24 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private int _index;
+
+        public int Index
+        {
+            get
+            {
+                return _index;
+            }
+            set
+            {
+                if (value != _index)
+                {
+                    _index = value;
+                    OnPropertyChanged(nameof(Index));
+                }
+            }
+        }
+
         private string _category;
 
         public string Category
