@@ -4,6 +4,8 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using ManagedShell.Interop;
+using Microsoft.Win32.SafeHandles;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
@@ -354,8 +356,7 @@ namespace ManagedShell.Common.Helpers
             StringBuilder outFileName = new StringBuilder(1024);
 
             // get process id
-            uint procId;
-            GetWindowThreadProcessId(hWnd, out procId);
+            var procId = GetProcIdForHandle(hWnd);
 
             if (procId != 0)
             {
@@ -372,6 +373,13 @@ namespace ManagedShell.Common.Helpers
             }
 
             return outFileName.ToString();
+        }
+
+        public static uint GetProcIdForHandle(IntPtr hWnd)
+        {
+            uint procId;
+            GetWindowThreadProcessId(hWnd, out procId);
+            return procId;
         }
 
         /// <summary>
@@ -460,6 +468,37 @@ namespace ManagedShell.Common.Helpers
             {
                 SetEvent(hShellReadyEvent);
                 CloseHandle(hShellReadyEvent);
+            }
+        }
+
+        public static bool IsSameFile(string path1, string path2)
+        {
+            using (var sfh1 = CreateFile(path1, FileAccess.Read, FileShare.ReadWrite,
+                IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero))
+            {
+                if (sfh1.IsInvalid)
+                    Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+
+                using (var sfh2 = CreateFile(path2, FileAccess.Read, FileShare.ReadWrite,
+                    IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero))
+                {
+                    if (sfh2.IsInvalid)
+                        Marshal.ThrowExceptionForHR(Marshal.GetHRForLastWin32Error());
+
+                    BY_HANDLE_FILE_INFORMATION fileInfo1;
+                    var result1 = GetFileInformationByHandle(sfh1, out fileInfo1);
+                    if (!result1)
+                        throw new IOException(string.Format("GetFileInformationByHandle has failed on {0}", path1));
+
+                    BY_HANDLE_FILE_INFORMATION fileInfo2;
+                    var result2 = NativeMethods.GetFileInformationByHandle(sfh2, out fileInfo2);
+                    if (!result2)
+                        throw new IOException(string.Format("GetFileInformationByHandle has failed on {0}", path2));
+
+                    return fileInfo1.VolumeSerialNumber == fileInfo2.VolumeSerialNumber
+                           && fileInfo1.FileIndexHigh == fileInfo2.FileIndexHigh
+                           && fileInfo1.FileIndexLow == fileInfo2.FileIndexLow;
+                }
             }
         }
     }

@@ -120,7 +120,7 @@ namespace ManagedShell.WindowsTasks
                 ApplicationWindow win = new ApplicationWindow(this, hwnd);
 
                 // set window category if provided by shell
-                win.Category = TaskCategoryProvider?.GetCategory(win);
+                win.Category = TaskCategoryProvider?.GetCategory(win, Windows);
 
                 if (win.CanAddToTaskbar && win.ShowInTaskbar && !Windows.Contains(win))
                     Windows.Add(win);
@@ -154,7 +154,7 @@ namespace ManagedShell.WindowsTasks
         {
             foreach (ApplicationWindow window in Windows)
             {
-                window.Category = TaskCategoryProvider?.GetCategory(window);
+                window.Category = TaskCategoryProvider?.GetCategory(window, Windows);
             }
         }
 
@@ -198,7 +198,7 @@ namespace ManagedShell.WindowsTasks
             ApplicationWindow win = new ApplicationWindow(this, hWnd);
 
             // set window category if provided by shell
-            win.Category = TaskCategoryProvider?.GetCategory(win);
+            win.Category = TaskCategoryProvider?.GetCategory(win, Windows);
 
             // set window state if a non-default value is provided
             if (initialState != ApplicationWindow.WindowState.Inactive) win.State = initialState;
