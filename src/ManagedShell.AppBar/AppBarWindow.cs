@@ -4,6 +4,7 @@ using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
 using System.Windows;
+using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
@@ -117,7 +118,7 @@ namespace ManagedShell.AppBar
 
             foreach (FullScreenApp app in _fullScreenHelper.FullScreenApps)
             {
-                if (app.screen.DeviceName == Screen.DeviceName)
+                if (app.screenDeviceName == Screen.DeviceName || app.screenDeviceName == nameof(SystemInformation.VirtualScreen))
                 {
                     // we need to not be on top now
                     found = true;

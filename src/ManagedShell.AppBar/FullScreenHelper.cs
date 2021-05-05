@@ -3,6 +3,8 @@ using ManagedShell.Common.Logging;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
+using System.Drawing;
+using System.Linq;
 using System.Text;
 using System.Windows.Forms;
 using System.Windows.Threading;
@@ -39,14 +41,14 @@ namespace ManagedShell.AppBar
             {
                 FullScreenApp appCurrentState = getFullScreenApp(app.hWnd);
 
-                if (app.hWnd == hWnd && appCurrentState != null && app.screen == appCurrentState.screen)
+                if (app.hWnd == hWnd && appCurrentState != null && app.screenDeviceName == appCurrentState.screenDeviceName)
                 {
                     // this window, still same screen, do nothing
                     skipAdd = true;
                     continue;
                 }
 
-                if (appCurrentState == null || app.screen != appCurrentState.screen)
+                if (appCurrentState == null || app.screenDeviceName != appCurrentState.screenDeviceName)
                 {
                     removeApps.Add(app);
                 }
@@ -89,11 +91,16 @@ namespace ManagedShell.AppBar
                 GetWindowRect(hWnd, out rect);
             }
 
+            var x = SystemInformation.VirtualScreen;
+
+            var allScreens = Screen.AllScreens.Select(e => (deviceName: e.DeviceName, bounds: e.Bounds))
+                .Concat(new List<(string deviceName, Rectangle bounds)>{(deviceName: nameof(SystemInformation.VirtualScreen), bounds: SystemInformation.VirtualScreen)});
+
             // check if this is a fullscreen app
-            foreach (Screen screen in Screen.AllScreens)
+            foreach (var screen in allScreens)
             {
-                if (rect.Top == screen.Bounds.Top && rect.Left == screen.Bounds.Left &&
-                    rect.Bottom == screen.Bounds.Bottom && rect.Right == screen.Bounds.Right)
+                if (rect.Top == screen.bounds.Top && rect.Left == screen.bounds.Left &&
+                    rect.Bottom == screen.bounds.Bottom && rect.Right == screen.bounds.Right)
                 {
                     // make sure this is not us
                     GetWindowThreadProcessId(hWnd, out uint hwndProcId);
@@ -128,7 +135,7 @@ namespace ManagedShell.AppBar
                     }
 
                     // this is a full screen app on this screen
-                    return new FullScreenApp { hWnd = hWnd, screen = screen, rect = rect };
+                    return new FullScreenApp { hWnd = hWnd, screenDeviceName = screen.deviceName, rect = rect };
                 }
             }
 

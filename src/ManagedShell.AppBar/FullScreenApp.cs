@@ -7,7 +7,7 @@ namespace ManagedShell.AppBar
     public class FullScreenApp
     {
         public IntPtr hWnd;
-        public Screen screen;
+        public string screenDeviceName;
         public NativeMethods.Rect rect;
     }
 }
