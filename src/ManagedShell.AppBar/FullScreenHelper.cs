@@ -93,8 +93,8 @@ namespace ManagedShell.AppBar
 
             var x = SystemInformation.VirtualScreen;
 
-            var allScreens = Screen.AllScreens.Select(e => (deviceName: e.DeviceName, bounds: e.Bounds))
-                .Concat(new List<(string deviceName, Rectangle bounds)>{(deviceName: nameof(SystemInformation.VirtualScreen), bounds: SystemInformation.VirtualScreen)});
+            var allScreens = Screen.AllScreens.Select(e => (deviceName: e.DeviceName, bounds: e.Bounds)).ToList();
+            if (allScreens.Count() > 1) allScreens.Add((deviceName: nameof(SystemInformation.VirtualScreen), bounds: SystemInformation.VirtualScreen));
 
             // check if this is a fullscreen app
             foreach (var screen in allScreens)
