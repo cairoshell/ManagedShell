@@ -6,7 +6,7 @@ namespace ManagedShell.WindowsTasks
 {
     public interface ITaskCategoryProvider : IDisposable
     {
-        string GetCategory(ApplicationWindow window, ICollection<ApplicationWindow> applicationWindows);
+        string GetCategory(ApplicationWindow window);
 
         void SetCategoryChangeDelegate(TaskCategoryChangeDelegate changeDelegate);
     }
