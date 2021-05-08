@@ -91,8 +91,6 @@ namespace ManagedShell.AppBar
                 GetWindowRect(hWnd, out rect);
             }
 
-            var x = SystemInformation.VirtualScreen;
-
             var allScreens = Screen.AllScreens.Select(e => (deviceName: e.DeviceName, bounds: e.Bounds)).ToList();
             if (allScreens.Count() > 1) allScreens.Add((deviceName: nameof(SystemInformation.VirtualScreen), bounds: SystemInformation.VirtualScreen));
 
