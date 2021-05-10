@@ -37,7 +37,7 @@ namespace ManagedShell.WindowsTasks
             set;
         }
 
-        private string _appUserModelId = "";
+        private string _appUserModelId = null;
 
         public string AppUserModelID
         {
@@ -45,33 +45,7 @@ namespace ManagedShell.WindowsTasks
             {
                 if (string.IsNullOrEmpty(_appUserModelId))
                 {
-                    NativeMethods.IPropertyStore propStore;
-                    var g = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
-                    NativeMethods.SHGetPropertyStoreForWindow(Handle, ref g, out propStore);
-
-                    NativeMethods.PropVariant prop;
-
-                    NativeMethods.PROPERTYKEY PKEY_AppUserModel_ID = new NativeMethods.PROPERTYKEY
-                    {
-                        fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"),
-                        pid = 5
-                    };
-
-                    if (propStore != null)
-                    {
-                        propStore.GetValue(PKEY_AppUserModel_ID, out prop);
-
-                        try
-                        {
-                            _appUserModelId = prop.Value.ToString();
-                        }
-                        catch
-                        {
-                            _appUserModelId = "";
-                        }
-
-                        prop.Clear();
-                    }
+                    _appUserModelId = ShellHelper.GetAppUserModelIdPropertyForHandle(Handle);
                 }
 
                 return _appUserModelId;
@@ -315,7 +289,7 @@ namespace ManagedShell.WindowsTasks
 
                 if (cloaked > 0)
                 {
-                    ShellLogger.Debug(string.Format("Cloaked ({0}) window ({1}) hidden from taskbar", cloaked, Title));
+                    ShellLogger.Debug($"ApplicationWindow: Cloaked ({cloaked}) window ({Title}) hidden from taskbar");
                     return false;
                 }
 
@@ -324,9 +298,9 @@ namespace ManagedShell.WindowsTasks
                 NativeMethods.GetClassName(Handle, cName, cName.Capacity);
                 if (cName.ToString() == "ApplicationFrameWindow" || cName.ToString() == "Windows.UI.Core.CoreWindow" || cName.ToString() == "Shell_CharmWindow" || cName.ToString() == "ImmersiveLauncher")
                 {
-                    if (string.IsNullOrEmpty(AppUserModelID))
+                    if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0 && string.IsNullOrEmpty(AppUserModelID))
                     {
-                        ShellLogger.Debug($"Hiding UWP non-window {Title}");
+                        ShellLogger.Debug($"ApplicationWindow: Hiding UWP non-window {Title}");
                         return false;
                     }
                 }
@@ -337,7 +311,7 @@ namespace ManagedShell.WindowsTasks
 
         internal void Uncloak()
         {
-            ShellLogger.Debug($"Uncloak event received for {Title}");
+            ShellLogger.Debug($"ApplicationWindow: Uncloak event received for {Title}");
 
             SetShowInTaskbar();
         }
