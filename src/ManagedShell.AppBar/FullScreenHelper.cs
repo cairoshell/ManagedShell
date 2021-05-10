@@ -40,14 +40,14 @@ namespace ManagedShell.AppBar
             {
                 FullScreenApp appCurrentState = getFullScreenApp(app.hWnd);
 
-                if (app.hWnd == hWnd && appCurrentState != null && app.screen == appCurrentState.screen)
+                if (app.hWnd == hWnd && appCurrentState != null && app.screen.DeviceName == appCurrentState.screen.DeviceName)
                 {
                     // this window, still same screen, do nothing
                     skipAdd = true;
                     continue;
                 }
 
-                if (appCurrentState == null || app.screen != appCurrentState.screen)
+                if (appCurrentState == null || app.screen.DeviceName != appCurrentState.screen.DeviceName)
                 {
                     removeApps.Add(app);
                 }
