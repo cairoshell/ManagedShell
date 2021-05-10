@@ -4,7 +4,6 @@ using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
 using System.Windows;
-using System.Windows.Forms;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
