@@ -34,7 +34,7 @@ namespace ManagedShell.AppBar
             IntPtr hWnd = GetForegroundWindow();
 
             List<FullScreenApp> removeApps = new List<FullScreenApp>();
-            bool skipAdd = false;cai
+            bool skipAdd = false;
 
             // first check if this window is already in our list. if so, remove it if necessary
             foreach (FullScreenApp app in FullScreenApps)
