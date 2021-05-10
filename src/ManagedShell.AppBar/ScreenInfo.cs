@@ -3,7 +3,7 @@ using System.Windows.Forms;
 
 namespace ManagedShell.AppBar
 {
-	public class ScreenInfo
+	public sealed class ScreenInfo
 	{
 		private ScreenInfo(string deviceName, Rectangle bounds)
 		{
@@ -26,5 +26,33 @@ namespace ManagedShell.AppBar
 		public Rectangle Bounds { get; }
 
 		public bool IsVirtualScreen => DeviceName == nameof(SystemInformation.VirtualScreen);
+
+		public override bool Equals(object obj)
+		{
+			if (ReferenceEquals(null, obj)) return false;
+			if (ReferenceEquals(this, obj)) return true;
+			if (obj.GetType() != GetType()) return false;
+			return Equals((ScreenInfo) obj);
+		}
+
+		private bool Equals(ScreenInfo other)
+		{
+			return DeviceName == other.DeviceName;
+		}
+
+		public override int GetHashCode()
+		{
+			return (DeviceName != null ? DeviceName.GetHashCode() : 0);
+		}
+
+		public static bool operator ==(ScreenInfo left, ScreenInfo right)
+		{
+			return Equals(left, right);
+		}
+
+		public static bool operator !=(ScreenInfo left, ScreenInfo right)
+		{
+			return !Equals(left, right);
+		}
 	}
 }
