@@ -159,5 +159,8 @@ namespace ManagedShell.Interop
         [DllImport(Kernel32_DllName, SetLastError = true, ExactSpelling = true)]
         public static extern bool VirtualFreeEx(IntPtr hProcess, IntPtr lpAddress,
             int dwSize, AllocationType dwFreeType);
+
+        [DllImport(Kernel32_DllName, SetLastError = true)]
+        public static extern int GetApplicationUserModelId(IntPtr hProcess, ref uint applicationUserModelIdLength, [MarshalAs(UnmanagedType.LPWStr)] StringBuilder sbAppUserModelID);
     }
 }

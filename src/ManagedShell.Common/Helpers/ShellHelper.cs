@@ -382,6 +382,67 @@ namespace ManagedShell.Common.Helpers
             return procId;
         }
 
+        public static string GetAppUserModelIdPropertyForHandle(IntPtr hWnd)
+        {
+            string aumid = string.Empty;
+
+            IPropertyStore propStore;
+            PropVariant prop;
+
+            var g = new Guid("886D8EEB-8CF2-4446-8D02-CDBA1DBDCF99");
+            SHGetPropertyStoreForWindow(hWnd, ref g, out propStore);
+
+            PROPERTYKEY PKEY_AppUserModel_ID = new PROPERTYKEY
+            {
+                fmtid = new Guid("9F4C2855-9F79-4B39-A8D0-E1D42DE1D5F3"),
+                pid = 5
+            };
+
+            if (propStore != null)
+            {
+                propStore.GetValue(PKEY_AppUserModel_ID, out prop);
+
+                try
+                {
+                    aumid = prop.Value.ToString();
+                }
+                catch
+                { }
+
+                prop.Clear();
+            }
+
+            return aumid;
+        }
+
+        public static string GetAppUserModelIdForHandle(IntPtr hWnd)
+        {
+            if (!EnvironmentHelper.IsWindows8OrBetter)
+            {
+                return GetAppUserModelIdPropertyForHandle(hWnd);
+            }
+
+            uint procId;
+            GetWindowThreadProcessId(hWnd, out procId);
+
+            if (procId > 0 && procId < int.MaxValue)
+            {
+                IntPtr hProcess = OpenProcess(ProcessAccessFlags.QueryLimitedInformation, false, (int)procId);
+
+                uint len = 130;
+                StringBuilder outAumid = new StringBuilder((int)len);
+
+                GetApplicationUserModelId(hProcess, ref len, outAumid);
+
+                if (outAumid.Length > 0)
+                {
+                    return outAumid.ToString();
+                }
+            }
+
+            return GetAppUserModelIdPropertyForHandle(hWnd);
+        }
+
         /// <summary>
         /// Calls the LockWorkStation method on the User32 API.
         /// </summary>
