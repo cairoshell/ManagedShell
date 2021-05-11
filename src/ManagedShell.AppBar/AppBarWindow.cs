@@ -117,7 +117,7 @@ namespace ManagedShell.AppBar
 
             foreach (FullScreenApp app in _fullScreenHelper.FullScreenApps)
             {
-                if (app.screen.DeviceName == Screen.DeviceName)
+                if (app.screen.DeviceName == Screen.DeviceName || app.screen.IsVirtualScreen)
                 {
                     // we need to not be on top now
                     found = true;
