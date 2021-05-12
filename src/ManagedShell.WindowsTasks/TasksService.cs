@@ -29,7 +29,7 @@ namespace ManagedShell.WindowsTasks
         private static IntPtr uncloakEventHook = IntPtr.Zero;
         private WinEventProc uncloakEventProc;
 
-        private ITaskCategoryProvider TaskCategoryProvider;
+        internal ITaskCategoryProvider TaskCategoryProvider;
         private TaskCategoryChangeDelegate CategoryChangeDelegate;
 
         public TasksService() : this(DEFAULT_ICON_SIZE)
@@ -119,9 +119,6 @@ namespace ManagedShell.WindowsTasks
             {
                 ApplicationWindow win = new ApplicationWindow(this, hwnd);
 
-                // set window category if provided by shell
-                win.Category = TaskCategoryProvider?.GetCategory(win);
-
                 if (win.CanAddToTaskbar && win.ShowInTaskbar && !Windows.Contains(win))
                     Windows.Add(win);
 
@@ -154,7 +151,10 @@ namespace ManagedShell.WindowsTasks
         {
             foreach (ApplicationWindow window in Windows)
             {
-                window.Category = TaskCategoryProvider?.GetCategory(window);
+                if (window.ShowInTaskbar)
+                {
+                    window.Category = TaskCategoryProvider?.GetCategory(window);
+                }
             }
         }
 
@@ -196,9 +196,6 @@ namespace ManagedShell.WindowsTasks
         private ApplicationWindow addWindow(IntPtr hWnd, ApplicationWindow.WindowState initialState = ApplicationWindow.WindowState.Inactive, bool sanityCheck = false)
         {
             ApplicationWindow win = new ApplicationWindow(this, hWnd);
-
-            // set window category if provided by shell
-            win.Category = TaskCategoryProvider?.GetCategory(win);
 
             // set window state if a non-default value is provided
             if (initialState != ApplicationWindow.WindowState.Inactive) win.State = initialState;
