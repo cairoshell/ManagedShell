@@ -12,7 +12,6 @@ namespace ManagedShell.WindowsTasks
         private ICollectionView groupedWindows;
 
         public ICollectionView GroupedWindows => groupedWindows;
-        public ICollection<ApplicationWindow> Windows => _tasksService.Windows;
 
         public Tasks(TasksService tasksService)
         {
