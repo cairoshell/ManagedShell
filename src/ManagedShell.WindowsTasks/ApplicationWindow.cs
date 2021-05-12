@@ -274,6 +274,13 @@ namespace ManagedShell.WindowsTasks
             if (_showInTaskbar != showInTaskbar)
             {
                 _showInTaskbar = showInTaskbar;
+
+                // If we are becoming visible in the taskbar, get the category if it hasn't been set yet
+                if (_showInTaskbar == true && Category == null)
+                {
+                    Category = _tasksService.TaskCategoryProvider?.GetCategory(this);
+                }
+
                 OnPropertyChanged("ShowInTaskbar");
             }
         }
