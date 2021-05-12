@@ -1,12 +1,62 @@
 ﻿using System;
+using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Win32.SafeHandles;
+using FILETIME = System.Runtime.InteropServices.ComTypes.FILETIME;
 
 namespace ManagedShell.Interop
 {
     public partial class NativeMethods
     {
         const string Kernel32_DllName = "kernel32.dll";
+
+        [StructLayout(LayoutKind.Explicit)]
+        public struct BY_HANDLE_FILE_INFORMATION
+        {
+            [FieldOffset(0)]
+            public uint FileAttributes;
+
+            [FieldOffset(4)]
+            public FILETIME CreationTime;
+
+            [FieldOffset(12)]
+            public FILETIME LastAccessTime;
+
+            [FieldOffset(20)]
+            public FILETIME LastWriteTime;
+
+            [FieldOffset(28)]
+            public uint VolumeSerialNumber;
+
+            [FieldOffset(32)]
+            public uint FileSizeHigh;
+
+            [FieldOffset(36)]
+            public uint FileSizeLow;
+
+            [FieldOffset(40)]
+            public uint NumberOfLinks;
+
+            [FieldOffset(44)]
+            public uint FileIndexHigh;
+
+            [FieldOffset(48)]
+            public uint FileIndexLow;
+        }
+
+        [DllImport(Kernel32_DllName, SetLastError = true)]
+        public static extern bool GetFileInformationByHandle(SafeFileHandle hFile,
+            out BY_HANDLE_FILE_INFORMATION lpFileInformation);
+
+        [DllImport(Kernel32_DllName, CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern SafeFileHandle CreateFile([MarshalAs(UnmanagedType.LPTStr)] string filename,
+            [MarshalAs(UnmanagedType.U4)] FileAccess access,
+            [MarshalAs(UnmanagedType.U4)] FileShare share,
+            IntPtr securityAttributes,
+            [MarshalAs(UnmanagedType.U4)] FileMode creationDisposition,
+            [MarshalAs(UnmanagedType.U4)] FileAttributes flagsAndAttributes,
+            IntPtr templateFile);
 
         // Handling the close splash screen event
         [DllImport(Kernel32_DllName)]

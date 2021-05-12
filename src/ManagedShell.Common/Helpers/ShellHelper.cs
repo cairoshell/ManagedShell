@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Text;
+using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
@@ -354,8 +355,7 @@ namespace ManagedShell.Common.Helpers
             StringBuilder outFileName = new StringBuilder(1024);
 
             // get process id
-            uint procId;
-            GetWindowThreadProcessId(hWnd, out procId);
+            var procId = GetProcIdForHandle(hWnd);
 
             if (procId != 0)
             {
@@ -372,6 +372,13 @@ namespace ManagedShell.Common.Helpers
             }
 
             return outFileName.ToString();
+        }
+
+        public static uint GetProcIdForHandle(IntPtr hWnd)
+        {
+            uint procId;
+            GetWindowThreadProcessId(hWnd, out procId);
+            return procId;
         }
 
         public static string GetAppUserModelIdPropertyForHandle(IntPtr hWnd)
@@ -521,6 +528,39 @@ namespace ManagedShell.Common.Helpers
             {
                 SetEvent(hShellReadyEvent);
                 CloseHandle(hShellReadyEvent);
+            }
+        }
+
+        public static bool IsSameFile(string path1, string path2)
+        {
+            if (path1 == path2) return true;
+
+            using (var sfh1 = CreateFile(path1, FileAccess.Read, FileShare.ReadWrite,
+                IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero))
+            {
+                if (sfh1.IsInvalid)
+                    ShellLogger.Error($"Win32 error occured when trying to open file {path1}", Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()));
+
+                using (var sfh2 = CreateFile(path2, FileAccess.Read, FileShare.ReadWrite,
+                    IntPtr.Zero, FileMode.Open, 0, IntPtr.Zero))
+                {
+                    if (sfh2.IsInvalid)
+                        ShellLogger.Error($"Win32 error occured when trying to open file {path2}", Marshal.GetExceptionForHR(Marshal.GetHRForLastWin32Error()));
+
+                    BY_HANDLE_FILE_INFORMATION fileInfo1;
+                    var result1 = GetFileInformationByHandle(sfh1, out fileInfo1);
+                    if (!result1)
+                        ShellLogger.Error($"GetFileInformationByHandle has failed on {path1}");
+
+                    BY_HANDLE_FILE_INFORMATION fileInfo2;
+                    var result2 = GetFileInformationByHandle(sfh2, out fileInfo2);
+                    if (!result2)
+                        ShellLogger.Error($"GetFileInformationByHandle has failed on {path2}");
+
+                    return fileInfo1.VolumeSerialNumber == fileInfo2.VolumeSerialNumber
+                           && fileInfo1.FileIndexHigh == fileInfo2.FileIndexHigh
+                           && fileInfo1.FileIndexLow == fileInfo2.FileIndexLow;
+                }
             }
         }
     }

@@ -82,6 +82,10 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private uint? _procId;
+
+        public uint? ProcId => _procId = _procId ?? ShellHelper.GetProcIdForHandle(Handle);
+
         private string _category;
 
         public string Category
