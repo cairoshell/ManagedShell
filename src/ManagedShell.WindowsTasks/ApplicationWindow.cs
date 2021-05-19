@@ -309,7 +309,7 @@ namespace ManagedShell.WindowsTasks
                 NativeMethods.GetClassName(Handle, cName, cName.Capacity);
                 if (cName.ToString() == "ApplicationFrameWindow" || cName.ToString() == "Windows.UI.Core.CoreWindow" || cName.ToString() == "Shell_CharmWindow" || cName.ToString() == "ImmersiveLauncher")
                 {
-                    if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0 && string.IsNullOrEmpty(AppUserModelID))
+                    if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                     {
                         ShellLogger.Debug($"ApplicationWindow: Hiding UWP non-window {Title}");
                         return false;
