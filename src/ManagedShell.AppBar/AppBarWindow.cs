@@ -284,7 +284,7 @@ namespace ManagedShell.AppBar
 
         protected void SetBlur(bool enable)
         {
-            if (EnableBlur != enable && Handle != IntPtr.Zero)
+            if (EnableBlur != enable && Handle != IntPtr.Zero && AllowsTransparency)
             {
                 EnableBlur = enable;
                 WindowHelper.SetWindowBlur(Handle, enable);
