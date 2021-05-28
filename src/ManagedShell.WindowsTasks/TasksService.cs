@@ -299,7 +299,7 @@ namespace ManagedShell.WindowsTasks
                                     {
                                         foreach (ApplicationWindow wind in Windows)
                                         {
-                                            if (wind.WinFileName == win.WinFileName)
+                                            if (wind.WinFileName == win.WinFileName && wind.Handle != win.Handle)
                                                 wind.SetShowInTaskbar();
                                         }
                                     }
@@ -345,7 +345,7 @@ namespace ManagedShell.WindowsTasks
 
                                     foreach (ApplicationWindow wind in Windows)
                                     {
-                                        if (wind.WinFileName == win.WinFileName)
+                                        if (wind.WinFileName == win.WinFileName && wind.Handle != win.Handle)
                                         {
                                             wind.UpdateProperties();
                                         }

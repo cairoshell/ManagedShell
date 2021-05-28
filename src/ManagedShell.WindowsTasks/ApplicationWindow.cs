@@ -463,25 +463,16 @@ namespace ManagedShell.WindowsTasks
         {
             if ((WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0)
             {
-                bool minimizeResult = NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Minimize);
-                if (!minimizeResult)
-                {
-                    // elevated windows require WM_SYSCOMMAND messages
-                    IntPtr retval = IntPtr.Zero;
-                    NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_MINIMIZE, 0, 2, 200, ref retval);
-                }
+                IntPtr retval = IntPtr.Zero;
+                NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_MINIMIZE, 0, 2, 200, ref retval);
             }
         }
 
         public void Restore()
         {
-            bool restoreResult = NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Restore);
-            if (!restoreResult)
-            {
-                // elevated windows require WM_SYSCOMMAND messages
-                IntPtr retval = IntPtr.Zero;
-                NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_RESTORE, 0, 2, 200, ref retval);
-            }
+            IntPtr retval = IntPtr.Zero;
+            NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_RESTORE, 0, 2, 200, ref retval);
+
             NativeMethods.SetForegroundWindow(Handle);
         }
 
