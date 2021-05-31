@@ -138,6 +138,10 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private bool _iconLoading;
+        private ImageSource _icon;
+        private IntPtr _hIcon = IntPtr.Zero;
+
         public ImageSource Icon
         {
             get
@@ -153,11 +157,21 @@ namespace ManagedShell.WindowsTasks
                 OnPropertyChanged("Icon");
             }
         }
+        
+        private ImageSource _overlayIcon;
 
-        private bool _iconLoading = false;
-
-        private ImageSource _icon = null;
-        private IntPtr _hIcon = IntPtr.Zero;
+        public ImageSource OverlayIcon
+        {
+            get
+            {
+                return _overlayIcon;
+            }
+            set
+            {
+                _overlayIcon = value;
+                OnPropertyChanged("OverlayIcon");
+            }
+        }
 
         private NativeMethods.TBPFLAG _progressState;
 
@@ -433,6 +447,22 @@ namespace ManagedShell.WindowsTasks
 
                     _iconLoading = false;
                 }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+            }
+        }
+
+        public void SetOverlayIcon(IntPtr hIcon)
+        {
+            if (hIcon == IntPtr.Zero)
+            {
+                OverlayIcon = null;
+                return;
+            }
+
+            ImageSource icon = IconImageConverter.GetImageFromHIcon(hIcon, false);
+            if (icon != null)
+            {
+                icon.Freeze();
+                OverlayIcon = icon;
             }
         }
 

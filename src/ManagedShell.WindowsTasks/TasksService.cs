@@ -236,7 +236,7 @@ namespace ManagedShell.WindowsTasks
                         switch ((HSHELL)msg.WParam.ToInt32())
                         {
                             case HSHELL.WINDOWCREATED:
-                                ShellLogger.Debug("TasksService: Created: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Created: " + msg.LParam);
                                 if (!Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     addWindow(msg.LParam);
@@ -249,12 +249,12 @@ namespace ManagedShell.WindowsTasks
                                 break;
 
                             case HSHELL.WINDOWDESTROYED:
-                                ShellLogger.Debug("TasksService: Destroyed: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Destroyed: " + msg.LParam);
                                 removeWindow(msg.LParam);
                                 break;
 
                             case HSHELL.WINDOWREPLACING:
-                                ShellLogger.Debug("TasksService: Replacing: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Replacing: " + msg.LParam);
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
@@ -267,13 +267,13 @@ namespace ManagedShell.WindowsTasks
                                 }
                                 break;
                             case HSHELL.WINDOWREPLACED:
-                                ShellLogger.Debug("TasksService: Replaced: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Replaced: " + msg.LParam);
                                 removeWindow(msg.LParam);
                                 break;
 
                             case HSHELL.WINDOWACTIVATED:
                             case HSHELL.RUDEAPPACTIVATED:
-                                ShellLogger.Debug("TasksService: Activated: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Activated: " + msg.LParam);
 
                                 foreach (var aWin in Windows.Where(w => w.State == ApplicationWindow.WindowState.Active))
                                 {
@@ -307,7 +307,7 @@ namespace ManagedShell.WindowsTasks
                                 break;
 
                             case HSHELL.FLASH:
-                                ShellLogger.Debug("TasksService: Flashing window: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Flashing window: " + msg.LParam);
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
@@ -324,12 +324,12 @@ namespace ManagedShell.WindowsTasks
                                 break;
 
                             case HSHELL.ENDTASK:
-                                ShellLogger.Debug("TasksService: EndTask called: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: EndTask called: " + msg.LParam);
                                 removeWindow(msg.LParam);
                                 break;
 
                             case HSHELL.GETMINRECT:
-                                ShellLogger.Debug("TasksService: GetMinRect called: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: GetMinRect called: " + msg.LParam);
                                 SHELLHOOKINFO winHandle = (SHELLHOOKINFO)Marshal.PtrToStructure(msg.LParam, typeof(SHELLHOOKINFO));
                                 winHandle.rc = new NativeMethods.Rect { Bottom = 100, Left = 0, Right = 100, Top = 0 };
                                 Marshal.StructureToPtr(winHandle, msg.LParam, true);
@@ -337,7 +337,7 @@ namespace ManagedShell.WindowsTasks
                                 return; // return here so the result isnt reset to DefWindowProc
 
                             case HSHELL.REDRAW:
-                                ShellLogger.Debug("TasksService: Redraw called: " + msg.LParam.ToString());
+                                ShellLogger.Debug("TasksService: Redraw called: " + msg.LParam);
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
@@ -445,7 +445,7 @@ namespace ManagedShell.WindowsTasks
                         return;
                     case (int)WM.USER + 75:
                         // Unknown
-                        ShellLogger.Debug("TasksService: ITaskbarList: Unknown HWND:" + msg.WParam);
+                        ShellLogger.Debug("TasksService: ITaskbarList: Unknown HWND:" + msg.WParam + " LParam: " + msg.LParam);
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 76:
@@ -466,6 +466,14 @@ namespace ManagedShell.WindowsTasks
                     case (int)WM.USER + 79:
                         // SetOverlayIcon - Icon
                         ShellLogger.Debug("TasksService: ITaskbarList: SetOverlayIcon - Icon HWND:" + msg.WParam);
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msg.WParam);
+                            win.SetOverlayIcon(msg.LParam);
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 80:
