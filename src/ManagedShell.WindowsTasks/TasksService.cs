@@ -489,6 +489,14 @@ namespace ManagedShell.WindowsTasks
                     case (int)WM.USER + 85:
                         // SetOverlayIcon - Description
                         ShellLogger.Debug("TasksService: ITaskbarList: SetOverlayIcon - Description HWND:" + msg.WParam);
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msg.WParam);
+                            win.SetOverlayIconDescription(msg.LParam);
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 87:

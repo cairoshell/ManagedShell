@@ -4,6 +4,7 @@ using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -166,10 +167,25 @@ namespace ManagedShell.WindowsTasks
             {
                 return _overlayIcon;
             }
-            set
+            private set
             {
                 _overlayIcon = value;
                 OnPropertyChanged("OverlayIcon");
+            }
+        }
+
+        private string _overlayIconDescription;
+
+        public string OverlayIconDescription
+        {
+            get
+            {
+                return _overlayIconDescription;
+            }
+            private set
+            {
+                _overlayIconDescription = value;
+                OnPropertyChanged("OverlayIconDescription");
             }
         }
 
@@ -463,6 +479,25 @@ namespace ManagedShell.WindowsTasks
             {
                 icon.Freeze();
                 OverlayIcon = icon;
+            }
+        }
+
+        public void SetOverlayIconDescription(IntPtr lParam)
+        {
+            try
+            {
+                if (ProcId is uint procId)
+                {
+                    IntPtr hShared = NativeMethods.SHLockShared(lParam, procId);
+                    string str = Marshal.PtrToStringAuto(hShared);
+                    NativeMethods.SHUnlockShared(hShared);
+
+                    OverlayIconDescription = str;
+                }
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ApplicationWindow: Unable to get overlay icon description from process {Title}: {e.Message}");
             }
         }
 
