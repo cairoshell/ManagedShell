@@ -4,6 +4,7 @@ using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
@@ -138,6 +139,10 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private bool _iconLoading;
+        private ImageSource _icon;
+        private IntPtr _hIcon = IntPtr.Zero;
+
         public ImageSource Icon
         {
             get
@@ -153,11 +158,36 @@ namespace ManagedShell.WindowsTasks
                 OnPropertyChanged("Icon");
             }
         }
+        
+        private ImageSource _overlayIcon;
 
-        private bool _iconLoading = false;
+        public ImageSource OverlayIcon
+        {
+            get
+            {
+                return _overlayIcon;
+            }
+            private set
+            {
+                _overlayIcon = value;
+                OnPropertyChanged("OverlayIcon");
+            }
+        }
 
-        private ImageSource _icon = null;
-        private IntPtr _hIcon = IntPtr.Zero;
+        private string _overlayIconDescription;
+
+        public string OverlayIconDescription
+        {
+            get
+            {
+                return _overlayIconDescription;
+            }
+            private set
+            {
+                _overlayIconDescription = value;
+                OnPropertyChanged("OverlayIconDescription");
+            }
+        }
 
         private NativeMethods.TBPFLAG _progressState;
 
@@ -433,6 +463,41 @@ namespace ManagedShell.WindowsTasks
 
                     _iconLoading = false;
                 }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
+            }
+        }
+
+        public void SetOverlayIcon(IntPtr hIcon)
+        {
+            if (hIcon == IntPtr.Zero)
+            {
+                OverlayIcon = null;
+                return;
+            }
+
+            ImageSource icon = IconImageConverter.GetImageFromHIcon(hIcon, false);
+            if (icon != null)
+            {
+                icon.Freeze();
+                OverlayIcon = icon;
+            }
+        }
+
+        public void SetOverlayIconDescription(IntPtr lParam)
+        {
+            try
+            {
+                if (ProcId is uint procId)
+                {
+                    IntPtr hShared = NativeMethods.SHLockShared(lParam, procId);
+                    string str = Marshal.PtrToStringAuto(hShared);
+                    NativeMethods.SHUnlockShared(hShared);
+
+                    OverlayIconDescription = str;
+                }
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ApplicationWindow: Unable to get overlay icon description from process {Title}: {e.Message}");
             }
         }
 
