@@ -451,16 +451,40 @@ namespace ManagedShell.WindowsTasks
                     case (int)WM.USER + 76:
                         // ThumbBarAddButtons
                         ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarAddButtons HWND:" + msg.WParam);
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msg.WParam);
+                            win.SetThumbButtons(msg.LParam, false);
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 77:
                         // ThumbBarUpdateButtons
                         ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarUpdateButtons HWND:" + msg.WParam);
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msg.WParam);
+                            win.SetThumbButtons(msg.LParam, true);
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 78:
                         // ThumbBarSetImageList
                         ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarSetImageList HWND:" + msg.WParam);
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msg.WParam);
+                            win.SetThumbButtonImageList(msg.LParam);
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 79:

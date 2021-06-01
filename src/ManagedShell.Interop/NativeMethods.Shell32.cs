@@ -660,5 +660,46 @@ namespace ManagedShell.Interop
             NoAppcontainerRedirection = 0x00010000,
             AliasOnly = 0x80000000
         }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct THUMBBUTTON
+        {
+            public THUMBBUTTONMASK dwMask;
+            public uint iId;
+            public uint iBitmap;
+            public uint hIcon;
+
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szTip;
+
+            public THUMBBUTTONFLAGS dwFlags;
+        }
+
+        [Flags]
+        public enum THUMBBUTTONMASK : uint
+        {
+            THB_BITMAP = 0x1,
+            THB_ICON = 0x2,
+            THB_TOOLTIP = 0x4,
+            THB_FLAGS = 0x8
+        }
+
+        [Flags]
+        public enum THUMBBUTTONFLAGS : uint
+        {
+            THBF_ENABLED = 0,
+            THBF_DISABLED = 0x1,
+            THBF_DISMISSONCLICK = 0x2,
+            THBF_NOBACKGROUND = 0x4,
+            THBF_HIDDEN = 0x8,
+            THBF_NONINTERACTIVE = 0x10
+        }
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
+        public struct THUMBBUTTONLIST
+        {
+            public uint cButtons;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 7)] public THUMBBUTTON[] pButtons;
+        }
     }
 }

@@ -2,8 +2,10 @@
 using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using System;
+using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading;
@@ -269,6 +271,10 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private IntPtr _hThumbButtonImageList;
+
+        public List<TaskThumbButton> ThumbButtons { get; } = new List<TaskThumbButton>();
+
         public bool CanAddToTaskbar
         {
             get
@@ -466,7 +472,7 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public void SetOverlayIcon(IntPtr hIcon)
+        internal void SetOverlayIcon(IntPtr hIcon)
         {
             if (hIcon == IntPtr.Zero)
             {
@@ -482,23 +488,124 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public void SetOverlayIconDescription(IntPtr lParam)
+        internal void SetOverlayIconDescription(IntPtr lParam)
         {
             try
             {
-                if (ProcId is uint procId)
-                {
-                    IntPtr hShared = NativeMethods.SHLockShared(lParam, procId);
-                    string str = Marshal.PtrToStringAuto(hShared);
-                    NativeMethods.SHUnlockShared(hShared);
+                IntPtr hShared = NativeMethods.SHLockShared(lParam, NativeMethods.GetCurrentProcessId());
+                string str = Marshal.PtrToStringAuto(hShared);
+                NativeMethods.SHUnlockShared(hShared);
 
-                    OverlayIconDescription = str;
-                }
+                OverlayIconDescription = str;
             }
             catch (Exception e)
             {
                 ShellLogger.Error($"ApplicationWindow: Unable to get overlay icon description from process {Title}: {e.Message}");
             }
+        }
+
+        internal void SetThumbButtons(IntPtr lParam, bool isUpdate)
+        {
+            try
+            {
+                if (ThumbButtons.Count > 0 && !isUpdate)
+                {
+                    // buttons can be added only once; must be updated instead
+                    return;
+                }
+
+                IntPtr hShared = NativeMethods.SHLockShared(lParam, NativeMethods.GetCurrentProcessId());
+                NativeMethods.THUMBBUTTONLIST tbl = (NativeMethods.THUMBBUTTONLIST)Marshal.PtrToStructure(hShared, typeof(NativeMethods.THUMBBUTTONLIST));
+
+                foreach (var pButton in tbl.pButtons)
+                {
+                    if (pButton.dwMask != 0)
+                    {
+                        TaskThumbButton thumbButton;
+
+                        if (!isUpdate)
+                        {
+                            thumbButton = new TaskThumbButton();
+                            thumbButton.Id = pButton.iId;
+                        }
+                        else if (ThumbButtons.Any(btn => btn.Id == pButton.iId))
+                        {
+                            thumbButton = ThumbButtons.First(btn => btn.Id == pButton.iId);
+                        }
+                        else
+                        {
+                            continue;
+                        }
+
+                        if ((pButton.dwMask & NativeMethods.THUMBBUTTONMASK.THB_TOOLTIP) != 0)
+                        {
+                            thumbButton.Title = pButton.szTip;
+                        }
+
+                        if ((pButton.dwMask & NativeMethods.THUMBBUTTONMASK.THB_FLAGS) != 0)
+                        {
+                            thumbButton.Flags = pButton.dwFlags;
+                        }
+
+                        if ((pButton.dwMask & NativeMethods.THUMBBUTTONMASK.THB_BITMAP) != 0)
+                        {
+                            IntPtr hIcon = NativeMethods.ImageList_GetIcon(_hThumbButtonImageList, pButton.iBitmap, 0);
+                            ImageSource icon = IconImageConverter.GetImageFromHIcon(hIcon);
+                            if (icon != null)
+                            {
+                                icon.Freeze();
+                                thumbButton.Icon = icon;
+                            }
+                        }
+
+                        if ((pButton.dwMask & NativeMethods.THUMBBUTTONMASK.THB_ICON) != 0)
+                        {
+                            ImageSource icon = IconImageConverter.GetImageFromHIcon((IntPtr)pButton.hIcon);
+                            if (icon != null)
+                            {
+                                icon.Freeze();
+                                thumbButton.Icon = icon;
+                            }
+                        }
+
+                        if (!isUpdate)
+                        {
+                            ThumbButtons.Add(thumbButton);
+                        }
+                    }
+                }
+
+                NativeMethods.SHUnlockShared(hShared);
+
+                OnPropertyChanged("ThumbButtons");
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ApplicationWindow: Unable to add thumb buttons from process {Title}: {e.Message}");
+            }
+        }
+
+        internal void SetThumbButtonImageList(IntPtr lParam)
+        {
+            try
+            {
+                IntPtr hShared = NativeMethods.SHLockShared(lParam, NativeMethods.GetCurrentProcessId());
+                _hThumbButtonImageList = NativeMethods.ImageList_Duplicate(hShared);
+                NativeMethods.SHUnlockShared(hShared);
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Error($"ApplicationWindow: Unable to get set thumb button image list from process {Title}: {e.Message}");
+            }
+        }
+
+        public IntPtr ClickThumbButton(TaskThumbButton button)
+        {
+            IntPtr retval = IntPtr.Zero;
+            NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.COMMAND, button.Id | (0x1800 << 16), 0, 2, 200,
+                ref retval);
+
+            return retval;
         }
 
         internal void UpdateProperties()
