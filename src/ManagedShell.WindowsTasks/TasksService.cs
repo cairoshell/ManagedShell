@@ -120,7 +120,11 @@ namespace ManagedShell.WindowsTasks
                 ApplicationWindow win = new ApplicationWindow(this, hwnd);
 
                 if (win.CanAddToTaskbar && win.ShowInTaskbar && !Windows.Contains(win))
+                {
                     Windows.Add(win);
+
+                    sendTaskbarButtonCreatedMessage(win.Handle);
+                }
 
                 return true;
             }, 0);
@@ -193,6 +197,12 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private void sendTaskbarButtonCreatedMessage(IntPtr hWnd)
+        {
+            // Server Core doesn't support ITaskbarList, so sending this message on that OS could cause some assuming apps to crash
+            if (!EnvironmentHelper.IsServerCore) SendNotifyMessage(hWnd, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
+        }
+
         private ApplicationWindow addWindow(IntPtr hWnd, ApplicationWindow.WindowState initialState = ApplicationWindow.WindowState.Inactive, bool sanityCheck = false)
         {
             ApplicationWindow win = new ApplicationWindow(this, hWnd);
@@ -205,8 +215,7 @@ namespace ManagedShell.WindowsTasks
 
             // Only send TaskbarButtonCreated if we are shell, and if OS is not Server Core
             // This is because if Explorer is running, it will send the message, so we don't need to
-            // Server Core doesn't support ITaskbarList, so sending this message on that OS could cause some assuming apps to crash
-            if (EnvironmentHelper.IsAppRunningAsShell && !EnvironmentHelper.IsServerCore) SendNotifyMessage(win.Handle, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
+            if (EnvironmentHelper.IsAppRunningAsShell) sendTaskbarButtonCreatedMessage(win.Handle);
 
             return win;
         }
