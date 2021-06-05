@@ -13,14 +13,19 @@ namespace ManagedShell.WindowsTray
 {
     public class NotificationArea : DependencyObject, IDisposable
     {
+        const string HEALTH_GUID = "7820ae76-23e3-4229-82c1-e41cb67d5b9c";
+        const string MEETNOW_GUID = "7820ae83-23e3-4229-82c1-e41cb67d5b9c";
+        const string NETWORK_GUID = "7820ae74-23e3-4229-82c1-e41cb67d5b9c";
+        const string POWER_GUID = "7820ae75-23e3-4229-82c1-e41cb67d5b9c";
+        const string VOLUME_GUID = "7820ae73-23e3-4229-82c1-e41cb67d5b9c";
+
         public static readonly string[] DEFAULT_PINNED = {
-            "7820ae76-23e3-4229-82c1-e41cb67d5b9c",
-            "7820ae75-23e3-4229-82c1-e41cb67d5b9c",
-            "7820ae74-23e3-4229-82c1-e41cb67d5b9c",
-            "7820ae73-23e3-4229-82c1-e41cb67d5b9c"
+            HEALTH_GUID,
+            POWER_GUID,
+            NETWORK_GUID,
+            VOLUME_GUID
         };
 
-        const string VOLUME_GUID = "7820ae73-23e3-4229-82c1-e41cb67d5b9c";
         readonly NativeMethods.Rect defaultPlacement = new NativeMethods.Rect
         {
             Top = 0,
@@ -255,6 +260,13 @@ namespace ManagedShell.WindowsTray
 
                         // hide icons while we are shell which require UWP support & we have a separate implementation for
                         if (nicData.guidItem == new Guid(VOLUME_GUID) && ((EnvironmentHelper.IsAppRunningAsShell && EnvironmentHelper.IsWindows10OrBetter) || GroupPolicyHelper.HideScaVolume))
+                            return false;
+
+                        // hide icons per group policy
+                        if ((nicData.guidItem == new Guid(HEALTH_GUID) && GroupPolicyHelper.HideScaHealth) ||
+                            (nicData.guidItem == new Guid(MEETNOW_GUID) && GroupPolicyHelper.HideScaMeetNow) ||
+                            (nicData.guidItem == new Guid(NETWORK_GUID) && GroupPolicyHelper.HideScaNetwork) ||
+                            (nicData.guidItem == new Guid(POWER_GUID) && GroupPolicyHelper.HideScaPower))
                             return false;
 
                         foreach (NotifyIcon ti in TrayIcons)
