@@ -310,9 +310,14 @@ namespace ManagedShell.WindowsTasks
                 _showInTaskbar = showInTaskbar;
 
                 // If we are becoming visible in the taskbar, get the category if it hasn't been set yet
-                if (_showInTaskbar == true && Category == null)
+                if (_showInTaskbar == true && Category == null && _tasksService.TaskCategoryProvider != null)
                 {
-                    Category = _tasksService.TaskCategoryProvider?.GetCategory(this);
+                    // This is still a bit hacky because we need to call this synchronous as we access the list of Windows in TryGetCategoryDisplayNameByProcId
+                    // and also mutate that same list in getInitialWindows so we can not evaluate categories in parallel
+                    var task = Task.Run(async ()
+                        => await _tasksService.TaskCategoryProvider.GetCategoryAsync(this)
+                            .ConfigureAwait(false));
+                    Category = task.GetAwaiter().GetResult();
                 }
 
                 OnPropertyChanged("ShowInTaskbar");
@@ -489,6 +494,7 @@ namespace ManagedShell.WindowsTasks
                 if (ProcId is uint procId)
                 {
                     IntPtr hShared = NativeMethods.SHLockShared(lParam, procId);
+                    if (hShared == default) return;
                     string str = Marshal.PtrToStringAuto(hShared);
                     NativeMethods.SHUnlockShared(hShared);
 

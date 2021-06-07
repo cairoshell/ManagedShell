@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Threading.Tasks;
 
 namespace ManagedShell.WindowsTasks
 {
     public interface ITaskCategoryProvider : IDisposable
     {
-        string GetCategory(ApplicationWindow window);
+        Task<string> GetCategoryAsync(ApplicationWindow window);
 
-        void SetCategoryChangeDelegate(TaskCategoryChangeDelegate changeDelegate);
+        void SetCategoryChangeDelegate(TaskCategoryChangeAsyncDelegate changeAsyncDelegate);
     }
 }

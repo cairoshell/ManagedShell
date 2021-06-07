@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Forms;
 using ManagedShell.Common.Enums;
@@ -30,7 +31,7 @@ namespace ManagedShell.WindowsTasks
         private WinEventProc uncloakEventProc;
 
         internal ITaskCategoryProvider TaskCategoryProvider;
-        private TaskCategoryChangeDelegate CategoryChangeDelegate;
+        private TaskCategoryChangeAsyncDelegate _categoryChangeAsyncDelegate;
 
         public TasksService() : this(DEFAULT_ICON_SIZE)
         {
@@ -105,12 +106,9 @@ namespace ManagedShell.WindowsTasks
         {
             TaskCategoryProvider = provider;
 
-            if (CategoryChangeDelegate == null)
-            {
-                CategoryChangeDelegate = CategoriesChanged;
-            }
+            _categoryChangeAsyncDelegate = _categoryChangeAsyncDelegate ?? CategoriesChangedAsync;
 
-            TaskCategoryProvider.SetCategoryChangeDelegate(CategoryChangeDelegate);
+            TaskCategoryProvider.SetCategoryChangeDelegate(_categoryChangeAsyncDelegate);
         }
 
         private void getInitialWindows()
@@ -147,13 +145,14 @@ namespace ManagedShell.WindowsTasks
             TaskCategoryProvider?.Dispose();
         }
 
-        private void CategoriesChanged()
+        private async Task CategoriesChangedAsync()
         {
+            if (TaskCategoryProvider == null) return;
             foreach (ApplicationWindow window in Windows)
             {
                 if (window.ShowInTaskbar)
                 {
-                    window.Category = TaskCategoryProvider?.GetCategory(window);
+                    window.Category = await TaskCategoryProvider.GetCategoryAsync(window);
                 }
             }
         }
