@@ -6,6 +6,7 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Runtime.InteropServices;
+using System.Text;
 using System.Windows;
 using System.Windows.Forms;
 using ManagedShell.Common.Enums;
@@ -85,7 +86,7 @@ namespace ManagedShell.WindowsTasks
                 }
 
                 // set window for ITaskbarList
-                setTaskbarListHwnd();
+                setTaskbarListHwnd(_HookWin.Handle);
 
                 // adjust minimize animation
                 SetMinimizedMetrics();
@@ -120,7 +121,11 @@ namespace ManagedShell.WindowsTasks
                 ApplicationWindow win = new ApplicationWindow(this, hwnd);
 
                 if (win.CanAddToTaskbar && win.ShowInTaskbar && !Windows.Contains(win))
+                {
                     Windows.Add(win);
+
+                    sendTaskbarButtonCreatedMessage(win.Handle);
+                }
 
                 return true;
             }, 0);
@@ -142,6 +147,7 @@ namespace ManagedShell.WindowsTasks
                 DeregisterShellHookWindow(_HookWin.Handle);
                 if (uncloakEventHook != IntPtr.Zero) UnhookWinEvent(uncloakEventHook);
                 _HookWin.DestroyHandle();
+                setTaskbarListHwnd(IntPtr.Zero);
             }
 
             TaskCategoryProvider?.Dispose();
@@ -193,6 +199,12 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private void sendTaskbarButtonCreatedMessage(IntPtr hWnd)
+        {
+            // Server Core doesn't support ITaskbarList, so sending this message on that OS could cause some assuming apps to crash
+            if (!EnvironmentHelper.IsServerCore) SendNotifyMessage(hWnd, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
+        }
+
         private ApplicationWindow addWindow(IntPtr hWnd, ApplicationWindow.WindowState initialState = ApplicationWindow.WindowState.Inactive, bool sanityCheck = false)
         {
             ApplicationWindow win = new ApplicationWindow(this, hWnd);
@@ -205,8 +217,7 @@ namespace ManagedShell.WindowsTasks
 
             // Only send TaskbarButtonCreated if we are shell, and if OS is not Server Core
             // This is because if Explorer is running, it will send the message, so we don't need to
-            // Server Core doesn't support ITaskbarList, so sending this message on that OS could cause some assuming apps to crash
-            if (EnvironmentHelper.IsAppRunningAsShell && !EnvironmentHelper.IsServerCore) SendNotifyMessage(win.Handle, (uint)TASKBARBUTTONCREATEDMESSAGE, UIntPtr.Zero, IntPtr.Zero);
+            if (EnvironmentHelper.IsAppRunningAsShell) sendTaskbarButtonCreatedMessage(win.Handle);
 
             return win;
         }
@@ -222,6 +233,19 @@ namespace ManagedShell.WindowsTasks
                     Windows.Remove(win);
                 }
                 while (Windows.Any(i => i.Handle == hWnd));
+            }
+        }
+
+        private void redrawWindow(ApplicationWindow win)
+        {
+            win.UpdateProperties();
+
+            foreach (ApplicationWindow wind in Windows)
+            {
+                if (wind.WinFileName == win.WinFileName && wind.Handle != win.Handle)
+                {
+                    wind.UpdateProperties();
+                }
             }
         }
 
@@ -268,6 +292,7 @@ namespace ManagedShell.WindowsTasks
                                 break;
                             case HSHELL.WINDOWREPLACED:
                                 ShellLogger.Debug("TasksService: Replaced: " + msg.LParam);
+                                // TODO: If a window gets replaced, we lose app-level state such as overlay icons.
                                 removeWindow(msg.LParam);
                                 break;
 
@@ -311,7 +336,13 @@ namespace ManagedShell.WindowsTasks
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
-                                    win.State = ApplicationWindow.WindowState.Flashing;
+                                    
+                                    if (win.State != ApplicationWindow.WindowState.Active)
+                                    {
+                                        win.State = ApplicationWindow.WindowState.Flashing;
+                                    }
+
+                                    redrawWindow(win);
                                 }
                                 else
                                 {
@@ -341,15 +372,13 @@ namespace ManagedShell.WindowsTasks
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
-                                    win.UpdateProperties();
 
-                                    foreach (ApplicationWindow wind in Windows)
+                                    if (win.State == ApplicationWindow.WindowState.Flashing)
                                     {
-                                        if (wind.WinFileName == win.WinFileName && wind.Handle != win.Handle)
-                                        {
-                                            wind.UpdateProperties();
-                                        }
+                                        win.State = ApplicationWindow.WindowState.Inactive;
                                     }
+
+                                    redrawWindow(win);
                                 }
                                 else
                                 {
@@ -376,7 +405,7 @@ namespace ManagedShell.WindowsTasks
             else if (msg.Msg == WM_TASKBARCREATEDMESSAGE)
             {
                 ShellLogger.Debug("TasksService: TaskbarCreated received, setting ITaskbarList window");
-                setTaskbarListHwnd();
+                setTaskbarListHwnd(_HookWin.Handle);
             }
             else
             {
@@ -522,13 +551,34 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        private void setTaskbarListHwnd()
+        private void setTaskbarListHwnd(IntPtr hwndHook)
         {
-            // set property to receive ITaskbarList messages
+            // set property on hook window that should receive ITaskbarList messages
+
             IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", "");
             if (taskbarHwnd != IntPtr.Zero)
             {
-                SetProp(taskbarHwnd, "TaskbandHWND", _HookWin.Handle);
+                if (hwndHook == IntPtr.Zero)
+                {
+                    // Try to find and use the handle of the Explorer hook window
+                    EnumChildWindows(taskbarHwnd, (hwnd, lParam) =>
+                    {
+                        StringBuilder cName = new StringBuilder(256);
+                        GetClassName(hwnd, cName, cName.Capacity);
+                        if (cName.ToString() == "MSTaskSwWClass")
+                        {
+                            hwndHook = hwnd;
+                            return false;
+                        }
+
+                        return true;
+                    }, 0);
+                }
+
+                if (hwndHook != IntPtr.Zero)
+                {
+                    SetProp(taskbarHwnd, "TaskbandHWND", hwndHook);
+                }
             }
         }
 
