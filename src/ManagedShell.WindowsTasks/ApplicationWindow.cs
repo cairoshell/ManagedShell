@@ -329,9 +329,8 @@ namespace ManagedShell.WindowsTasks
             // EnumWindows and ShellHook return UWP app windows that are 'cloaked', which should not be visible in the taskbar.
             if (EnvironmentHelper.IsWindows8OrBetter)
             {
-                uint cloaked;
-                int cbSize = System.Runtime.InteropServices.Marshal.SizeOf(typeof(uint));
-                NativeMethods.DwmGetWindowAttribute(Handle, NativeMethods.DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out cloaked, cbSize);
+                int cbSize = Marshal.SizeOf(typeof(uint));
+                NativeMethods.DwmGetWindowAttribute(Handle, NativeMethods.DWMWINDOWATTRIBUTE.DWMWA_CLOAKED, out var cloaked, cbSize);
 
                 if (cloaked > 0)
                 {

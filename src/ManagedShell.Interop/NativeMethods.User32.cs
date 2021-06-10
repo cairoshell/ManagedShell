@@ -15,6 +15,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern int EnumWindows(CallBackPtr callPtr, int lPar);
 
+        [DllImport(User32_DllName)]
+        public static extern int EnumChildWindows(IntPtr hParent, CallBackPtr callPtr, int lPar);
+
         [DllImport(User32_DllName, CharSet = CharSet.Unicode)]
         public static extern int GetWindowText(IntPtr hwnd, StringBuilder sb, int Length);
 
