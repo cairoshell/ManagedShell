@@ -48,7 +48,7 @@ namespace ManagedShell.AppBar
 
         public void SuspendTrayService()
         {
-            // get shell window back so we can do appbar stuff
+            // get Explorer tray window back so we can do appbar stuff that requires shared memory
             _notificationArea?.Suspend();
         }
 
@@ -107,10 +107,8 @@ namespace ManagedShell.AppBar
                     hWnd = FindTaskbarHwnd(),
                     lParam = (IntPtr) state
                 };
-
-                SuspendTrayService();
+                
                 SHAppBarMessage((int) ABMsg.ABM_SETSTATE, ref abd);
-                ResumeTrayService();
             });
         }
 
@@ -121,10 +119,8 @@ namespace ManagedShell.AppBar
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
                 hWnd = FindTaskbarHwnd()
             };
-
-            SuspendTrayService();
+            
             uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
-            ResumeTrayService();
 
             return (TaskbarState)uState;
         }
