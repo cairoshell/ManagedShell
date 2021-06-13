@@ -52,10 +52,8 @@ namespace ManagedShell.AppBar
                     {
                         uCallBack = RegisterWindowMessage("AppBarMessage");
                         abd.uCallbackMessage = uCallBack;
-
-                        _explorerHelper.SuspendTrayService();
+                        
                         SHAppBarMessage((int) ABMsg.ABM_NEW, ref abd);
-                        _explorerHelper.ResumeTrayService();
                     }
                     
                     AppBars.Add(abWindow);
@@ -75,9 +73,7 @@ namespace ManagedShell.AppBar
                 {
                     if (!EnvironmentHelper.IsAppRunningAsShell)
                     {
-                        _explorerHelper.SuspendTrayService();
                         SHAppBarMessage((int) ABMsg.ABM_REMOVE, ref abd);
-                        _explorerHelper.ResumeTrayService();
                     }
 
                     AppBars.Remove(abWindow);
@@ -103,10 +99,8 @@ namespace ManagedShell.AppBar
                 hWnd = hwnd,
                 lParam = (IntPtr)Convert.ToInt32(true)
             };
-
-            _explorerHelper.SuspendTrayService();
+            
             SHAppBarMessage((int)ABMsg.ABM_ACTIVATE, ref abd);
-            _explorerHelper.ResumeTrayService();
 
             // apparently the TaskBars like to pop up when AppBars change
             if (_explorerHelper.HideExplorerTaskbar)
@@ -122,10 +116,8 @@ namespace ManagedShell.AppBar
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
                 hWnd = hwnd
             };
-
-            _explorerHelper.SuspendTrayService();
+            
             SHAppBarMessage((int)ABMsg.ABM_WINDOWPOSCHANGED, ref abd);
-            _explorerHelper.ResumeTrayService();
 
             // apparently the TaskBars like to pop up when AppBars change
             if (_explorerHelper.HideExplorerTaskbar)

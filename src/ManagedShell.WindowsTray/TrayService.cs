@@ -160,10 +160,14 @@ namespace ManagedShell.WindowsTray
                                     break;
                                 }
 
-                                if (AppBarMessageAction(amd))
+                                IntPtr abmResult = AppBarMessageAction(amd);
+
+                                if (abmResult != IntPtr.Zero)
                                 {
-                                    return (IntPtr)1;
+                                    return abmResult;
                                 }
+
+                                ShellLogger.Debug($"TrayService: Forwarding AppBar message {(ABMsg)amd.dwMessage} from PID {amd.dwSourceProcessId}");
                             }
                             else
                             {
@@ -227,7 +231,7 @@ namespace ManagedShell.WindowsTray
         }
 
         #region Event handling
-        private bool AppBarMessageAction(APPBARMSGDATAV3 amd)
+        private IntPtr AppBarMessageAction(APPBARMSGDATAV3 amd)
         {
             // only handle ABM_GETTASKBARPOS, send other AppBar messages to default handler
             switch ((ABMsg)amd.dwMessage)
@@ -239,9 +243,9 @@ namespace ManagedShell.WindowsTray
                     Marshal.StructureToPtr(abd, hShared, false);
                     SHUnlockShared(hShared);
                     ShellLogger.Debug("TrayService: Responded to ABM_GETTASKBARPOS");
-                    return true;
+                    return (IntPtr)1;
             }
-            return false;
+            return IntPtr.Zero;
         }
 
         private void FillTrayHostSizeData(ref APPBARDATAV2 abd)
