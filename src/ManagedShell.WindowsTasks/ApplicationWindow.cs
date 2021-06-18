@@ -487,7 +487,18 @@ namespace ManagedShell.WindowsTasks
             {
                 if (ProcId is uint procId)
                 {
+                    if (lParam == IntPtr.Zero)
+                    {
+                        return;
+                    }
+
                     IntPtr hShared = NativeMethods.SHLockShared(lParam, procId);
+
+                    if (hShared == IntPtr.Zero)
+                    {
+                        return;
+                    }
+
                     string str = Marshal.PtrToStringAuto(hShared);
                     NativeMethods.SHUnlockShared(hShared);
 
