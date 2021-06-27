@@ -222,7 +222,10 @@ namespace ManagedShell.WindowsTray
                     break;
             }
 
-            if (msg == (int)WM.COPYDATA || msg == (int)WM.ACTIVATEAPP)
+            if (msg == (int)WM.COPYDATA ||
+                msg == (int)WM.ACTIVATEAPP ||
+                msg == (int)WM.COMMAND ||
+                msg >= (int)WM.USER)
             {
                 return ForwardMsg(msg, wParam, lParam);
             }
