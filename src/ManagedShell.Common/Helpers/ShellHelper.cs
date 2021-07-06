@@ -272,6 +272,11 @@ namespace ManagedShell.Common.Helpers
             ShellKeyCombo(VK_LWIN, VK_LWIN);
         }
 
+        public static void ShowStartContextMenu()
+        {
+            ShellKeyCombo(VK_LWIN, 0x58);
+        }
+
         /// <summary>
         /// Send file to recycle bin
         /// </summary>
