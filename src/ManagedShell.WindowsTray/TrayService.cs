@@ -2,6 +2,7 @@ using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
 using System;
 using System.Runtime.InteropServices;
+using System.Windows.Threading;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.WindowsTray
@@ -21,9 +22,11 @@ namespace ManagedShell.WindowsTray
         private IntPtr HwndFwd;
         private IntPtr hInstance = Marshal.GetHINSTANCE(typeof(TrayService).Module);
 
+        private readonly DispatcherTimer trayMonitor = new DispatcherTimer(DispatcherPriority.Background);
+
         public TrayService()
         {
-
+            SetupTrayMonitor();
         }
 
         #region Set callbacks
@@ -62,13 +65,7 @@ namespace ManagedShell.WindowsTray
         {
             if (HwndTray != IntPtr.Zero)
             {
-                SetWindowsTrayBottommost();
-
-                SetWindowPos(HwndTray, IntPtr.Zero, 0, 0, 0, 0,
-                    (int)SetWindowPosFlags.SWP_NOMOVE |
-                    (int)SetWindowPosFlags.SWP_NOACTIVATE |
-                    (int)SetWindowPosFlags.SWP_NOSIZE);
-
+                Resume();
                 SendTaskbarCreated();
             }
         }
@@ -78,6 +75,7 @@ namespace ManagedShell.WindowsTray
             // if we go beneath another tray, it will receive messages
             if (HwndTray != IntPtr.Zero)
             {
+                trayMonitor.Stop();
                 SetWindowPos(HwndTray, (IntPtr)WindowZOrder.HWND_BOTTOM, 0, 0, 0, 0,
                     (int)SetWindowPosFlags.SWP_NOMOVE | (int)SetWindowPosFlags.SWP_NOACTIVATE |
                     (int)SetWindowPosFlags.SWP_NOSIZE);
@@ -89,8 +87,9 @@ namespace ManagedShell.WindowsTray
             // if we are above another tray, we will receive messages
             if (HwndTray != IntPtr.Zero)
             {
-                MakeTrayTopmost();
                 SetWindowsTrayBottommost();
+                MakeTrayTopmost();
+                trayMonitor.Start();
             }
         }
 
@@ -125,6 +124,7 @@ namespace ManagedShell.WindowsTray
 
         public void Dispose()
         {
+            trayMonitor.Stop();
             DestroyWindows();
 
             if (!EnvironmentHelper.IsAppRunningAsShell)
@@ -269,7 +269,7 @@ namespace ManagedShell.WindowsTray
         {
             if (HwndFwd == IntPtr.Zero || !IsWindow(HwndFwd))
             {
-                HwndFwd = FindWindowsTray();
+                HwndFwd = WindowHelper.FindWindowsTray(HwndTray);
             }
 
             if (HwndFwd != IntPtr.Zero)
@@ -343,24 +343,27 @@ namespace ManagedShell.WindowsTray
             }
         }
 
-        private IntPtr FindWindowsTray()
+        private void SetupTrayMonitor()
         {
+            trayMonitor.Interval = new TimeSpan(0, 0, 0, 0, 100);
+            trayMonitor.Tick += TrayMonitor_Tick;
+        }
+
+        private void TrayMonitor_Tick(object sender, EventArgs e)
+        {
+            if (HwndTray == IntPtr.Zero) return;
+
             IntPtr taskbarHwnd = FindWindow(TrayWndClass, "");
 
-            if (HwndTray != IntPtr.Zero)
-            {
-                while (taskbarHwnd == HwndTray)
-                {
-                    taskbarHwnd = FindWindowEx(IntPtr.Zero, taskbarHwnd, TrayWndClass, "");
-                }
-            }
+            if (taskbarHwnd == HwndTray) return;
 
-            return taskbarHwnd;
+            ShellLogger.Debug("TrayService: Raising Shell_TrayWnd");
+            MakeTrayTopmost();
         }
 
         private void SetWindowsTrayBottommost()
         {
-            IntPtr taskbarHwnd = FindWindowsTray();
+            IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(HwndTray);
 
             if (taskbarHwnd != IntPtr.Zero)
             {
