@@ -6,6 +6,8 @@ namespace ManagedShell.Common.Helpers
 {
     public static class WindowHelper
     {
+        public const string TrayWndClass = "Shell_TrayWnd";
+
         public static void ShowWindowBottomMost(IntPtr handle)
         {
             SetWindowPos(
@@ -176,6 +178,21 @@ namespace ManagedShell.Common.Helpers
             }
 
             return false;
+        }
+
+        public static IntPtr FindWindowsTray(IntPtr hwndIgnore)
+        {
+            IntPtr taskbarHwnd = FindWindow(TrayWndClass, "");
+
+            if (hwndIgnore != IntPtr.Zero)
+            {
+                while (taskbarHwnd == hwndIgnore)
+                {
+                    taskbarHwnd = FindWindowEx(IntPtr.Zero, taskbarHwnd, TrayWndClass, "");
+                }
+            }
+
+            return taskbarHwnd;
         }
     }
 }

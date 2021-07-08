@@ -156,10 +156,6 @@ namespace ManagedShell.AppBar
                         }
 
                         break;
-
-                    case NativeMethods.AppBarNotifications.FullScreenApp:
-                        _explorerHelper.HideTaskbar();
-                        break;
                 }
                 handled = true;
             }
@@ -311,12 +307,6 @@ namespace ManagedShell.AppBar
         #region Virtual methods
         public virtual void AfterAppBarPos(bool isSameCoords, NativeMethods.Rect rect)
         {
-            // apparently the TaskBars like to pop up when AppBars change
-            if (_explorerHelper.HideExplorerTaskbar && !AllowClose)
-            {
-                _explorerHelper.HideTaskbar();
-            }
-
             if (!isSameCoords)
             {
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };

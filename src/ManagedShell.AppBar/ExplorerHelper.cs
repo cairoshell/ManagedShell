@@ -3,6 +3,8 @@ using ManagedShell.WindowsTray;
 using System;
 using System.Runtime.InteropServices;
 using System.Threading.Tasks;
+using System.Windows.Threading;
+using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.AppBar
@@ -12,6 +14,8 @@ namespace ManagedShell.AppBar
         private static TaskbarState? startupTaskbarState;
         private NotificationArea _notificationArea;
 
+
+        private readonly DispatcherTimer taskbarMonitor = new DispatcherTimer(DispatcherPriority.Background);
 
         private bool _hideExplorerTaskbar;
 
@@ -44,6 +48,8 @@ namespace ManagedShell.AppBar
         public ExplorerHelper(NotificationArea notificationArea)
         {
             _notificationArea = notificationArea;
+
+            SetupTaskbarMonitor();
         }
 
         public void SuspendTrayService()
@@ -63,7 +69,7 @@ namespace ManagedShell.AppBar
             // only run this if our TaskBar is enabled, or if we are showing the Windows TaskBar
             if (swp != (int)SetWindowPosFlags.SWP_HIDEWINDOW || HideExplorerTaskbar)
             {
-                IntPtr taskbarHwnd = FindTaskbarHwnd();
+                IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(_notificationArea.Handle);
                 IntPtr startButtonHwnd = FindWindowEx(IntPtr.Zero, IntPtr.Zero, (IntPtr)0xC017, null);
 
                 if (taskbarHwnd != IntPtr.Zero
@@ -104,7 +110,7 @@ namespace ManagedShell.AppBar
                 APPBARDATA abd = new APPBARDATA
                 {
                     cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                    hWnd = FindTaskbarHwnd(),
+                    hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle),
                     lParam = (IntPtr) state
                 };
                 
@@ -117,7 +123,7 @@ namespace ManagedShell.AppBar
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = FindTaskbarHwnd()
+                hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle)
             };
             
             uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
@@ -125,22 +131,7 @@ namespace ManagedShell.AppBar
             return (TaskbarState)uState;
         }
 
-        private IntPtr FindTaskbarHwnd()
-        {
-            IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", "");
-
-            if (_notificationArea != null && _notificationArea.Handle != IntPtr.Zero)
-            {
-                while (taskbarHwnd == _notificationArea.Handle)
-                {
-                    taskbarHwnd = FindWindowEx(IntPtr.Zero, taskbarHwnd, "Shell_TrayWnd", "");
-                }
-            }
-
-            return taskbarHwnd;
-        }
-
-        public void HideTaskbar()
+        private void HideTaskbar()
         {
             if (!EnvironmentHelper.IsAppRunningAsShell)
             {
@@ -151,18 +142,58 @@ namespace ManagedShell.AppBar
 
                 if (HideExplorerTaskbar)
                 {
-                    SetTaskbarState(TaskbarState.AutoHide);
-                    SetTaskbarVisibility((int) SetWindowPosFlags.SWP_HIDEWINDOW);
+                    DoHideTaskbar();
+                    taskbarMonitor.Start();
                 }
             }
         }
 
-        public void ShowTaskbar()
+        private void DoHideTaskbar()
+        {
+            SetTaskbarState(TaskbarState.AutoHide);
+            SetTaskbarVisibility((int)SetWindowPosFlags.SWP_HIDEWINDOW);
+        }
+
+        private void ShowTaskbar()
         {
             if (!EnvironmentHelper.IsAppRunningAsShell)
             {
                 SetTaskbarState(startupTaskbarState ?? TaskbarState.OnTop);
                 SetTaskbarVisibility((int)SetWindowPosFlags.SWP_SHOWWINDOW);
+                taskbarMonitor.Stop();
+            }
+        }
+
+        private void SetupTaskbarMonitor()
+        {
+            taskbarMonitor.Interval = new TimeSpan(0, 0, 0, 0, 100);
+            taskbarMonitor.Tick += TaskbarMonitor_Tick;
+        }
+
+        private void TaskbarMonitor_Tick(object sender, EventArgs e)
+        {
+            IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(_notificationArea.Handle);
+
+            if (IsWindowVisible(taskbarHwnd))
+            {
+                ShellLogger.Debug("ExplorerHelper: Hiding unwanted Windows taskbar");
+                DoHideTaskbar();
+                return;
+            }
+
+            IntPtr secTaskbarHwnd = FindWindowEx(IntPtr.Zero, IntPtr.Zero, "Shell_SecondaryTrayWnd", null);
+
+            // if we have 3+ monitors there may be multiple secondary TaskBars
+            while (secTaskbarHwnd != IntPtr.Zero)
+            {
+                if (IsWindowVisible(secTaskbarHwnd))
+                {
+                    ShellLogger.Debug("ExplorerHelper: Hiding unwanted Windows taskbar");
+                    DoHideTaskbar();
+                    return;
+                }
+
+                secTaskbarHwnd = FindWindowEx(IntPtr.Zero, secTaskbarHwnd, "Shell_SecondaryTrayWnd", null);
             }
         }
 
