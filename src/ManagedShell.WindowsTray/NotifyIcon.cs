@@ -56,7 +56,7 @@ namespace ManagedShell.WindowsTray
         private string _title;
 
         /// <summary>
-        /// Gets or sets the Icon's title (tool tip).
+        /// Gets or sets the icon's title.
         /// </summary>
         public string Title
         {
@@ -70,6 +70,11 @@ namespace ManagedShell.WindowsTray
                 OnPropertyChanged();
             }
         }
+
+        /// <summary>
+        /// Gets the icon's tool tip.
+        /// </summary>
+        public string ToolTip => Version < 4 || ShowV4Tip ? Title : null;
 
         /// <summary>
         /// Gets or sets the path to the application that created the icon.
@@ -177,6 +182,16 @@ namespace ManagedShell.WindowsTray
         }
 
         public Rect Placement
+        {
+            get;
+            set;
+        }
+
+        /// <summary>
+        /// NotifyIcons with version set to 4 are assumed to draw their own tip by default.
+        /// If the icon sends the NIF_SHOWTIP flag, to indicate the shell should draw it, this is set to true.
+        /// </summary>
+        public bool ShowV4Tip
         {
             get;
             set;

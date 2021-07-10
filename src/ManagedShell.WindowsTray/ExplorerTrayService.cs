@@ -188,6 +188,12 @@ namespace ManagedShell.WindowsTray
             nid.dwState = (int)trayItem.dwState;
             nid.uFlags = NIF.GUID | NIF.MESSAGE | NIF.TIP | NIF.STATE;
 
+            if (nid.uVersion >= 4)
+            {
+                // It doesn't seem like we can get this from Explorer, so take the safe route.
+                nid.uFlags |= NIF.SHOWTIP;
+            }
+
             if (nid.hIcon != IntPtr.Zero)
             {
                 nid.uFlags |= NIF.ICON;

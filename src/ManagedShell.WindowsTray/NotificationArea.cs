@@ -282,6 +282,9 @@ namespace ManagedShell.WindowsTray
                         if ((NIF.STATE & nicData.uFlags) != 0)
                             trayIcon.IsHidden = nicData.dwState == 1;
 
+                        if (nicData.uVersion > 0 && nicData.uVersion <= 4)
+                            trayIcon.Version = nicData.uVersion;
+
                         if ((NIF.TIP & nicData.uFlags) != 0 && !string.IsNullOrEmpty(nicData.szTip))
                             trayIcon.Title = nicData.szTip;
 
@@ -321,8 +324,8 @@ namespace ManagedShell.WindowsTray
                         if ((NIF.GUID & nicData.uFlags) != 0)
                             trayIcon.GUID = nicData.guidItem;
 
-                        if (nicData.uVersion > 0 && nicData.uVersion <= 4)
-                            trayIcon.Version = nicData.uVersion;
+                        if ((NIF.SHOWTIP & nicData.uFlags) != 0)
+                            trayIcon.ShowV4Tip = true;
 
                         if ((NIF.MESSAGE & nicData.uFlags) != 0)
                             trayIcon.CallbackMessage = nicData.uCallbackMessage;
