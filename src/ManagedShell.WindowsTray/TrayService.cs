@@ -227,7 +227,7 @@ namespace ManagedShell.WindowsTray
                 msg == (int)WM.COMMAND ||
                 msg >= (int)WM.USER)
             {
-                return ForwardMsg(msg, wParam, lParam);
+                return ForwardMsg(hWnd, msg, wParam, lParam);
             }
 
             return DefWindowProc(hWnd, msg, wParam, lParam);
@@ -265,7 +265,7 @@ namespace ManagedShell.WindowsTray
             }
         }
 
-        private IntPtr ForwardMsg(int msg, IntPtr wParam, IntPtr lParam)
+        private IntPtr ForwardMsg(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam)
         {
             if (HwndFwd == IntPtr.Zero || !IsWindow(HwndFwd))
             {
@@ -277,7 +277,7 @@ namespace ManagedShell.WindowsTray
                 return SendMessage(HwndFwd, msg, wParam, lParam);
             }
 
-            return IntPtr.Zero;
+            return DefWindowProc(hWnd, msg, wParam, lParam);
         }
         #endregion
 
