@@ -56,6 +56,10 @@ namespace ManagedShell.Common.Helpers
                 // subscribed to events successfully
                 ShellLogger.Debug("AppVisibilityHelper: Subscribed to change events");
             }
+            else
+            {
+                ShellLogger.Debug("AppVisibilityHelper: Unable to subscribe to change events");
+            }
         }
 
         private void Events_AppVisibilityChanged(object sender, AppVisibilityEventArgs e)
