@@ -11,29 +11,46 @@ namespace ManagedShell.Common.Helpers
         public event EventHandler<AppVisibilityEventArgs> AppVisibilityChanged;
         public event EventHandler<LauncherVisibilityEventArgs> LauncherVisibilityChanged;
 
-        private IAppVisibility appVis;
-        private int eventCookie;
+        private IAppVisibility _appVis;
+        private int _eventCookie;
+        private bool _useEvents;
 
-        public AppVisibilityHelper()
+        public AppVisibilityHelper(bool useEvents)
         {
             if (!EnvironmentHelper.IsWindows8OrBetter)
             {
+                ShellLogger.Debug("AppVisibilityHelper: Requires Windows 8 or higher");
                 return;
             }
 
-            // register for app visibility events
-            appVis = (IAppVisibility)new AppVisibility();
+            // get IAppVisibility instance
+            _appVis = (IAppVisibility)new AppVisibility();
+            _useEvents = useEvents;
 
-            if (appVis == null)
+            if (_appVis == null)
+            {
+                ShellLogger.Debug("AppVisibilityHelper: Unable create IAppVisibility");
+                return;
+            }
+
+            if (!_useEvents)
             {
                 return;
             }
 
+            if (!EnvironmentHelper.IsWindows10OrBetter)
+            {
+                ShellLogger.Debug("AppVisibilityHelper: Events require Windows 10 or higher");
+                return;
+            }
+
+            // register for events
+            // only works properly on Windows 10 or later
             AppVisibilityEvents events = new AppVisibilityEvents();
             events.AppVisibilityChanged += Events_AppVisibilityChanged;
             events.LauncherVisibilityChanged += Events_LauncherVisibilityChanged;
 
-            if (appVis.Advise(events, out eventCookie) == 0)
+            if (_appVis.Advise(events, out _eventCookie) == 0)
             {
                 // subscribed to events successfully
                 ShellLogger.Debug("AppVisibilityHelper: Subscribed to change events");
@@ -57,12 +74,12 @@ namespace ManagedShell.Common.Helpers
                 return false;
             }
 
-            if (appVis == null)
+            if (_appVis == null)
             {
                 return false;
             }
 
-            appVis.IsLauncherVisible(out bool pfVisible);
+            _appVis.IsLauncherVisible(out bool pfVisible);
 
             return pfVisible;
         }
@@ -74,12 +91,12 @@ namespace ManagedShell.Common.Helpers
                 return MONITOR_APP_VISIBILITY.MAV_UNKNOWN;
             }
 
-            if (appVis == null)
+            if (_appVis == null)
             {
                 return MONITOR_APP_VISIBILITY.MAV_UNKNOWN;
             }
 
-            appVis.GetAppVisibilityOnMonitor(hMonitor, out MONITOR_APP_VISIBILITY pMode);
+            _appVis.GetAppVisibilityOnMonitor(hMonitor, out MONITOR_APP_VISIBILITY pMode);
 
             return pMode;
         }
@@ -91,15 +108,15 @@ namespace ManagedShell.Common.Helpers
                 return;
             }
 
-            if (appVis == null)
+            if (_appVis == null)
             {
                 return;
             }
 
-            if (eventCookie > 0)
+            if (_useEvents && _eventCookie > 0)
             {
                 // unregister from events
-                if (appVis.Unadvise(eventCookie) == 0)
+                if (_appVis.Unadvise(_eventCookie) == 0)
                 {
                     ShellLogger.Debug("AppVisibilityHelper: Unsubscribed from change events");
                 }
