@@ -15,6 +15,7 @@ namespace ManagedShell.Common.Helpers
         private int _eventCookie;
         private bool _useEvents;
 
+        // Note: when using events, this object must be held in memory by the consumer
         public AppVisibilityHelper(bool useEvents)
         {
             if (!EnvironmentHelper.IsWindows8OrBetter)
