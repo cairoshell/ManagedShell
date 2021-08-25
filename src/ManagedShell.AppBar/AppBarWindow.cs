@@ -26,6 +26,7 @@ namespace ManagedShell.AppBar
         public bool AllowClose;
         public bool IsClosing;
         protected double DesiredHeight;
+        protected double DesiredWidth;
         private bool EnableBlur;
 
         // AppBar properties
@@ -34,7 +35,7 @@ namespace ManagedShell.AppBar
         protected internal bool EnableAppBar = true;
         protected internal bool RequiresScreenEdge;
 
-        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, AppBarScreen screen, AppBarEdge edge, double height)
+        public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, AppBarScreen screen, AppBarEdge edge, double size)
         {
             _explorerHelper = explorerHelper;
             _fullScreenHelper = fullScreenHelper;
@@ -52,7 +53,15 @@ namespace ManagedShell.AppBar
 
             Screen = screen;
             AppBarEdge = edge;
-            DesiredHeight = height;
+
+            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            {
+                DesiredWidth = size;
+            }
+            else
+            {
+                DesiredHeight = size;
+            }
         }
 
         #region Events
@@ -142,7 +151,14 @@ namespace ManagedShell.AppBar
                 switch ((NativeMethods.AppBarNotifications)wParam.ToInt32())
                 {
                     case NativeMethods.AppBarNotifications.PosChanged:
-                        _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
+                        if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+                        {
+                            _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
+                        }
+                        else
+                        {
+                            _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
+                        }
                         break;
 
                     case NativeMethods.AppBarNotifications.WindowArrange:
@@ -235,7 +251,14 @@ namespace ManagedShell.AppBar
             }
             else if (EnableAppBar)
             {
-                _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
+                if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+                {
+                    _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
+                }
+                else
+                {
+                    _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
+                }
             }
         }
 
@@ -289,7 +312,16 @@ namespace ManagedShell.AppBar
 
         protected void RegisterAppBar()
         {
-            if (EnableAppBar && !_appBarManager.AppBars.Contains(this))
+            if (!EnableAppBar || _appBarManager.AppBars.Contains(this))
+            {
+                return;
+            }
+
+            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            {
+                AppBarMessageId = _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
+            }
+            else
             {
                 AppBarMessageId = _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
             }
@@ -297,7 +329,16 @@ namespace ManagedShell.AppBar
 
         protected void UnregisterAppBar()
         {
-            if (_appBarManager.AppBars.Contains(this))
+            if (!_appBarManager.AppBars.Contains(this))
+            {
+                return;
+            }
+
+            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            {
+                _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale);
+            }
+            else
             {
                 _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale);
             }
@@ -340,19 +381,37 @@ namespace ManagedShell.AppBar
                 edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
             }
 
-            // TODO: Handle left/right AppBar positioning and sizing
-            Left = Screen.Bounds.Left / DpiScale;
-            Width = Screen.Bounds.Width / DpiScale;
-            Height = DesiredHeight;
-
-            if (AppBarEdge == AppBarEdge.Top)
+            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
             {
-                Top = (Screen.Bounds.Top / DpiScale) + edgeOffset;
+                Top = Screen.Bounds.Top / DpiScale;
+                Height = Screen.Bounds.Height / DpiScale;
+                Width = DesiredWidth;
+
+                if (AppBarEdge == AppBarEdge.Left)
+                {
+                    Left = Screen.Bounds.Left / DpiScale + edgeOffset;
+                }
+                else
+                {
+                    Left = Screen.Bounds.Right / DpiScale - Width - edgeOffset;
+                }
             }
             else
             {
-                Top = Screen.Bounds.Bottom / DpiScale - Height - edgeOffset;
+                Left = Screen.Bounds.Left / DpiScale;
+                Width = Screen.Bounds.Width / DpiScale;
+                Height = DesiredHeight;
+
+                if (AppBarEdge == AppBarEdge.Top)
+                {
+                    Top = (Screen.Bounds.Top / DpiScale) + edgeOffset;
+                }
+                else
+                {
+                    Top = Screen.Bounds.Bottom / DpiScale - Height - edgeOffset;
+                }
             }
+            
 
             if (EnvironmentHelper.IsAppRunningAsShell)
             {

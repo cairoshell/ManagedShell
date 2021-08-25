@@ -145,6 +145,8 @@ namespace ManagedShell.AppBar
                 int right = ScreenHelper.PrimaryMonitorDeviceSize.Width;
                 int bottom = ScreenHelper.PrimaryMonitorDeviceSize.Height;
 
+                int edgeOffset = 0;
+
                 if (abWindow.Screen != null)
                 {
                     top = abWindow.Screen.Bounds.Y;
@@ -153,18 +155,23 @@ namespace ManagedShell.AppBar
                     bottom = abWindow.Screen.Bounds.Bottom;
                 }
 
+                if (!abWindow.RequiresScreenEdge)
+                {
+                    edgeOffset = Convert.ToInt32(GetAppBarEdgeWindowsHeight((AppBarEdge)abd.uEdge, abWindow.Screen));
+                }
+
                 if (abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right)
                 {
                     abd.rc.Top = top;
                     abd.rc.Bottom = bottom;
                     if (abd.uEdge == (int)AppBarEdge.Left)
                     {
-                        abd.rc.Left = left;
+                        abd.rc.Left = left + edgeOffset;
                         abd.rc.Right = abd.rc.Left + sWidth;
                     }
                     else
                     {
-                        abd.rc.Right = right;
+                        abd.rc.Right = right - edgeOffset;
                         abd.rc.Left = abd.rc.Right - sWidth;
                     }
                 }
@@ -174,28 +181,12 @@ namespace ManagedShell.AppBar
                     abd.rc.Right = right;
                     if (abd.uEdge == (int)AppBarEdge.Top)
                     {
-                        if (!abWindow.RequiresScreenEdge)
-                        {
-                            abd.rc.Top = top + Convert.ToInt32(GetAppBarEdgeWindowsHeight((AppBarEdge)abd.uEdge, abWindow.Screen));
-                        }
-                        else
-                        {
-                            abd.rc.Top = top;
-                        }
-
+                        abd.rc.Top = top + edgeOffset;
                         abd.rc.Bottom = abd.rc.Top + sHeight;
                     }
                     else
                     {
-                        if (!abWindow.RequiresScreenEdge)
-                        {
-                            abd.rc.Bottom = bottom - Convert.ToInt32(GetAppBarEdgeWindowsHeight((AppBarEdge)abd.uEdge, abWindow.Screen));
-                        }
-                        else
-                        {
-                            abd.rc.Bottom = bottom;
-                        }
-
+                        abd.rc.Bottom = bottom - edgeOffset;
                         abd.rc.Top = abd.rc.Bottom - sHeight;
                     }
                 }

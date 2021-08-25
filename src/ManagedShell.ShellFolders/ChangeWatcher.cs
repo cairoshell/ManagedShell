@@ -72,6 +72,11 @@ namespace ManagedShell.ShellFolders
 
         public void Dispose()
         {
+            if (_watchers == null)
+            {
+                return;
+            }
+
             foreach (var watcher in _watchers)
             {
                 if (watcher == null)
