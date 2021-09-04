@@ -3,6 +3,7 @@ using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
@@ -11,7 +12,7 @@ using Application = System.Windows.Application;
 
 namespace ManagedShell.AppBar
 {
-    public class AppBarWindow : Window
+    public class AppBarWindow : Window, INotifyPropertyChanged
     {
         protected readonly AppBarManager _appBarManager;
         protected readonly ExplorerHelper _explorerHelper;
@@ -32,7 +33,21 @@ namespace ManagedShell.AppBar
 
         // AppBar properties
         private int AppBarMessageId = -1;
-        public AppBarEdge AppBarEdge;
+
+        private AppBarEdge _appBarEdge;
+        public AppBarEdge AppBarEdge
+        {
+            get
+            {
+                return _appBarEdge;
+            }
+            set
+            {
+                _appBarEdge = value;
+                OnPropertyChanged();
+                OnPropertyChanged("Orientation");
+            }
+        }
         protected internal bool EnableAppBar = true;
         protected internal bool RequiresScreenEdge;
 
@@ -423,6 +438,14 @@ namespace ManagedShell.AppBar
             {
                 _appBarManager.SetWorkArea(Screen);
             }
+        }
+        #endregion
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }
