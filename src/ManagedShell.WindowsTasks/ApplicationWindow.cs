@@ -336,13 +336,19 @@ namespace ManagedShell.WindowsTasks
                 // UWP shell windows that are not cloaked should be hidden from the taskbar, too.
                 StringBuilder cName = new StringBuilder(256);
                 NativeMethods.GetClassName(Handle, cName, cName.Capacity);
-                if (cName.ToString() == "ApplicationFrameWindow" || cName.ToString() == "Windows.UI.Core.CoreWindow" || cName.ToString() == "Shell_CharmWindow" || cName.ToString() == "ImmersiveLauncher")
+                string className = cName.ToString();
+                if (className == "ApplicationFrameWindow" || className == "Windows.UI.Core.CoreWindow")
                 {
                     if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                     {
                         ShellLogger.Debug($"ApplicationWindow: Hiding UWP non-window {Title}");
                         return false;
                     }
+                }
+                else if (!EnvironmentHelper.IsWindows10OrBetter && (className == "ImmersiveBackgroundWindow" || className == "SearchPane" || className == "NativeHWNDHost" || className == "Shell_CharmWindow" || className == "ImmersiveLauncher") && WinFileName.ToLower().Contains("explorer.exe"))
+                {
+                    ShellLogger.Debug($"ApplicationWindow: Hiding immersive shell window {Title}");
+                    return false;
                 }
             }
 

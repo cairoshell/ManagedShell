@@ -3,14 +3,16 @@ using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using System;
 using System.ComponentModel;
+using System.Runtime.CompilerServices;
 using System.Windows;
+using System.Windows.Controls;
 using System.Windows.Interop;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
 
 namespace ManagedShell.AppBar
 {
-    public class AppBarWindow : Window
+    public class AppBarWindow : Window, INotifyPropertyChanged
     {
         protected readonly AppBarManager _appBarManager;
         protected readonly ExplorerHelper _explorerHelper;
@@ -31,9 +33,28 @@ namespace ManagedShell.AppBar
 
         // AppBar properties
         private int AppBarMessageId = -1;
-        public AppBarEdge AppBarEdge;
+
+        private AppBarEdge _appBarEdge;
+        public AppBarEdge AppBarEdge
+        {
+            get
+            {
+                return _appBarEdge;
+            }
+            set
+            {
+                _appBarEdge = value;
+                OnPropertyChanged();
+                OnPropertyChanged("Orientation");
+            }
+        }
         protected internal bool EnableAppBar = true;
         protected internal bool RequiresScreenEdge;
+
+        public Orientation Orientation
+        {
+            get => (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right) ? Orientation.Vertical : Orientation.Horizontal;
+        }
 
         public AppBarWindow(AppBarManager appBarManager, ExplorerHelper explorerHelper, FullScreenHelper fullScreenHelper, AppBarScreen screen, AppBarEdge edge, double size)
         {
@@ -54,7 +75,7 @@ namespace ManagedShell.AppBar
             Screen = screen;
             AppBarEdge = edge;
 
-            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            if (Orientation == Orientation.Vertical)
             {
                 DesiredWidth = size;
             }
@@ -151,7 +172,7 @@ namespace ManagedShell.AppBar
                 switch ((NativeMethods.AppBarNotifications)wParam.ToInt32())
                 {
                     case NativeMethods.AppBarNotifications.PosChanged:
-                        if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+                        if (Orientation == Orientation.Vertical)
                         {
                             _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
                         }
@@ -251,7 +272,7 @@ namespace ManagedShell.AppBar
             }
             else if (EnableAppBar)
             {
-                if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+                if (Orientation == Orientation.Vertical)
                 {
                     _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
                 }
@@ -317,7 +338,7 @@ namespace ManagedShell.AppBar
                 return;
             }
 
-            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            if (Orientation == Orientation.Vertical)
             {
                 AppBarMessageId = _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
             }
@@ -334,7 +355,7 @@ namespace ManagedShell.AppBar
                 return;
             }
 
-            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            if (Orientation == Orientation.Vertical)
             {
                 _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale);
             }
@@ -381,7 +402,7 @@ namespace ManagedShell.AppBar
                 edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
             }
 
-            if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Right)
+            if (Orientation == Orientation.Vertical)
             {
                 Top = Screen.Bounds.Top / DpiScale;
                 Height = Screen.Bounds.Height / DpiScale;
@@ -417,6 +438,14 @@ namespace ManagedShell.AppBar
             {
                 _appBarManager.SetWorkArea(Screen);
             }
+        }
+        #endregion
+
+        #region INotifyPropertyChanged
+        public event PropertyChangedEventHandler PropertyChanged;
+        private void OnPropertyChanged([CallerMemberName] string propertyName = "")
+        {
+            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
         }
         #endregion
     }
