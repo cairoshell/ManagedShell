@@ -401,10 +401,11 @@ namespace ManagedShell.WindowsTray
         }
         #endregion
 
-        // The notification area control calls this when an icon is clicked to set the placement of its host for ABM_GETTASKBARPOS usage
+        // The notification area control calls this when an icon is clicked to set the placement of its host (such as for ABM_GETTASKBARPOS usage)
         public void SetTrayHostSizeData(TrayHostSizeData data)
         {
             trayHostSizeData = data;
+            _trayService?.SetTrayHostSizeData(trayHostSizeData);
         }
 
         public void Dispose()
