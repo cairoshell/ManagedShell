@@ -93,6 +93,12 @@ namespace ManagedShell.WindowsTray
             }
         }
 
+        internal void SetTrayHostSizeData(TrayHostSizeData data)
+        {
+            SetWindowPos(HwndTray, IntPtr.Zero, data.rc.Left, data.rc.Top, data.rc.Width, data.rc.Height, (int)SetWindowPosFlags.SWP_NOACTIVATE | (int)SetWindowPosFlags.SWP_NOZORDER);
+            SetWindowPos(HwndNotify, IntPtr.Zero, data.rc.Left, data.rc.Top, data.rc.Width, data.rc.Height, (int)SetWindowPosFlags.SWP_NOACTIVATE | (int)SetWindowPosFlags.SWP_NOZORDER);
+        }
+
         private void SendTaskbarCreated()
         {
             int msg = RegisterWindowMessage("TaskbarCreated");
