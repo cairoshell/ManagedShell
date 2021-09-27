@@ -406,6 +406,11 @@ namespace ManagedShell.WindowsTray
 
         private void handleBalloonData(SafeNotifyIconData nicData, NotifyIcon notifyIcon)
         {
+            if (string.IsNullOrEmpty(nicData.szInfoTitle))
+            {
+                return;
+            }
+
             NotificationBalloonInfo balloonInfo = new NotificationBalloonInfo(nicData);
             NotificationBalloonEventArgs args = new NotificationBalloonEventArgs
             {
