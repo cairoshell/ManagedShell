@@ -191,6 +191,23 @@ namespace ManagedShell.WindowsTray
             }
         }
 
+        #region Balloon Notifications
+
+        public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
+
+        internal void TriggerNotificationBalloon(NotificationBalloonInfo balloonInfo)
+        {
+            NotificationBalloonEventArgs args = new NotificationBalloonEventArgs
+            {
+                BalloonInfo = balloonInfo,
+                NotifyIcon = this
+            };
+
+            NotificationBalloonShown?.Invoke(this, args);
+        }
+
+        #endregion
+
         #region Pinning
 
         public void Pin()

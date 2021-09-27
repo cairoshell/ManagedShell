@@ -38,6 +38,8 @@ namespace ManagedShell.WindowsTray
         public IntPtr Handle { get; private set; }
         public bool IsFailed { get; private set; }
 
+        public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
+
         private SystrayDelegate trayDelegate;
         private IconDataDelegate iconDataDelegate;
         private TrayHostSizeDelegate trayHostSizeDelegate;
@@ -289,24 +291,16 @@ namespace ManagedShell.WindowsTray
                         {
                             if (nicData.hIcon != IntPtr.Zero)
                             {
-                                try
-                                {
-                                    System.Windows.Media.Imaging.BitmapSource bs =
-                                        System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
-                                            nicData.hIcon, Int32Rect.Empty,
-                                            System.Windows.Media.Imaging.BitmapSizeOptions.FromEmptyOptions());
-                                    DestroyIcon(nicData.hIcon);
+                                System.Windows.Media.ImageSource icon = IconImageConverter.GetImageFromHIcon(nicData.hIcon, false);
 
-                                    if (bs != null)
-                                    {
-                                        bs.Freeze();
-                                        trayIcon.Icon = bs;
-                                    }
-                                }
-                                catch
+                                if (icon != null)
                                 {
-                                    if (trayIcon.Icon == null)
-                                        trayIcon.Icon = IconImageConverter.GetDefaultIcon();
+                                    trayIcon.Icon = icon;
+                                }
+                                else if (icon == null && trayIcon.Icon == null)
+                                {
+                                    // Use default only if we don't have a valid icon already
+                                    trayIcon.Icon = IconImageConverter.GetDefaultIcon();
                                 }
                             }
                             else
@@ -340,6 +334,10 @@ namespace ManagedShell.WindowsTray
                                 trayIcon.Icon = IconImageConverter.GetDefaultIcon();
 
                             TrayIcons.Add(trayIcon);
+
+                            if ((NIF.INFO & nicData.uFlags) != 0)
+                                handleBalloonData(nicData, trayIcon);
+
                             ShellLogger.Debug($"NotificationArea: Added: {trayIcon.Title} Path: {trayIcon.Path} Hidden: {trayIcon.IsHidden} GUID: {trayIcon.GUID} UID: {trayIcon.UID} Version: {trayIcon.Version}");
 
                             if ((NIM)message == NIM.NIM_MODIFY)
@@ -349,7 +347,12 @@ namespace ManagedShell.WindowsTray
                             }
                         }
                         else
+                        {
+                            if ((NIF.INFO & nicData.uFlags) != 0)
+                                handleBalloonData(nicData, trayIcon);
+
                             ShellLogger.Debug($"NotificationArea: Modified: {trayIcon.Title}");
+                        }
                     }
                     catch (Exception ex)
                     {
@@ -400,6 +403,21 @@ namespace ManagedShell.WindowsTray
             return true;
         }
         #endregion
+
+        private void handleBalloonData(SafeNotifyIconData nicData, NotifyIcon notifyIcon)
+        {
+            NotificationBalloonInfo balloonInfo = new NotificationBalloonInfo(nicData);
+            NotificationBalloonEventArgs args = new NotificationBalloonEventArgs
+            {
+                BalloonInfo = balloonInfo,
+                NotifyIcon = notifyIcon
+            };
+
+            notifyIcon.TriggerNotificationBalloon(balloonInfo);
+            NotificationBalloonShown?.Invoke(this, args);
+
+            ShellLogger.Debug($"NotificationArea: Received notification \"{balloonInfo.Title}\" for {notifyIcon.Title}");
+        }
 
         // The notification area control calls this when an icon is clicked to set the placement of its host (such as for ABM_GETTASKBARPOS usage)
         public void SetTrayHostSizeData(TrayHostSizeData data)
