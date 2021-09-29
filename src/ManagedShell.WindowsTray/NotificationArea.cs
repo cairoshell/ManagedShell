@@ -411,17 +411,16 @@ namespace ManagedShell.WindowsTray
                 return;
             }
 
-            NotificationBalloonInfo balloonInfo = new NotificationBalloonInfo(nicData);
+            NotificationBalloon balloonInfo = new NotificationBalloon(nicData, notifyIcon);
             NotificationBalloonEventArgs args = new NotificationBalloonEventArgs
             {
-                BalloonInfo = balloonInfo,
-                NotifyIcon = notifyIcon
+                Balloon = balloonInfo
             };
+
+            ShellLogger.Debug($"NotificationArea: Received notification \"{balloonInfo.Title}\" for {notifyIcon.Title}");
 
             notifyIcon.TriggerNotificationBalloon(balloonInfo);
             NotificationBalloonShown?.Invoke(this, args);
-
-            ShellLogger.Debug($"NotificationArea: Received notification \"{balloonInfo.Title}\" for {notifyIcon.Title}");
         }
 
         // The notification area control calls this when an icon is clicked to set the placement of its host (such as for ABM_GETTASKBARPOS usage)

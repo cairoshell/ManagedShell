@@ -8,7 +8,7 @@ using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.WindowsTray
 {
-    public class NotificationBalloonInfo
+    public class NotificationBalloon
     {
         public string Info { get; internal set; }
 
@@ -20,10 +20,14 @@ namespace ManagedShell.WindowsTray
 
         public int Timeout { get; internal set; }
 
-        public NotificationBalloonInfo() { }
+        public readonly NotifyIcon NotifyIcon;
 
-        public NotificationBalloonInfo(SafeNotifyIconData nicData)
+        public NotificationBalloon() { }
+
+        public NotificationBalloon(SafeNotifyIconData nicData, NotifyIcon notifyIcon)
         {
+            NotifyIcon = notifyIcon;
+
             Title = nicData.szInfoTitle;
             Info = nicData.szInfo;
             Flags = nicData.dwInfoFlags;
@@ -52,6 +56,29 @@ namespace ManagedShell.WindowsTray
             {
                 Icon = GetSystemIcon(SystemIcons.Error.Handle);
             }
+        }
+
+        public void SetVisibility(BalloonVisibility visibility)
+        {
+            switch (visibility)
+            {
+                case BalloonVisibility.Visible:
+                    NotifyIcon.SendMessage((uint)NIN.BALLOONSHOW, 0);
+                    break;
+                case BalloonVisibility.Hidden:
+                    NotifyIcon.SendMessage((uint)NIN.BALLOONHIDE, 0);
+                    break;
+                case BalloonVisibility.TimedOut:
+                    NotifyIcon.SendMessage((uint)NIN.BALLOONTIMEOUT, 0);
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        public void Click()
+        {
+            NotifyIcon.SendMessage((uint)NIN.BALLOONUSERCLICK, 0);
         }
 
         private void SetIconFromHIcon(IntPtr hIcon)

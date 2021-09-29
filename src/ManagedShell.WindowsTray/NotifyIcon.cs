@@ -195,12 +195,11 @@ namespace ManagedShell.WindowsTray
 
         public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
 
-        internal void TriggerNotificationBalloon(NotificationBalloonInfo balloonInfo)
+        internal void TriggerNotificationBalloon(NotificationBalloon balloonInfo)
         {
             NotificationBalloonEventArgs args = new NotificationBalloonEventArgs
             {
-                BalloonInfo = balloonInfo,
-                NotifyIcon = this
+                Balloon = balloonInfo
             };
 
             NotificationBalloonShown?.Invoke(this, args);
@@ -282,36 +281,25 @@ namespace ManagedShell.WindowsTray
         {
             if (RemoveIfInvalid()) return;
 
-            uint wparam = GetMessageWParam(mouse);
-            uint hiWord = GetMessageHiWord();
+            SendMessage((uint)WM.MOUSEHOVER, mouse);
 
-            SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.MOUSEHOVER | (hiWord << 16));
-
-            if (Version > 3)
-                SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_POPUPOPEN | (hiWord << 16));
+            if (Version > 3) SendMessage((uint)NIN.POPUPOPEN, mouse);
         }
 
         public void IconMouseLeave(uint mouse)
         {
             if (RemoveIfInvalid()) return;
 
-            uint wparam = GetMessageWParam(mouse);
-            uint hiWord = GetMessageHiWord();
+            SendMessage((uint)WM.MOUSELEAVE, mouse);
 
-            SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.MOUSELEAVE | (hiWord << 16));
-
-            if (Version > 3)
-                SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_POPUPCLOSE | (hiWord << 16));
+            if (Version > 3) SendMessage((uint)NIN.POPUPCLOSE, mouse);
         }
 
         public void IconMouseMove(uint mouse)
         {
             if (RemoveIfInvalid()) return;
 
-            uint wparam = GetMessageWParam(mouse);
-            uint hiWord = GetMessageHiWord();
-
-            SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.MOUSEMOVE | (hiWord << 16));
+            SendMessage((uint)WM.MOUSEMOVE, mouse);
         }
 
         public void IconMouseDown(MouseButton button, uint mouse, int doubleClickTime)
@@ -320,18 +308,15 @@ namespace ManagedShell.WindowsTray
             GetWindowThreadProcessId(HWnd, out uint procId);
             AllowSetForegroundWindow(procId);
 
-            uint wparam = GetMessageWParam(mouse);
-            uint hiWord = GetMessageHiWord();
-
             if (button == MouseButton.Left)
             {
                 if (DateTime.Now.Subtract(_lastLClick).TotalMilliseconds <= doubleClickTime)
                 {
-                    SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONDBLCLK | (hiWord << 16));
+                    SendMessage((uint)WM.LBUTTONDBLCLK, mouse);
                 }
                 else
                 {
-                    SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONDOWN | (hiWord << 16));
+                    SendMessage((uint)WM.LBUTTONDOWN, mouse);
                 }
 
                 _lastLClick = DateTime.Now;
@@ -340,11 +325,11 @@ namespace ManagedShell.WindowsTray
             {
                 if (DateTime.Now.Subtract(_lastRClick).TotalMilliseconds <= doubleClickTime)
                 {
-                    SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONDBLCLK | (hiWord << 16));
+                    SendMessage((uint)WM.RBUTTONDBLCLK, mouse);
                 }
                 else
                 {
-                    SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONDOWN | (hiWord << 16));
+                    SendMessage((uint)WM.RBUTTONDOWN, mouse);
                 }
 
                 _lastRClick = DateTime.Now;
@@ -355,27 +340,29 @@ namespace ManagedShell.WindowsTray
         {
             ShellLogger.Debug($"NotifyIcon: {button} mouse button clicked: {Title}");
 
-            uint wparam = GetMessageWParam(mouse);
-            uint hiWord = GetMessageHiWord();
-
             if (button == MouseButton.Left)
             {
-                SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.LBUTTONUP | (hiWord << 16));
+                SendMessage((uint)WM.LBUTTONUP, mouse);
 
                 // This is documented as version 4, but Explorer does this for version 3 as well
-                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, NIN_SELECT | (hiWord << 16));
+                if (Version >= 3) SendMessage((uint)NIN.SELECT, mouse);
 
                 _lastLClick = DateTime.Now;
             }
             else if (button == MouseButton.Right)
             {
-                SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.RBUTTONUP | (hiWord << 16));
+                SendMessage((uint)WM.RBUTTONUP, mouse);
 
                 // This is documented as version 4, but Explorer does this for version 3 as well
-                if (Version >= 3) SendNotifyMessage(HWnd, CallbackMessage, wparam, (uint)WM.CONTEXTMENU | (hiWord << 16));
+                if (Version >= 3) SendMessage((uint)WM.CONTEXTMENU, mouse);
 
                 _lastRClick = DateTime.Now;
             }
+        }
+
+        internal bool SendMessage(uint message, uint mouse)
+        {
+            return SendNotifyMessage(HWnd, CallbackMessage, GetMessageWParam(mouse), message | (GetMessageHiWord() << 16));
         }
 
         private uint GetMessageHiWord()

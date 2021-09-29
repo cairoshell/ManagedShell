@@ -1,10 +1,9 @@
-﻿using System;
+﻿using System.ComponentModel;
 
 namespace ManagedShell.WindowsTray
 {
-    public class NotificationBalloonEventArgs : EventArgs
+    public class NotificationBalloonEventArgs : HandledEventArgs
     {
-        public NotificationBalloonInfo BalloonInfo;
-        public NotifyIcon NotifyIcon;
+        public NotificationBalloon Balloon;
     }
 }

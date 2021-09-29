@@ -239,9 +239,16 @@ namespace ManagedShell.Interop
         [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
         public static extern int SHFileOperation(ref SHFILEOPSTRUCT FileOp);
 
-        public const uint NIN_SELECT = 0x400;
-        public const uint NIN_POPUPOPEN = 0x406;
-        public const uint NIN_POPUPCLOSE = 0x407;
+        public enum NIN : uint
+        {
+            SELECT = 0x400,
+            BALLOONSHOW = 0x402,
+            BALLOONHIDE = 0x403,
+            BALLOONTIMEOUT = 0x404,
+            BALLOONUSERCLICK = 0x405,
+            POPUPOPEN = 0x406,
+            POPUPCLOSE = 0x407,
+        }
 
         /// <summary>
         /// Numerical values of the NIM_* messages represented as an enumeration.
