@@ -1,4 +1,5 @@
 ﻿using ManagedShell.Common.Helpers;
+using ManagedShell.Common.Logging;
 using System;
 using System.Drawing;
 using System.Windows;
@@ -63,6 +64,12 @@ namespace ManagedShell.WindowsTray
 
         public void SetVisibility(BalloonVisibility visibility)
         {
+            if (NotifyIcon == null)
+            {
+                ShellLogger.Error("NotificationBalloon: NotifyIcon is null");
+                return;
+            }
+
             switch (visibility)
             {
                 case BalloonVisibility.Visible:
@@ -81,6 +88,12 @@ namespace ManagedShell.WindowsTray
 
         public void Click()
         {
+            if (NotifyIcon == null)
+            {
+                ShellLogger.Error("NotificationBalloon: NotifyIcon is null");
+                return;
+            }
+
             NotifyIcon.SendMessage((uint)NIN.BALLOONUSERCLICK, 0);
         }
 
