@@ -39,6 +39,10 @@ namespace ManagedShell.Common.Helpers
                             soundPlayer.Play();
                         }
                     }
+                    else
+                    {
+                        ShellLogger.Error($"SoundHelper: Missing file for sound {name} for app {app}");
+                    }
                 }
             }
             catch (Exception e)
