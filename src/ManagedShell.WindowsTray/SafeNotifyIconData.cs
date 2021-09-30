@@ -18,7 +18,7 @@ namespace ManagedShell.WindowsTray
         public string szInfo;
         public uint uVersion;  // used with NIM_SETVERSION, values 0, 3 and 4
         public string szInfoTitle;
-        public uint dwInfoFlags;
+        public NIIF dwInfoFlags;
         public Guid guidItem;
         public uint hBalloonIcon;
 

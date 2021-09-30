@@ -239,9 +239,16 @@ namespace ManagedShell.Interop
         [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
         public static extern int SHFileOperation(ref SHFILEOPSTRUCT FileOp);
 
-        public const uint NIN_SELECT = 0x400;
-        public const uint NIN_POPUPOPEN = 0x406;
-        public const uint NIN_POPUPCLOSE = 0x407;
+        public enum NIN : uint
+        {
+            SELECT = 0x400,
+            BALLOONSHOW = 0x402,
+            BALLOONHIDE = 0x403,
+            BALLOONTIMEOUT = 0x404,
+            BALLOONUSERCLICK = 0x405,
+            POPUPOPEN = 0x406,
+            POPUPCLOSE = 0x407,
+        }
 
         /// <summary>
         /// Numerical values of the NIM_* messages represented as an enumeration.
@@ -301,6 +308,28 @@ namespace ManagedShell.Interop
         }
 
         /// <summary>
+        /// Notify icon info balloon flags
+        /// </summary>
+        [Flags]
+        public enum NIIF : uint
+        {
+            NONE = 0x00000000,
+            INFO = 0x00000001,
+            WARNING = 0x00000002,
+            ERROR = 0x00000003,
+            /// <summary>Use app-provided icon in the balloon. XP SP2 and later.</summary>
+            USER = 0x00000004,
+            /// <summary>XP and later.</summary>
+            NOSOUND = 0x00000010,
+            /// <summary>Vista and later.</summary>
+            LARGE_ICON = 0x00000020,
+            /// <summary>Windows 7 and later</summary>
+            NIIF_RESPECT_QUIET_TIME = 0x00000080,
+            /// <summary>Reserved. XP and later.</summary>
+            ICON_MASK = 0x0000000F,
+        }
+
+        /// <summary>
         /// Notify icon data structure type
         /// </summary>
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Unicode)]
@@ -321,7 +350,7 @@ namespace ManagedShell.Interop
             public uint uVersion;  // used with NIM_SETVERSION, values 0, 3 and 4
             [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 64)]
             public string szInfoTitle;
-            public uint dwInfoFlags;
+            public NIIF dwInfoFlags;
             public Guid guidItem;
             public uint hBalloonIcon;
         }
