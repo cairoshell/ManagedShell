@@ -20,6 +20,8 @@ namespace ManagedShell.WindowsTray
 
         public int Timeout { get; internal set; }
 
+        public DateTime Received { get; internal set; }
+
         public readonly NotifyIcon NotifyIcon;
 
         public NotificationBalloon() { }
@@ -32,6 +34,7 @@ namespace ManagedShell.WindowsTray
             Info = nicData.szInfo;
             Flags = nicData.dwInfoFlags;
             Timeout = (int)nicData.uVersion;
+            Received = DateTime.Now;
 
             if ((NIIF.USER & Flags) != 0)
             {

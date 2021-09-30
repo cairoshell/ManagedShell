@@ -7,6 +7,7 @@ using static ManagedShell.Interop.NativeMethods;
 using ManagedShell.Common.Logging;
 using System.Collections.Generic;
 using System.Linq;
+using System.Collections.ObjectModel;
 
 namespace ManagedShell.WindowsTray
 {
@@ -33,6 +34,7 @@ namespace ManagedShell.WindowsTray
         {
             _notificationArea = notificationArea;
             HWnd = hWnd;
+            MissedNotifications = new ObservableCollection<NotificationBalloon>();
         }
 
         private ImageSource _icon;
@@ -193,6 +195,12 @@ namespace ManagedShell.WindowsTray
 
         #region Balloon Notifications
 
+        public ObservableCollection<NotificationBalloon> MissedNotifications
+        {
+            get;
+            set;
+        }
+
         public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
 
         internal void TriggerNotificationBalloon(NotificationBalloon balloonInfo)
@@ -203,6 +211,11 @@ namespace ManagedShell.WindowsTray
             };
 
             NotificationBalloonShown?.Invoke(this, args);
+
+            if (!args.Handled)
+            {
+                MissedNotifications.Add(balloonInfo);
+            }
         }
 
         #endregion
