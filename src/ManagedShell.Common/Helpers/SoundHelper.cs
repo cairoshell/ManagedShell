@@ -1,20 +1,26 @@
 ﻿using ManagedShell.Common.Logging;
 using Microsoft.Win32;
 using System;
-using System.Media;
+using System.Runtime.InteropServices;
 
 namespace ManagedShell.Common.Helpers
 {
     public class SoundHelper
     {
         private const string SYSTEM_SOUND_ROOT_KEY = @"AppEvents\Schemes\Apps";
+        private const int SND_FILENAME = 0x00020000;
+        private const int SND_ASYNC = 0x0001;
+        private const long SND_SYSTEM = 0x00200000L;
+
+        [DllImport("winmm.dll", SetLastError = true, CharSet = CharSet.Auto)]
+        private static extern bool PlaySound(string pszSound, IntPtr hmod, uint fdwSound);
 
         /// <summary>
-        /// Plays the specified system sound.
+        /// Plays the specified system sound using the audio session for system notification sounds.
         /// </summary>
         /// <param name="app">The name of the app that the sound belongs to. For example, ".Default" contains system sounds, "Explorer" contains Explorer sounds.</param>
         /// <param name="name">The name of the system sound to play.</param>
-        public static void PlaySystemSound(string app, string name)
+        public static bool PlaySystemSound(string app, string name)
         {
             try
             {
@@ -23,7 +29,7 @@ namespace ManagedShell.Common.Helpers
                     if (key == null)
                     {
                         ShellLogger.Error($"SoundHelper: Unable to find sound {name} for app {app}");
-                        return;
+                        return false;
                     }
 
                     if (key.GetValue(null) is string soundFileName)
@@ -31,23 +37,22 @@ namespace ManagedShell.Common.Helpers
                         if (string.IsNullOrEmpty(soundFileName))
                         {
                             ShellLogger.Error($"SoundHelper: Missing file for sound {name} for app {app}");
-                            return;
+                            return false;
                         }
 
-                        using (SoundPlayer soundPlayer = new SoundPlayer(soundFileName))
-                        {
-                            soundPlayer.Play();
-                        }
+                        return PlaySound(soundFileName, IntPtr.Zero, (uint)(SND_ASYNC | SND_FILENAME | SND_SYSTEM));
                     }
                     else
                     {
                         ShellLogger.Error($"SoundHelper: Missing file for sound {name} for app {app}");
+                        return false;
                     }
                 }
             }
             catch (Exception e)
             {
                 ShellLogger.Error($"SoundHelper: Unable to play sound {name} for app {app}: {e.Message}");
+                return false;
             }
         }
 
@@ -56,11 +61,7 @@ namespace ManagedShell.Common.Helpers
         /// </summary>
         public static void PlayNotificationSound()
         {
-            if (EnvironmentHelper.IsWindows8OrBetter)
-            {
-                PlaySystemSound(".Default", "Notification.Default");
-            }
-            else
+            if (!PlaySystemSound("Explorer", "SystemNotification"))
             {
                 PlaySystemSound(".Default", "SystemNotification");
             }
