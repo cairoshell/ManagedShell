@@ -8,6 +8,7 @@ using ManagedShell.Common.Logging;
 using System.Collections.Generic;
 using System.Linq;
 using System.Collections.ObjectModel;
+using ManagedShell.Common.Helpers;
 
 namespace ManagedShell.WindowsTray
 {
@@ -17,7 +18,6 @@ namespace ManagedShell.WindowsTray
     public class NotifyIcon : IEquatable<NotifyIcon>, INotifyPropertyChanged
     {
         private readonly NotificationArea _notificationArea;
-
 
         /// <summary>
         /// Initializes a new instance of the TrayIcon class with no hwnd.
@@ -323,6 +323,11 @@ namespace ManagedShell.WindowsTray
 
             if (button == MouseButton.Left)
             {
+                if (handleClickOverride(false))
+                {
+                    return;
+                }
+
                 if (DateTime.Now.Subtract(_lastLClick).TotalMilliseconds <= doubleClickTime)
                 {
                     SendMessage((uint)WM.LBUTTONDBLCLK, mouse);
@@ -355,6 +360,11 @@ namespace ManagedShell.WindowsTray
 
             if (button == MouseButton.Left)
             {
+                if (handleClickOverride(true))
+                {
+                    return;
+                }
+
                 SendMessage((uint)WM.LBUTTONUP, mouse);
 
                 // This is documented as version 4, but Explorer does this for version 3 as well
@@ -403,6 +413,21 @@ namespace ManagedShell.WindowsTray
             if (!IsWindow(HWnd))
             {
                 _notificationArea.TrayIcons.Remove(this);
+                return true;
+            }
+
+            return false;
+        }
+
+        private bool handleClickOverride(bool performAction)
+        {
+            if (NotificationArea.Win11ActionCenterIcons.Contains(GUID.ToString()) && EnvironmentHelper.IsWindows11OrBetter)
+            {
+                if (performAction)
+                {
+                    ShellHelper.ShowActionCenter();
+                }
+
                 return true;
             }
 

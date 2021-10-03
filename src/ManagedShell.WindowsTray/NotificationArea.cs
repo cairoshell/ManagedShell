@@ -2,6 +2,7 @@
 using ManagedShell.Common.Logging;
 using ManagedShell.Interop;
 using System;
+using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
@@ -23,6 +24,13 @@ namespace ManagedShell.WindowsTray
             HEALTH_GUID,
             POWER_GUID,
             NETWORK_GUID,
+            VOLUME_GUID
+        };
+
+        internal static readonly List<string> Win11ActionCenterIcons = new List<string>()
+        {
+            NETWORK_GUID,
+            POWER_GUID,
             VOLUME_GUID
         };
 

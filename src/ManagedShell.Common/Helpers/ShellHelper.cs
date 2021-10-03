@@ -267,6 +267,16 @@ namespace ManagedShell.Common.Helpers
             ShellKeyCombo(VK_LWIN, 0x41);
         }
 
+        public static void ShowNotificationCenter()
+        {
+            if (!EnvironmentHelper.IsWindows11OrBetter)
+            {
+                return;
+            }
+
+            ShellKeyCombo(VK_LWIN, 0x4E);
+        }
+
         public static void ShowStartMenu()
         {
             ShellKeyCombo(VK_LWIN, VK_LWIN);
