@@ -61,10 +61,25 @@ namespace ManagedShell.Common.Helpers
         /// </summary>
         public static void PlayNotificationSound()
         {
+            // System default sound for the classic notification balloon.
             if (!PlaySystemSound("Explorer", "SystemNotification"))
             {
-                PlaySystemSound(".Default", "SystemNotification");
+                if (EnvironmentHelper.IsWindows8OrBetter)
+                {
+                    // Toast notification sound.
+                    if (!PlaySystemSound(".Default", "Notification.Default"))
+                        PlayXPNotificationSound();
+                }
+                else
+                {
+                    PlayXPNotificationSound();
+                }
             }
+        }
+
+        public static bool PlayXPNotificationSound()
+        {
+            return PlaySystemSound(".Default", "SystemNotification");
         }
     }
 }
