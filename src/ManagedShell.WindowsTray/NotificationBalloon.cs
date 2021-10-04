@@ -37,30 +37,28 @@ namespace ManagedShell.WindowsTray
             Timeout = (int)nicData.uVersion;
             Received = DateTime.Now;
 
-            switch (Flags)
+            if (Flags.HasFlag(NIIF.ERROR))
             {
-                case NIIF.USER:
-                    if (nicData.hBalloonIcon != 0)
-                    {
-                        SetIconFromHIcon((IntPtr)nicData.hBalloonIcon);
-                    }
-                    else if (nicData.hIcon != IntPtr.Zero)
-                    {
-                        SetIconFromHIcon(nicData.hIcon);
-                    }
-                    break;
-
-                case NIIF.INFO:
-                    Icon = GetSystemIcon(SystemIcons.Information.Handle);
-                    break;
-
-                case NIIF.WARNING:
-                    Icon = GetSystemIcon(SystemIcons.Warning.Handle);
-                    break;
-
-                case NIIF.ERROR:
-                    Icon = GetSystemIcon(SystemIcons.Error.Handle);
-                    break;
+                Icon = GetSystemIcon(SystemIcons.Error.Handle);
+            }
+            else if (Flags.HasFlag(NIIF.INFO))
+            {
+                Icon = GetSystemIcon(SystemIcons.Information.Handle);
+            }
+            else if (Flags.HasFlag(NIIF.WARNING))
+            {
+                Icon = GetSystemIcon(SystemIcons.Warning.Handle);
+            }
+            else if (Flags.HasFlag(NIIF.USER))
+            {
+                if (nicData.hBalloonIcon != 0)
+                {
+                    SetIconFromHIcon((IntPtr)nicData.hBalloonIcon);
+                }
+                else if (nicData.hIcon != IntPtr.Zero)
+                {
+                    SetIconFromHIcon(nicData.hIcon);
+                }
             }
         }
 
