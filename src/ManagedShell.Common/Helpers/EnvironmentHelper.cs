@@ -96,6 +96,19 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        public static bool IsWindows11OrBetter
+        {
+            get
+            {
+                if (osVersionMajor == 0)
+                {
+                    getOSVersion();
+                }
+
+                return (osVersionMajor >= 10 && osVersionBuild >= 22000);
+            }
+        }
+
         public static bool IsWindows10DarkModeSupported
         {
             get
@@ -111,7 +124,7 @@ namespace ManagedShell.Common.Helpers
                 }
 
                 // This has an upper-bound due to the volatility of the undocumented dark mode API
-                return (osVersionMajor >= 10 && osVersionBuild >= 18362 && osVersionBuild <= 19043);
+                return (osVersionMajor >= 10 && osVersionBuild >= 18362 && osVersionBuild <= 22000);
             }
         }
 

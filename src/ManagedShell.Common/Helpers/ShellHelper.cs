@@ -259,22 +259,32 @@ namespace ManagedShell.Common.Helpers
 
         public static void ShowWindowSwitcher()
         {
-            ShellKeyCombo(VK_LWIN, VK_TAB);
+            ShellKeyCombo(VK.LWIN, VK.TAB);
         }
 
         public static void ShowActionCenter()
         {
-            ShellKeyCombo(VK_LWIN, 0x41);
+            ShellKeyCombo(VK.LWIN, VK.KEY_A);
+        }
+
+        public static void ShowNotificationCenter()
+        {
+            if (!EnvironmentHelper.IsWindows11OrBetter)
+            {
+                return;
+            }
+
+            ShellKeyCombo(VK.LWIN, VK.KEY_N);
         }
 
         public static void ShowStartMenu()
         {
-            ShellKeyCombo(VK_LWIN, VK_LWIN);
+            ShellKeyCombo(VK.LWIN, VK.LWIN);
         }
 
         public static void ShowStartContextMenu()
         {
-            ShellKeyCombo(VK_LWIN, 0x58);
+            ShellKeyCombo(VK.LWIN, VK.KEY_X);
         }
 
         /// <summary>
@@ -493,7 +503,7 @@ namespace ManagedShell.Common.Helpers
             return (info.dwStyle & 0x10000000) == 0x10000000;
         }
 
-        private static void ShellKeyCombo(ushort wVk_1, ushort wVk_2)
+        private static void ShellKeyCombo(VK wVk_1, VK wVk_2)
         {
             INPUT[] inputs = new INPUT[4];
 
@@ -501,25 +511,25 @@ namespace ManagedShell.Common.Helpers
             inputs[0].mkhi.ki.time = 0;
             inputs[0].mkhi.ki.wScan = 0;
             inputs[0].mkhi.ki.dwExtraInfo = GetMessageExtraInfo();
-            inputs[0].mkhi.ki.wVk = wVk_1;
+            inputs[0].mkhi.ki.wVk = (ushort)wVk_1;
             inputs[0].mkhi.ki.dwFlags = 0;
 
             inputs[1].type = INPUT_KEYBOARD;
             inputs[1].mkhi.ki.wScan = 0;
             inputs[1].mkhi.ki.dwExtraInfo = GetMessageExtraInfo();
-            inputs[1].mkhi.ki.wVk = wVk_2;
+            inputs[1].mkhi.ki.wVk = (ushort)wVk_2;
             inputs[1].mkhi.ki.dwFlags = 0;
 
             inputs[2].type = INPUT_KEYBOARD;
             inputs[2].mkhi.ki.wScan = 0;
             inputs[2].mkhi.ki.dwExtraInfo = GetMessageExtraInfo();
-            inputs[2].mkhi.ki.wVk = wVk_2;
+            inputs[2].mkhi.ki.wVk = (ushort)wVk_2;
             inputs[2].mkhi.ki.dwFlags = KEYEVENTF_KEYUP;
 
             inputs[3].type = INPUT_KEYBOARD;
             inputs[3].mkhi.ki.wScan = 0;
             inputs[3].mkhi.ki.dwExtraInfo = GetMessageExtraInfo();
-            inputs[3].mkhi.ki.wVk = wVk_1;
+            inputs[3].mkhi.ki.wVk = (ushort)wVk_1;
             inputs[3].mkhi.ki.dwFlags = KEYEVENTF_KEYUP;
 
             SendInput(4, inputs, Marshal.SizeOf(typeof(INPUT)));
