@@ -34,7 +34,7 @@ namespace ManagedShell.WindowsTasks
         {
             if (!_tasksService.IsInitialized)
             {
-                _tasksService.SetTaskCategoryProvider(taskCategoryProvider);
+                SetTaskCategoryProvider(taskCategoryProvider);
                 Initialize();
             }
         }
@@ -42,6 +42,16 @@ namespace ManagedShell.WindowsTasks
         public void Initialize()
         {
             _tasksService.Initialize();
+        }
+
+        public void SetTaskCategoryProvider(ITaskCategoryProvider taskCategoryProvider)
+        {
+            if (_tasksService.TaskCategoryProvider != null)
+            {
+                _tasksService.TaskCategoryProvider.Dispose();
+            }
+
+            _tasksService.SetTaskCategoryProvider(taskCategoryProvider);
         }
 
         private void groupedWindows_Changed(object sender, NotifyCollectionChangedEventArgs e)
