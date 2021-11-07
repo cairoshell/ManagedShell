@@ -372,7 +372,6 @@ namespace ManagedShell.AppBar
             if (!isSameCoords)
             {
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };
-                timer.Start();
                 timer.Tick += (sender1, args) =>
                 {
                     // set position again, since WPF may have overridden the original change from AppBarHelper
@@ -380,6 +379,7 @@ namespace ManagedShell.AppBar
 
                     timer.Stop();
                 };
+                timer.Start();
             }
         }
 
