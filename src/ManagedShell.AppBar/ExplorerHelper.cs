@@ -11,8 +11,8 @@ namespace ManagedShell.AppBar
 {
     public class ExplorerHelper
     {
-        private static TaskbarState? startupTaskbarState;
-        private NotificationArea _notificationArea;
+        private static ABState? startupTaskbarState;
+        internal NotificationArea _notificationArea;
 
 
         private readonly DispatcherTimer taskbarMonitor = new DispatcherTimer(DispatcherPriority.Background);
@@ -103,7 +103,7 @@ namespace ManagedShell.AppBar
             }
         }
 
-        public void SetTaskbarState(TaskbarState state)
+        public void SetTaskbarState(ABState state)
         {
             Task.Run(() =>
             {
@@ -111,24 +111,27 @@ namespace ManagedShell.AppBar
                 {
                     cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
                     hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle),
-                    lParam = (IntPtr) state
+                    lParam = (IntPtr)state
                 };
-                
-                SHAppBarMessage((int) ABMsg.ABM_SETSTATE, ref abd);
+
+                SHAppBarMessage((int)ABMsg.ABM_SETSTATE, ref abd);
             });
         }
 
-        public TaskbarState GetTaskbarState()
+        public ABState GetTaskbarState()
         {
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
                 hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle)
             };
-            
-            uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
 
-            return (TaskbarState)uState;
+            // suspend tray since we don't care about ManagedShell AppBars here
+            SuspendTrayService();
+            uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
+            ResumeTrayService();
+
+            return (ABState)uState;
         }
 
         private void HideTaskbar()
@@ -150,7 +153,7 @@ namespace ManagedShell.AppBar
 
         private void DoHideTaskbar()
         {
-            SetTaskbarState(TaskbarState.AutoHide);
+            SetTaskbarState(ABState.AutoHide);
             SetTaskbarVisibility((int)SetWindowPosFlags.SWP_HIDEWINDOW);
         }
 
@@ -158,7 +161,7 @@ namespace ManagedShell.AppBar
         {
             if (!EnvironmentHelper.IsAppRunningAsShell)
             {
-                SetTaskbarState(startupTaskbarState ?? TaskbarState.OnTop);
+                SetTaskbarState(startupTaskbarState ?? ABState.Default);
                 SetTaskbarVisibility((int)SetWindowPosFlags.SWP_SHOWWINDOW);
                 taskbarMonitor.Stop();
             }
@@ -195,14 +198,6 @@ namespace ManagedShell.AppBar
 
                 secTaskbarHwnd = FindWindowEx(IntPtr.Zero, secTaskbarHwnd, "Shell_SecondaryTrayWnd", null);
             }
-        }
-
-
-
-        public enum TaskbarState : int
-        {
-            AutoHide = 1,
-            OnTop = 0
         }
     }
 }

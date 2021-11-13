@@ -12,6 +12,7 @@ namespace ManagedShell.WindowsTray
         private const string NotifyWndClass = "TrayNotifyWnd";
         private const string TrayWndClass = "Shell_TrayWnd";
 
+        private AutoHideBarDelegate autoHideBarDelegate;
         private IconDataDelegate iconDataDelegate;
         private TrayHostSizeDelegate trayHostSizeDelegate;
         private SystrayDelegate trayDelegate;
@@ -43,6 +44,11 @@ namespace ManagedShell.WindowsTray
         internal void SetTrayHostSizeCallback(TrayHostSizeDelegate theDelegate)
         {
             trayHostSizeDelegate = theDelegate;
+        }
+
+        internal void SetAutoHideBarCallback(AutoHideBarDelegate theDelegate)
+        {
+            autoHideBarDelegate = theDelegate;
         }
         #endregion
 
@@ -178,14 +184,16 @@ namespace ManagedShell.WindowsTray
                                     break;
                                 }
 
-                                IntPtr abmResult = AppBarMessageAction(amd);
+                                bool handled = false;
+                                IntPtr abmResult = AppBarMessageAction(amd, ref handled);
 
-                                if (abmResult != IntPtr.Zero)
+                                if (handled)
                                 {
+                                    ShellLogger.Debug($"TrayService: Handling AppBar message {(ABMsg)amd.dwMessage}");
                                     return abmResult;
                                 }
 
-                                ShellLogger.Debug($"TrayService: Forwarding AppBar message {(ABMsg)amd.dwMessage} from PID {amd.dwSourceProcessId}");
+                                ShellLogger.Debug($"TrayService: Forwarding AppBar message {(ABMsg)amd.dwMessage}");
                             }
                             else
                             {
@@ -252,9 +260,9 @@ namespace ManagedShell.WindowsTray
         }
 
         #region Event handling
-        private IntPtr AppBarMessageAction(APPBARMSGDATAV3 amd)
+        private IntPtr AppBarMessageAction(APPBARMSGDATAV3 amd, ref bool handled)
         {
-            // only handle ABM_GETTASKBARPOS, send other AppBar messages to default handler
+            // only handle certain messages, send other AppBar messages to default handler
             switch ((ABMsg)amd.dwMessage)
             {
                 case ABMsg.ABM_GETTASKBARPOS:
@@ -263,8 +271,30 @@ namespace ManagedShell.WindowsTray
                     FillTrayHostSizeData(ref abd);
                     Marshal.StructureToPtr(abd, hShared, false);
                     SHUnlockShared(hShared);
-                    ShellLogger.Debug("TrayService: Responded to ABM_GETTASKBARPOS");
+                    handled = true;
                     return (IntPtr)1;
+                case ABMsg.ABM_GETSTATE:
+                    if (autoHideBarDelegate == null)
+                    {
+                        break;
+                    }
+
+                    handled = true;
+
+                    if (autoHideBarDelegate(null) != IntPtr.Zero)
+                    {
+                        return (IntPtr)ABState.AutoHide;
+                    }
+
+                    return (IntPtr)ABState.Default;
+                case ABMsg.ABM_GETAUTOHIDEBAR:
+                    if (autoHideBarDelegate == null)
+                    {
+                        break;
+                    }
+
+                    handled = true;
+                    return autoHideBarDelegate((ABEdge)amd.abd.uEdge);
             }
             return IntPtr.Zero;
         }

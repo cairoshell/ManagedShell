@@ -34,12 +34,20 @@ namespace ManagedShell.Interop
             ABM_WINDOWPOSCHANGED,
             ABM_SETSTATE
         }
+
         public enum ABEdge : int
         {
             ABE_LEFT = 0,
             ABE_TOP,
             ABE_RIGHT,
             ABE_BOTTOM
+        }
+
+        public enum ABState : int
+        {
+            Default = 0,
+            AutoHide,
+            OnTop
         }
 
         public enum AppBarNotifications
