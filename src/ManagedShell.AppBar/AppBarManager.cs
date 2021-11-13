@@ -5,6 +5,7 @@ using System.Runtime.InteropServices;
 using System.Windows.Forms;
 using ManagedShell.Common.Helpers;
 using static ManagedShell.Interop.NativeMethods;
+using ManagedShell.WindowsTray;
 
 namespace ManagedShell.AppBar
 {
@@ -13,14 +14,18 @@ namespace ManagedShell.AppBar
         private static object appBarLock = new object();
         
         private readonly ExplorerHelper _explorerHelper;
+        private AutoHideBarDelegate _autoHideBarDelegate;
         private int uCallBack;
-        
+
         public List<AppBarWindow> AppBars { get; } = new List<AppBarWindow>();
         public EventHandler<AppBarEventArgs> AppBarEvent;
 
         public AppBarManager(ExplorerHelper explorerHelper)
         {
+            _autoHideBarDelegate = autoHideBarDelegate;
             _explorerHelper = explorerHelper;
+
+            _explorerHelper._notificationArea.SetAutoHideBarCallback(_autoHideBarDelegate);
         }
 
         public void SignalGracefulShutdown()
@@ -35,6 +40,13 @@ namespace ManagedShell.AppBar
         {
             AppBarEventArgs args = new AppBarEventArgs { Reason = reason };
             AppBarEvent?.Invoke(sender, args);
+        }
+
+        private IntPtr autoHideBarDelegate(ABEdge? edge)
+        {
+            // AppBarWindow does not currently manage auto-hide, it is the responsibility of the shell.
+            // This should be implemented in the future to allow apps to check if there are any auto-hide bars.
+            return IntPtr.Zero;
         }
 
         #region AppBar message helpers

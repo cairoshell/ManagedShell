@@ -48,6 +48,7 @@ namespace ManagedShell.WindowsTray
 
         public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
 
+        private AutoHideBarDelegate autoHideBarDelegate;
         private SystrayDelegate trayDelegate;
         private IconDataDelegate iconDataDelegate;
         private TrayHostSizeDelegate trayHostSizeDelegate;
@@ -440,6 +441,18 @@ namespace ManagedShell.WindowsTray
         {
             trayHostSizeData = data;
             _trayService?.SetTrayHostSizeData(trayHostSizeData);
+        }
+
+        // The AppBarManager calls this to provide AppBar autohide information
+        public void SetAutoHideBarCallback(AutoHideBarDelegate theDelegate)
+        {
+            if (theDelegate == null)
+            {
+                return;
+            }
+
+            autoHideBarDelegate = theDelegate;
+            _trayService?.SetAutoHideBarCallback(autoHideBarDelegate);
         }
 
         public void Dispose()
