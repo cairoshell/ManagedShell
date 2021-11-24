@@ -269,13 +269,13 @@ namespace ManagedShell.AppBar
             switch (edge)
             {
                 case AppBarEdge.Top:
-                    edgeHeight += (screen.Bounds.Top - workAreaRect.Top) / dpiScale;
+                    edgeHeight += (workAreaRect.Top - screen.Bounds.Top) / dpiScale;
                     break;
                 case AppBarEdge.Bottom:
                     edgeHeight += (screen.Bounds.Bottom - workAreaRect.Bottom) / dpiScale;
                     break;
                 case AppBarEdge.Left:
-                    edgeHeight += (screen.Bounds.Left - workAreaRect.Left) / dpiScale;
+                    edgeHeight += (workAreaRect.Left - screen.Bounds.Left) / dpiScale;
                     break;
                 case AppBarEdge.Right:
                     edgeHeight += (screen.Bounds.Right - workAreaRect.Right) / dpiScale;
