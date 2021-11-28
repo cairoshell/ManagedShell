@@ -105,7 +105,8 @@ namespace ManagedShell.UWPInterop
                 LargeIconPath = icons[IconSize.Large],
                 ExtraLargeIconPath = icons[IconSize.ExtraLarge],
                 JumboIconPath = icons[IconSize.Jumbo],
-                IconColor = getPlateColor(icons[IconSize.Small], appNode, xmlnsManager)
+                IconColor = getPlateColor(icons[IconSize.Small], appNode, xmlnsManager),
+                EntryPoint = getEntryPoint(appNode, xmlnsManager)
             };
 
             return storeApp;
@@ -177,6 +178,11 @@ namespace ManagedShell.UWPInterop
                 return name;
 
             return ExtractStringFromPRIFile(packagePath + "\\resources.pri", nameUri.ToString());
+        }
+
+        private static string getEntryPoint(XmlNode app, XmlNamespaceManager xmlnsManager)
+        {
+            return app.SelectSingleNode("@EntryPoint", xmlnsManager)?.Value;
         }
 
         private static string getPlateColor(string iconPath, XmlNode app, XmlNamespaceManager xmlnsManager)

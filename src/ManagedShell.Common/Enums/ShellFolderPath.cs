@@ -1,4 +1,4 @@
-﻿namespace ManagedShell.ShellFolders.Enums
+﻿namespace ManagedShell.Common.Enums
 {
     public class ShellFolderPath
     {
