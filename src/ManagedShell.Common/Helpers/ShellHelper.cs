@@ -6,6 +6,7 @@ using System.Runtime.InteropServices;
 using System.Text;
 using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
+using ManagedShell.Common.Enums;
 
 namespace ManagedShell.Common.Helpers
 {
@@ -52,7 +53,7 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
-        public static bool StartProcess(string filename)
+        public static bool StartProcess(string filename, string args = "", string verb = "")
         {
             try
             {
@@ -60,100 +61,39 @@ namespace ManagedShell.Common.Helpers
                 {
                     filename.Replace("system32", "sysnative");
                 }
-
-                ProcessStartInfo psi = new ProcessStartInfo
-                {
-                    UseShellExecute = true
-                };
 
                 if (filename.StartsWith("appx:"))
                 {
-                    psi.FileName = "LaunchWinApp.exe";
-                    psi.Arguments = "shell:appsFolder\\" + filename.Substring(5);
+                    filename = "shell:appsFolder\\" + filename.Substring(5);
                 }
-                else if (filename.Contains("://"))
+                else if (filename.Contains("://") && string.IsNullOrEmpty(args))
                 {
-                    psi.FileName = "explorer.exe";
-                    psi.Arguments = filename;
+                    args = filename;
+                    filename = "explorer.exe";
                 }
-                else
+                else if (EnvironmentHelper.IsAppRunningAsShell && filename.ToLower().EndsWith("explorer.exe") && string.IsNullOrEmpty(args))
                 {
-                    if (EnvironmentHelper.IsAppRunningAsShell && filename.ToLower().EndsWith("explorer.exe"))
-                    {
-                        // if we are shell and launching explorer, give it a parameter so that it doesn't do shell things.
-                        // this opens My Computer
-                        psi.FileName = filename;
-                        psi.Arguments = "::{20D04FE0-3AEA-1069-A2D8-08002B30309D}";
-                    }
-                    else
-                    {
-                        psi.FileName = filename;
-                    }
-                }
-
-                Process.Start(psi);
-
-                return true;
-            }
-            catch
-            {
-                return false;
-            }
-        }
-
-        public static bool StartProcess(string filename, string args)
-        {
-            try
-            {
-                if (!Environment.Is64BitProcess)
-                {
-                    filename.Replace("system32", "sysnative");
+                    // if we are shell and launching explorer, give it a parameter so that it doesn't do shell things.
+                    // this opens My Computer
+                    args = ShellFolderPath.ComputerFolder.Value;
                 }
 
                 ProcessStartInfo psi = new ProcessStartInfo
                 {
                     UseShellExecute = true,
                     FileName = filename,
-                    Arguments = args
+                    Arguments = args,
+                    Verb = verb
                 };
 
                 Process.Start(psi);
 
                 return true;
             }
-            catch
+            catch (Exception ex)
             {
-                return false;
-            }
-        }
+                ShellLogger.Error($"Error running the {verb} verb on {filename}. ({ex.Message})");
 
-        public static bool StartProcess(string filename, string args, string verb)
-        {
-            try
-            {
-                if (!Environment.Is64BitProcess)
-                {
-                    filename.Replace("system32", "sysnative");
-                }
-
-                Process proc = new Process();
-                proc.StartInfo.UseShellExecute = true;
-                proc.StartInfo.FileName = filename;
-                proc.StartInfo.Verb = verb;
-                try
-                {
-                    proc.Start();
-                }
-                catch (Exception ex)
-                {
-                    Debug.WriteLine(String.Format("Error running the {0} verb on {1}. ({2})", verb, filename, ex.Message));
-                    return false;
-                }
-
-                return true;
-            }
-            catch
-            {
                 return false;
             }
         }
