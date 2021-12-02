@@ -53,7 +53,7 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
-        public static bool StartProcess(string filename, string args = "", string verb = "")
+        public static bool StartProcess(string filename, string args = "", string verb = "", string workingDirectory = "")
         {
             try
             {
@@ -83,7 +83,8 @@ namespace ManagedShell.Common.Helpers
                     UseShellExecute = true,
                     FileName = filename,
                     Arguments = args,
-                    Verb = verb
+                    Verb = verb,
+                    WorkingDirectory = workingDirectory
                 };
 
                 Process.Start(psi);

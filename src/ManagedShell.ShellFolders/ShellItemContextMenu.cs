@@ -189,6 +189,7 @@ namespace ManagedShell.ShellFolders
             if (selected >= Interop.CMD_FIRST && selected < uint.MaxValue)
             {
                 string command = GetCommandString(iContextMenu, selected - Interop.CMD_FIRST, true);
+                string workingDir = null;
 
                 if (string.IsNullOrEmpty(command))
                 {
@@ -201,8 +202,14 @@ namespace ManagedShell.ShellFolders
                     return;
                 }
 
+                if (files.Length > 0 && files[0].ParentItem != null)
+                {
+                    workingDir = files[0].ParentItem.Path;
+                }
+
                 InvokeCommand(
                     iContextMenu,
+                    workingDir,
                     selected - Interop.CMD_FIRST,
                     new Point(x, y));
             }
