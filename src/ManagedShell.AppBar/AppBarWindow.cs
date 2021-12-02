@@ -287,8 +287,8 @@ namespace ManagedShell.AppBar
         {
             Top = rect.Top / DpiScale;
             Left = rect.Left / DpiScale;
-            Width = (rect.Right - rect.Left) / DpiScale;
-            Height = (rect.Bottom - rect.Top) / DpiScale;
+            if (rect.Width >= 0) Width = rect.Width / DpiScale;
+            if (rect.Height >= 0) Height = rect.Height / DpiScale;
         }
 
         private void ProcessScreenChange(ScreenSetupReason reason)
