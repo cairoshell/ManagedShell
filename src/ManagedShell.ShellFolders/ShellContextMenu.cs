@@ -151,15 +151,17 @@ namespace ManagedShell.ShellFolders
         /// Invokes a specific command from an IContextMenu
         /// </summary>
         /// <param name="iContextMenu">the IContextMenu containing the item</param>
+        /// <param name="workingDir">the parent directory from where to invoke</param>
         /// <param name="cmd">the index of the command to invoke</param>
-        /// <param name="parentDir">the parent directory from where to invoke</param>
         /// <param name="ptInvoke">the point (in screen coordinates) from which to invoke</param>
-        protected void InvokeCommand(IContextMenu iContextMenu, uint cmd, Point ptInvoke)
+        protected void InvokeCommand(IContextMenu iContextMenu, string workingDir, uint cmd, Point ptInvoke)
         {
             CMINVOKECOMMANDINFOEX invoke = new CMINVOKECOMMANDINFOEX();
             invoke.cbSize = Interop.cbInvokeCommand;
             invoke.lpVerb = (IntPtr)cmd;
             invoke.lpVerbW = (IntPtr)cmd;
+            invoke.lpDirectory = workingDir;
+            invoke.lpDirectoryW = workingDir;
             invoke.fMask = CMIC.ASYNCOK | CMIC.FLAG_LOG_USAGE | CMIC.UNICODE | CMIC.PTINVOKE |
                 ((Control.ModifierKeys & Keys.Control) != 0 ? CMIC.CONTROL_DOWN : 0) |
                 ((Control.ModifierKeys & Keys.Shift) != 0 ? CMIC.SHIFT_DOWN : 0);
