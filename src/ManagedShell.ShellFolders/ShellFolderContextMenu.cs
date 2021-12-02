@@ -105,7 +105,7 @@ namespace ManagedShell.ShellFolders
                         {
                             InvokeCommand(
                                 subMenu.iContextMenu,
-                                folder.Path,
+                                folder.IsFolder && folder.IsFileSystem ? folder.Path : null,
                                 selected - Interop.CMD_FIRST,
                                 new Point(x, y));
                         }

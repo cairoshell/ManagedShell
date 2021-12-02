@@ -202,7 +202,7 @@ namespace ManagedShell.ShellFolders
                     return;
                 }
 
-                if (files.Length > 0 && files[0].ParentItem != null)
+                if (files.Length > 0 && files[0].ParentItem != null && files[0].ParentItem.IsFolder && files[0].ParentItem.IsFileSystem)
                 {
                     workingDir = files[0].ParentItem.Path;
                 }
