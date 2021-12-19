@@ -306,7 +306,7 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
-        public static string GetPathForHandle(IntPtr hWnd)
+        public static string GetPathForWindowHandle(IntPtr hWnd)
         {
             StringBuilder outFileName = new StringBuilder(1024);
 
@@ -319,12 +319,9 @@ namespace ManagedShell.Common.Helpers
                 // QueryLimitedInformation flag allows us to access elevated applications as well
                 IntPtr hProc = OpenProcess(ProcessAccessFlags.QueryLimitedInformation, false, (int) procId);
 
-                // get filename
+                // get path
                 int len = outFileName.Capacity;
                 QueryFullProcessImageName(hProc, 0, outFileName, ref len);
-
-                outFileName.Replace("Excluded,", "");
-                outFileName.Replace(",SFC protected", "");
             }
 
             return outFileName.ToString();

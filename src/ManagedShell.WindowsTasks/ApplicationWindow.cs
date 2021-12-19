@@ -76,10 +76,25 @@ namespace ManagedShell.WindowsTasks
             {
                 if (string.IsNullOrEmpty(_winFileName))
                 {
-                    _winFileName = ShellHelper.GetPathForHandle(Handle);
+                    _winFileName = ShellHelper.GetPathForWindowHandle(Handle);
                 }
 
                 return _winFileName;
+            }
+        }
+
+        private string _winFileDescription;
+
+        public string WinFileDescription
+        {
+            get
+            {
+                if (string.IsNullOrEmpty(_winFileDescription))
+                {
+                    _winFileDescription = getFileDescription();
+                }
+
+                return _winFileDescription;
             }
         }
 
@@ -353,6 +368,23 @@ namespace ManagedShell.WindowsTasks
             }
 
             return CanAddToTaskbar;
+        }
+
+        private string getFileDescription()
+        {
+            string desc;
+
+            try
+            {
+                desc = FileVersionInfo.GetVersionInfo(WinFileName).FileDescription;
+            }
+            catch (Exception e)
+            {
+                ShellLogger.Warning($"ApplicationWindow: Unable to get file description for {WinFileName} ({Title}): {e.Message}");
+                desc = Title;
+            }
+
+            return desc;
         }
 
         internal void Uncloak()

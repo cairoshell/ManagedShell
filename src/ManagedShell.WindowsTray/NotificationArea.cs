@@ -336,7 +336,7 @@ namespace ManagedShell.WindowsTray
                             trayIcon.Placement = defaultPlacement;
 
                             // set properties used for pinning
-                            trayIcon.Path = ShellHelper.GetPathForHandle(trayIcon.HWnd);
+                            trayIcon.Path = ShellHelper.GetPathForWindowHandle(trayIcon.HWnd);
                             trayIcon.SetPinValues();
 
                             if (trayIcon.Icon == null)
