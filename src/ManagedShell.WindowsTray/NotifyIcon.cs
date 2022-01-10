@@ -93,9 +93,24 @@ namespace ManagedShell.WindowsTray
             {
                 return _isPinned;
             }
-            private set
+            set
             {
-                _isPinned = value;
+                if (_isPinned == value)
+                {
+                    return;
+                }
+
+                if (value)
+                {
+                    Pin();
+                }
+                else
+                {
+                    Unpin();
+                }
+
+                // the backing var is updated by the above called methods
+
                 OnPropertyChanged();
             }
         }
@@ -121,7 +136,7 @@ namespace ManagedShell.WindowsTray
         private int _pinOrder;
 
         /// <summary>
-        /// Gets or sets the order index of the item in the pinned icons
+        /// Gets the order index of the item in the pinned icons
         /// </summary>
         public int PinOrder
         {
@@ -257,17 +272,19 @@ namespace ManagedShell.WindowsTray
 
         public void Unpin()
         {
-            if (IsPinned)
+            if (!IsPinned)
             {
-                List<string> icons = _notificationArea.PinnedNotifyIcons.ToList();
-                icons.Remove(Identifier);
-                _notificationArea.PinnedNotifyIcons = icons.ToArray();
-
-                IsPinned = false;
-                PinOrder = 0;
-
-                _notificationArea.UpdatePinnedIcons();
+                return;
             }
+
+            List<string> icons = _notificationArea.PinnedNotifyIcons.ToList();
+            icons.Remove(Identifier);
+            _notificationArea.PinnedNotifyIcons = icons.ToArray();
+
+            _isPinned = false;
+            PinOrder = 0;
+
+            _notificationArea.UpdatePinnedIcons();
         }
 
         public void SetPinValues()
@@ -277,7 +294,7 @@ namespace ManagedShell.WindowsTray
                 string item = _notificationArea.PinnedNotifyIcons[i].ToLower();
                 if (item == GUID.ToString().ToLower() || (GUID == default && item == (Path.ToLower() + ":" + UID.ToString())))
                 {
-                    IsPinned = true;
+                    _isPinned = true;
                     PinOrder = i;
                     break;
                 }

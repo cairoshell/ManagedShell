@@ -91,6 +91,20 @@ namespace ManagedShell.WindowsTray
 
         private static DependencyProperty iconListProperty = DependencyProperty.Register("TrayIcons", typeof(ObservableCollection<NotifyIcon>), typeof(NotificationArea), new PropertyMetadata(new ObservableCollection<NotifyIcon>()));
 
+        public ICollectionView AllIcons
+        {
+            get
+            {
+                return GetValue(allIconsProperty) as ICollectionView;
+            }
+            set
+            {
+                SetValue(allIconsProperty, value);
+            }
+        }
+
+        private static DependencyProperty allIconsProperty = DependencyProperty.Register("AllIcons", typeof(ICollectionView), typeof(NotificationArea));
+
         public ICollectionView PinnedIcons
         {
             get
@@ -181,8 +195,15 @@ namespace ManagedShell.WindowsTray
             // then display these in system tray
 
             // prepare collections
+            AllIcons = new ListCollectionView(TrayIcons);
+            AllIcons.CollectionChanged += Icons_Changed;
+            AllIcons.Filter = AllIcons_Filter;
+            var allIconsView = AllIcons as ICollectionViewLiveShaping;
+            allIconsView.IsLiveFiltering = true;
+            allIconsView.LiveFilteringProperties.Add("IsHidden");
+
             PinnedIcons = new ListCollectionView(TrayIcons);
-            PinnedIcons.CollectionChanged += PinnedIcons_Changed;
+            PinnedIcons.CollectionChanged += Icons_Changed;
             PinnedIcons.Filter = PinnedIcons_Filter;
             PinnedIcons.SortDescriptions.Add(new SortDescription("PinOrder", ListSortDirection.Ascending));
             var pinnedIconsView = PinnedIcons as ICollectionViewLiveShaping;
@@ -193,7 +214,7 @@ namespace ManagedShell.WindowsTray
             pinnedIconsView.LiveSortingProperties.Add("PinOrder");
 
             UnpinnedIcons = new ListCollectionView(TrayIcons);
-            UnpinnedIcons.CollectionChanged += PinnedIcons_Changed;
+            UnpinnedIcons.CollectionChanged += Icons_Changed;
             UnpinnedIcons.Filter = UnpinnedIcons_Filter;
             var unpinnedIconsView = UnpinnedIcons as ICollectionViewLiveShaping;
             unpinnedIconsView.IsLiveFiltering = true;
@@ -201,9 +222,14 @@ namespace ManagedShell.WindowsTray
             unpinnedIconsView.LiveFilteringProperties.Add("IsPinned");
         }
 
-        private void PinnedIcons_Changed(object sender, NotifyCollectionChangedEventArgs e)
+        private void Icons_Changed(object sender, NotifyCollectionChangedEventArgs e)
         {
             // yup, do nothing. helps prevent a NRE
+        }
+
+        private bool AllIcons_Filter(object item)
+        {
+            return !(item as NotifyIcon).IsHidden;
         }
 
         private bool PinnedIcons_Filter(object item)
