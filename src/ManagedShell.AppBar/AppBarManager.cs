@@ -251,7 +251,8 @@ namespace ManagedShell.AppBar
 
                 abWindow.AfterAppBarPos(isSameCoords, abd.rc);
 
-                if (abd.rc.Bottom - abd.rc.Top < sHeight)
+                if (((abd.uEdge == (int)AppBarEdge.Top || abd.uEdge == (int)AppBarEdge.Bottom) && abd.rc.Bottom - abd.rc.Top < sHeight) ||
+                    ((abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right) && abd.rc.Right - abd.rc.Left < sWidth))
                 {
                     ABSetPos(abWindow, width, height, edge);
                 }
