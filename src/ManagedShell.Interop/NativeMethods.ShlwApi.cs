@@ -8,6 +8,12 @@ namespace ManagedShell.Interop
         const string ShlwApi_DllName = "shlwapi.dll";
 
         [DllImport(ShlwApi_DllName)]
+        public static extern IntPtr SHAllocShared(IntPtr hData, uint dwSize, uint dwProcessId);
+
+        [DllImport(ShlwApi_DllName)]
+        public static extern IntPtr SHFreeShared(IntPtr hData, uint dwProcessId);
+
+        [DllImport(ShlwApi_DllName)]
         public static extern IntPtr SHLockShared(IntPtr hData, uint dwProcessId);
 
         [DllImport(ShlwApi_DllName, SetLastError = true)]

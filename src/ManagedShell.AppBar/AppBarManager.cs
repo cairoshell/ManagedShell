@@ -14,7 +14,7 @@ namespace ManagedShell.AppBar
         private static object appBarLock = new object();
         
         private readonly ExplorerHelper _explorerHelper;
-        private AutoHideBarDelegate _autoHideBarDelegate;
+        private AppBarMessageDelegate _appBarMessageDelegate;
         private int uCallBack;
 
         public List<AppBarWindow> AppBars { get; } = new List<AppBarWindow>();
@@ -22,10 +22,10 @@ namespace ManagedShell.AppBar
 
         public AppBarManager(ExplorerHelper explorerHelper)
         {
-            _autoHideBarDelegate = autoHideBarDelegate;
+            _appBarMessageDelegate = appBarMessageDelegate;
             _explorerHelper = explorerHelper;
 
-            _explorerHelper._notificationArea.SetAutoHideBarCallback(_autoHideBarDelegate);
+            _explorerHelper._notificationArea.SetAppBarMessageCallback(_appBarMessageDelegate);
         }
 
         public void SignalGracefulShutdown()
@@ -42,12 +42,146 @@ namespace ManagedShell.AppBar
             AppBarEvent?.Invoke(sender, args);
         }
 
-        private IntPtr autoHideBarDelegate(ABEdge? edge)
+        private IntPtr appBarMessageDelegate(APPBARMSGDATAV3 amd, ref bool handled)
+        {
+            // only handle certain messages, send other AppBar messages to default handler
+            switch ((ABMsg)amd.dwMessage)
+            {
+                case ABMsg.ABM_GETTASKBARPOS:
+                    return appBarMessage_GetTaskbarPos(amd, ref handled);
+                case ABMsg.ABM_QUERYPOS:
+                case ABMsg.ABM_SETPOS:
+                    return appBarMessage_QuerySetPos(amd, ref handled);
+                case ABMsg.ABM_GETSTATE:
+                    return appBarMessage_GetState(amd, ref handled);
+                case ABMsg.ABM_GETAUTOHIDEBAR:
+                    return appBarMessage_GetAutoHideBar(amd, ref handled);
+            }
+            return IntPtr.Zero;
+        }
+
+        #region AppBar message handlers
+        private IntPtr appBarMessage_GetTaskbarPos(APPBARMSGDATAV3 amd, ref bool handled)
+        {
+            IntPtr hShared = SHLockShared((IntPtr)amd.hSharedMemory, (uint)amd.dwSourceProcessId);
+            APPBARDATAV2 abd = (APPBARDATAV2)Marshal.PtrToStructure(hShared, typeof(APPBARDATAV2));
+
+            if (_explorerHelper._notificationArea != null)
+            {
+                _explorerHelper._notificationArea.FillTrayHostSizeData(ref abd);
+            }
+
+            Marshal.StructureToPtr(abd, hShared, false);
+            SHUnlockShared(hShared);
+            handled = true;
+            return (IntPtr)1;
+        }
+
+        private IntPtr appBarMessage_QuerySetPos(APPBARMSGDATAV3 amd, ref bool handled)
+        {
+            // These two messages use shared memory, and forwarding over the message as-is doesn't
+            // seem to allow Explorer to access the shared memory. Here we grab the existing (old)
+            // shared memory and allocate it into new shared memory, then update AppBarMessageData
+            // and forward it on to Explorer.
+
+            if (EnvironmentHelper.IsAppRunningAsShell)
+            {
+                // some day we will manage AppBars if we are shell, but today is not that day.
+                return IntPtr.Zero;
+            }
+
+            // Get Explorer tray handle and PID
+            IntPtr ignoreHwnd = IntPtr.Zero;
+            IntPtr explorerTray;
+
+            if (_explorerHelper._notificationArea != null)
+            {
+                ignoreHwnd = _explorerHelper._notificationArea.Handle;
+            }
+            explorerTray = WindowHelper.FindWindowsTray(ignoreHwnd);
+
+            GetWindowThreadProcessId(explorerTray, out uint explorerPid);
+
+            // recreate shared memory so that Explorer gets access to it
+            IntPtr hSharedOld = SHLockShared((IntPtr)amd.hSharedMemory, (uint)amd.dwSourceProcessId);
+            IntPtr hSharedNew = SHAllocShared(IntPtr.Zero, (uint)Marshal.SizeOf(typeof(APPBARDATAV2)), explorerPid);
+
+            // Copy the data from the old shared memory into the new
+            IntPtr hSharedData = SHLockShared(hSharedNew, explorerPid);
+            if (hSharedData == IntPtr.Zero)
+            {
+                // Failed, bail out bail out!
+                SHFreeShared(hSharedNew, explorerPid);
+                return IntPtr.Zero;
+            }
+
+            APPBARDATAV2 abdOld = (APPBARDATAV2)Marshal.PtrToStructure(hSharedOld, typeof(APPBARDATAV2));
+            Marshal.StructureToPtr(abdOld, hSharedData, false);
+            SHUnlockShared(hSharedData);
+
+            // Update AppBarMessageData with the new shared memory handle and PID
+            amd.hSharedMemory = (long)hSharedNew;
+            amd.dwSourceProcessId = (int)explorerPid;
+
+            // Prepare structs to send onward
+            IntPtr hAmd = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(APPBARMSGDATAV3)));
+            Marshal.StructureToPtr(amd, hAmd, false);
+
+            COPYDATASTRUCT copyData = new COPYDATASTRUCT
+            {
+                cbData = Marshal.SizeOf(typeof(APPBARMSGDATAV3)),
+                dwData = (IntPtr)0,
+                lpData = hAmd
+            };
+            IntPtr hCopyData = Marshal.AllocHGlobal(Marshal.SizeOf(typeof(COPYDATASTRUCT)));
+            Marshal.StructureToPtr(copyData, hCopyData, false);
+
+            IntPtr result = SendMessage(explorerTray, (int)WM.COPYDATA, (IntPtr)amd.abd.hWnd, hCopyData);
+            handled = true;
+
+            // It's possible that Explorer modified the data we sent, so read the data back out.
+            IntPtr hSharedFromExplorer = SHLockShared(hSharedNew, explorerPid);
+            if (hSharedFromExplorer != IntPtr.Zero)
+            {
+                APPBARDATAV2 abdNew = (APPBARDATAV2)Marshal.PtrToStructure(hSharedFromExplorer, typeof(APPBARDATAV2));
+                SHUnlockShared(hSharedFromExplorer);
+
+                Marshal.StructureToPtr(abdNew, hSharedOld, false);
+                SHUnlockShared(hSharedOld);
+            }
+
+            SHFreeShared(hSharedNew, explorerPid);
+
+            return result;
+        }
+
+        private IntPtr appBarMessage_GetState(APPBARMSGDATAV3 amd, ref bool handled)
+        {
+            if (_explorerHelper._notificationArea != null && amd.abd.hWnd == (uint)WindowHelper.FindWindowsTray(_explorerHelper._notificationArea.Handle))
+            {
+                // If the Explorer AppBar is being queried specifically, forward the request on to it.
+                // ExplorerHelper queries this to get the pre-existing taskbar state before hiding.
+                return IntPtr.Zero;
+            }
+
+            // AppBarWindow does not currently manage auto-hide, it is the responsibility of the shell.
+            // This should be implemented in the future to allow apps to check the state of an AppBar.
+            // For now, always indicate that the bar is not auto-hide.
+
+            handled = true;
+            return (IntPtr)ABState.Default;
+        }
+
+        private IntPtr appBarMessage_GetAutoHideBar(APPBARMSGDATAV3 amd, ref bool handled)
         {
             // AppBarWindow does not currently manage auto-hide, it is the responsibility of the shell.
             // This should be implemented in the future to allow apps to check if there are any auto-hide bars.
+            // For now, always return NULL, indicating no auto-hide bars.
+
+            handled = true;
             return IntPtr.Zero;
         }
+        #endregion
 
         #region AppBar message helpers
         public int RegisterBar(AppBarWindow abWindow, double width, double height, AppBarEdge edge = AppBarEdge.Top)
@@ -203,9 +337,7 @@ namespace ManagedShell.AppBar
                     }
                 }
 
-                _explorerHelper.SuspendTrayService();
                 SHAppBarMessage((int)ABMsg.ABM_QUERYPOS, ref abd);
-                _explorerHelper.ResumeTrayService();
 
                 // system doesn't adjust all edges for us, do some adjustments
                 switch (abd.uEdge)
@@ -224,9 +356,7 @@ namespace ManagedShell.AppBar
                         break;
                 }
 
-                _explorerHelper.SuspendTrayService();
                 SHAppBarMessage((int)ABMsg.ABM_SETPOS, ref abd);
-                _explorerHelper.ResumeTrayService();
 
                 // check if new coords
                 bool isSameCoords = false;

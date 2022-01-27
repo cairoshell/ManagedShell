@@ -20,6 +20,28 @@ namespace ManagedShell.Interop
             public IntPtr lParam;
         }
 
+        [StructLayout(LayoutKind.Sequential)]
+        public struct APPBARDATAV2
+        {
+            public int cbSize;
+            public uint hWnd;
+            public uint uCallbackMessage;
+            public uint uEdge;
+            public Rect rc;
+            public long lParam;
+        }
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct APPBARMSGDATAV3
+        {
+            public APPBARDATAV2 abd;
+            public int dwMessage;
+            public int dwPadding1;
+            public long hSharedMemory;
+            public int dwSourceProcessId;
+            public int dwPadding3;
+        }
+
         public enum ABMsg : int
         {
             ABM_NEW = 0,
@@ -381,30 +403,6 @@ namespace ManagedShell.Interop
             public uint hWnd;
             public uint uID;
             public Guid guidItem;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct APPBARDATAV2
-        {
-            public int cbSize;
-            public uint hWnd;
-            public uint uCallbackMessage;
-            public uint uEdge;
-            public Rect rc;
-            public int lParam;
-            public int dw64BitAlign;
-        }
-
-        [StructLayout(LayoutKind.Sequential)]
-        public struct APPBARMSGDATAV3
-        {
-            public APPBARDATAV2 abd;
-            public int dwMessage;
-            public int dwPadding1;
-            public uint hSharedMemory;
-            public int dwPadding2;
-            public int dwSourceProcessId;
-            public int dwPadding3;
         }
 
         [StructLayout(LayoutKind.Sequential, Pack = 4)]

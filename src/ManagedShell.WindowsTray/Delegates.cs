@@ -28,9 +28,10 @@ namespace ManagedShell.WindowsTray
     public delegate TrayHostSizeData TrayHostSizeDelegate();
 
     /// <summary>
-    /// Delegate signature for the AppBar autohide callback.
+    /// Delegate signature for SHAppBarMessage callbacks.
     /// </summary>
-    /// <param name="edge">The AppBar edge to check for an autohide bar. Null to check any edge.</param>
-    /// <returns>Window handle to the autohide AppBar.</returns>
-    public delegate IntPtr AutoHideBarDelegate(ABEdge? edge);
+    /// <param name="amd">The AppBar message data received by Shell_TrayWnd.</param>
+    /// <param name="handled">Whether the delegate handled the message.</param>
+    /// <returns>Result if handled.</returns>
+    public delegate IntPtr AppBarMessageDelegate(APPBARMSGDATAV3 amd, ref bool handled);
 }

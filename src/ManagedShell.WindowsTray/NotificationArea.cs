@@ -48,10 +48,9 @@ namespace ManagedShell.WindowsTray
 
         public event EventHandler<NotificationBalloonEventArgs> NotificationBalloonShown;
 
-        private AutoHideBarDelegate autoHideBarDelegate;
+        private AppBarMessageDelegate appBarMessageDelegate;
         private SystrayDelegate trayDelegate;
         private IconDataDelegate iconDataDelegate;
-        private TrayHostSizeDelegate trayHostSizeDelegate;
         private object _lockObject = new object();
         private ShellServiceObject shellServiceObject;
         private TrayHostSizeData trayHostSizeData = new TrayHostSizeData
@@ -142,14 +141,12 @@ namespace ManagedShell.WindowsTray
                 prepareCollections();
                 trayDelegate = SysTrayCallback;
                 iconDataDelegate = IconDataCallback;
-                trayHostSizeDelegate = TrayHostSizeCallback;
 
                 _explorerTrayService.SetSystrayCallback(trayDelegate);
                 _explorerTrayService.Run();
 
                 _trayService.SetSystrayCallback(trayDelegate);
                 _trayService.SetIconDataCallback(iconDataDelegate);
-                _trayService.SetTrayHostSizeCallback(trayHostSizeDelegate);
                 Handle = _trayService.Initialize();
                 _trayService.Run();
 
@@ -176,16 +173,6 @@ namespace ManagedShell.WindowsTray
             {
                 notifyIcon.SetPinValues();
             }
-        }
-
-        public void Suspend()
-        {
-            _trayService?.Suspend();
-        }
-        
-        public void Resume()
-        {
-            _trayService?.Resume();
         }
 
         #region Collections
@@ -244,11 +231,6 @@ namespace ManagedShell.WindowsTray
         #endregion
 
         #region Callbacks
-        private TrayHostSizeData TrayHostSizeCallback()
-        {
-            return trayHostSizeData;
-        }
-
         private IntPtr IconDataCallback(int dwMessage, uint hWnd, uint uID, Guid guidItem)
         {
             NotifyIcon icon = null;
@@ -270,10 +252,12 @@ namespace ManagedShell.WindowsTray
             }
             else if (guidItem == new Guid(VOLUME_GUID))
             {
+                // If the shell is using sndvol32 as a volume control, it won't have a corresponding
+                // tray icon in Windows 10+, but it still requests the icon location. Provide the tray.
                 if (dwMessage == 1)
-                    return MakeLParam(defaultPlacement.Left, defaultPlacement.Top);
+                    return MakeLParam(trayHostSizeData.rc.Left, trayHostSizeData.rc.Top);
                 else if (dwMessage == 2)
-                    return MakeLParam(defaultPlacement.Right, defaultPlacement.Bottom);
+                    return MakeLParam(trayHostSizeData.rc.Right, trayHostSizeData.rc.Bottom);
             }
 
             return IntPtr.Zero;
@@ -469,16 +453,25 @@ namespace ManagedShell.WindowsTray
             _trayService?.SetTrayHostSizeData(trayHostSizeData);
         }
 
-        // The AppBarManager calls this to provide AppBar autohide information
-        public void SetAutoHideBarCallback(AutoHideBarDelegate theDelegate)
+        // The AppBarManager calls this to return information regarding the location of the notification area.
+        // With Explorer, the notification area is always in an AppBar, but we do not have that assumption.
+        public void FillTrayHostSizeData(ref APPBARDATAV2 abd)
+        {
+            TrayHostSizeData msd = trayHostSizeData;
+            abd.rc = msd.rc;
+            abd.uEdge = (uint)msd.edge;
+        }
+
+        // The AppBarManager calls this to provide the delegate that handles AppBar messages received by the tray
+        public void SetAppBarMessageCallback(AppBarMessageDelegate theDelegate)
         {
             if (theDelegate == null)
             {
                 return;
             }
 
-            autoHideBarDelegate = theDelegate;
-            _trayService?.SetAutoHideBarCallback(autoHideBarDelegate);
+            appBarMessageDelegate = theDelegate;
+            _trayService?.SetAppBarMessageCallback(appBarMessageDelegate);
         }
 
         public void Dispose()
