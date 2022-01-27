@@ -2,7 +2,6 @@
 using ManagedShell.WindowsTray;
 using System;
 using System.Runtime.InteropServices;
-using System.Threading.Tasks;
 using System.Windows.Threading;
 using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
@@ -52,18 +51,6 @@ namespace ManagedShell.AppBar
             SetupTaskbarMonitor();
         }
 
-        public void SuspendTrayService()
-        {
-            // get Explorer tray window back so we can do appbar stuff that requires shared memory
-            _notificationArea?.Suspend();
-        }
-
-        public void ResumeTrayService()
-        {
-            // take back over
-            _notificationArea?.Resume();
-        }
-
         public void SetTaskbarVisibility(int swp)
         {
             // only run this if our TaskBar is enabled, or if we are showing the Windows TaskBar
@@ -105,17 +92,14 @@ namespace ManagedShell.AppBar
 
         public void SetTaskbarState(ABState state)
         {
-            Task.Run(() =>
+            APPBARDATA abd = new APPBARDATA
             {
-                APPBARDATA abd = new APPBARDATA
-                {
-                    cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                    hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle),
-                    lParam = (IntPtr)state
-                };
+                cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
+                hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle),
+                lParam = (IntPtr)state
+            };
 
-                SHAppBarMessage((int)ABMsg.ABM_SETSTATE, ref abd);
-            });
+            SHAppBarMessage((int)ABMsg.ABM_SETSTATE, ref abd);
         }
 
         public ABState GetTaskbarState()
@@ -126,10 +110,7 @@ namespace ManagedShell.AppBar
                 hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle)
             };
 
-            // suspend tray since we don't care about ManagedShell AppBars here
-            SuspendTrayService();
             uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
-            ResumeTrayService();
 
             return (ABState)uState;
         }

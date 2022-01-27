@@ -12,9 +12,8 @@ namespace ManagedShell.WindowsTray
         private const string NotifyWndClass = "TrayNotifyWnd";
         private const string TrayWndClass = "Shell_TrayWnd";
 
-        private AutoHideBarDelegate autoHideBarDelegate;
+        private AppBarMessageDelegate appBarMessageDelegate;
         private IconDataDelegate iconDataDelegate;
-        private TrayHostSizeDelegate trayHostSizeDelegate;
         private SystrayDelegate trayDelegate;
         private WndProcDelegate wndProcDelegate;
 
@@ -41,14 +40,9 @@ namespace ManagedShell.WindowsTray
             iconDataDelegate = theDelegate;
         }
 
-        internal void SetTrayHostSizeCallback(TrayHostSizeDelegate theDelegate)
+        internal void SetAppBarMessageCallback(AppBarMessageDelegate theDelegate)
         {
-            trayHostSizeDelegate = theDelegate;
-        }
-
-        internal void SetAutoHideBarCallback(AutoHideBarDelegate theDelegate)
-        {
-            autoHideBarDelegate = theDelegate;
+            appBarMessageDelegate = theDelegate;
         }
         #endregion
 
@@ -180,16 +174,20 @@ namespace ManagedShell.WindowsTray
 
                                 if (Marshal.SizeOf(typeof(APPBARDATAV2)) != amd.abd.cbSize)
                                 {
-                                    ShellLogger.Debug("TrayService: Size incorrect for APPBARMSGDATAV3");
+                                    ShellLogger.Debug("TrayService: Size incorrect for AppBarData");
                                     break;
                                 }
 
                                 bool handled = false;
-                                IntPtr abmResult = AppBarMessageAction(amd, ref handled);
+                                IntPtr abmResult = IntPtr.Zero;
+                                if (appBarMessageDelegate != null)
+                                {
+                                    abmResult = appBarMessageDelegate(amd, ref handled);
+                                }
 
                                 if (handled)
                                 {
-                                    ShellLogger.Debug($"TrayService: Handling AppBar message {(ABMsg)amd.dwMessage}");
+                                    ShellLogger.Debug($"TrayService: Handled AppBar message {(ABMsg)amd.dwMessage}");
                                     return abmResult;
                                 }
 
@@ -260,59 +258,6 @@ namespace ManagedShell.WindowsTray
         }
 
         #region Event handling
-        private IntPtr AppBarMessageAction(APPBARMSGDATAV3 amd, ref bool handled)
-        {
-            // only handle certain messages, send other AppBar messages to default handler
-            switch ((ABMsg)amd.dwMessage)
-            {
-                case ABMsg.ABM_GETTASKBARPOS:
-                    IntPtr hShared = SHLockShared((IntPtr)amd.hSharedMemory, (uint)amd.dwSourceProcessId);
-                    APPBARDATAV2 abd = (APPBARDATAV2)Marshal.PtrToStructure(hShared, typeof(APPBARDATAV2));
-                    FillTrayHostSizeData(ref abd);
-                    Marshal.StructureToPtr(abd, hShared, false);
-                    SHUnlockShared(hShared);
-                    handled = true;
-                    return (IntPtr)1;
-                case ABMsg.ABM_GETSTATE:
-                    if (autoHideBarDelegate == null)
-                    {
-                        break;
-                    }
-
-                    handled = true;
-
-                    if (autoHideBarDelegate(null) != IntPtr.Zero)
-                    {
-                        return (IntPtr)ABState.AutoHide;
-                    }
-
-                    return (IntPtr)ABState.Default;
-                case ABMsg.ABM_GETAUTOHIDEBAR:
-                    if (autoHideBarDelegate == null)
-                    {
-                        break;
-                    }
-
-                    handled = true;
-                    return autoHideBarDelegate((ABEdge)amd.abd.uEdge);
-            }
-            return IntPtr.Zero;
-        }
-
-        private void FillTrayHostSizeData(ref APPBARDATAV2 abd)
-        {
-            if (trayHostSizeDelegate != null)
-            {
-                TrayHostSizeData msd = trayHostSizeDelegate();
-                abd.rc = msd.rc;
-                abd.uEdge = (uint)msd.edge;
-            }
-            else
-            {
-                ShellLogger.Info("TrayService: TrayHostSizeDelegate is null");
-            }
-        }
-
         private IntPtr ForwardMsg(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam)
         {
             if (HwndFwd == IntPtr.Zero || !IsWindow(HwndFwd))
