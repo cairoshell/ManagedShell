@@ -25,7 +25,7 @@ namespace ManagedShell.AppBar
             _appBarMessageDelegate = appBarMessageDelegate;
             _explorerHelper = explorerHelper;
 
-            _explorerHelper._notificationArea.SetAppBarMessageCallback(_appBarMessageDelegate);
+            _explorerHelper._notificationArea?.SetAppBarMessageCallback(_appBarMessageDelegate);
         }
 
         public void SignalGracefulShutdown()

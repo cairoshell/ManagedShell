@@ -56,7 +56,7 @@ namespace ManagedShell.AppBar
             // only run this if our TaskBar is enabled, or if we are showing the Windows TaskBar
             if (swp != (int)SetWindowPosFlags.SWP_HIDEWINDOW || HideExplorerTaskbar)
             {
-                IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(_notificationArea.Handle);
+                IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(getNotifyAreaHandle());
                 IntPtr startButtonHwnd = FindWindowEx(IntPtr.Zero, IntPtr.Zero, (IntPtr)0xC017, null);
 
                 if (taskbarHwnd != IntPtr.Zero
@@ -95,7 +95,7 @@ namespace ManagedShell.AppBar
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle),
+                hWnd = WindowHelper.FindWindowsTray(getNotifyAreaHandle()),
                 lParam = (IntPtr)state
             };
 
@@ -107,12 +107,19 @@ namespace ManagedShell.AppBar
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = WindowHelper.FindWindowsTray(_notificationArea.Handle)
+                hWnd = WindowHelper.FindWindowsTray(getNotifyAreaHandle())
             };
 
             uint uState = SHAppBarMessage((int)ABMsg.ABM_GETSTATE, ref abd);
 
             return (ABState)uState;
+        }
+
+        private IntPtr getNotifyAreaHandle()
+        {
+            if (_notificationArea == null) return IntPtr.Zero;
+
+            return _notificationArea.Handle;
         }
 
         private void HideTaskbar()
@@ -156,7 +163,7 @@ namespace ManagedShell.AppBar
 
         private void TaskbarMonitor_Tick(object sender, EventArgs e)
         {
-            IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(_notificationArea.Handle);
+            IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(getNotifyAreaHandle());
 
             if (IsWindowVisible(taskbarHwnd))
             {
