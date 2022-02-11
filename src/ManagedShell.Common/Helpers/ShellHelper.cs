@@ -273,36 +273,38 @@ namespace ManagedShell.Common.Helpers
         
         public static void ToggleDesktopIcons(bool enable)
         {
-            if (!EnvironmentHelper.IsAppRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell)
             {
-                var toggleDesktopCommand = new IntPtr(0x7402);
-                IntPtr hWnd = FindWindowEx(FindWindow("Progman", "Program Manager"), IntPtr.Zero, "SHELLDLL_DefView",
-                    "");
+                return;
+            }
 
-                if (hWnd == IntPtr.Zero)
+            var toggleDesktopCommand = new IntPtr(0x7402);
+            IntPtr hWnd = FindWindowEx(FindWindow("Progman", "Program Manager"), IntPtr.Zero, "SHELLDLL_DefView",
+                "");
+
+            if (hWnd == IntPtr.Zero)
+            {
+                EnumWindows((hwnd, lParam) =>
                 {
-                    EnumWindows((hwnd, lParam) =>
+                    StringBuilder cName = new StringBuilder(256);
+                    GetClassName(hwnd, cName, cName.Capacity);
+                    if (cName.ToString() == "WorkerW")
                     {
-                        StringBuilder cName = new StringBuilder(256);
-                        GetClassName(hwnd, cName, cName.Capacity);
-                        if (cName.ToString() == "WorkerW")
+                        IntPtr child = FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
+                        if (child != IntPtr.Zero)
                         {
-                            IntPtr child = FindWindowEx(hwnd, IntPtr.Zero, "SHELLDLL_DefView", null);
-                            if (child != IntPtr.Zero)
-                            {
-                                hWnd = child;
-                                return true;
-                            }
+                            hWnd = child;
+                            return true;
                         }
+                    }
 
-                        return true;
-                    }, 0);
-                }
+                    return true;
+                }, 0);
+            }
 
-                if (IsDesktopVisible() != enable)
-                {
-                    SendMessageTimeout(hWnd, (uint) WM.COMMAND, toggleDesktopCommand, IntPtr.Zero, 2, 200, ref hWnd);
-                }
+            if (IsDesktopVisible() != enable)
+            {
+                SendMessageTimeout(hWnd, (uint)WM.COMMAND, toggleDesktopCommand, IntPtr.Zero, 0, 5000, ref hWnd);
             }
         }
 
