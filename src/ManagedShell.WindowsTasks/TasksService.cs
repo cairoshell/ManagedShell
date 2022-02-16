@@ -22,7 +22,7 @@ namespace ManagedShell.WindowsTasks
         private NativeWindowEx _HookWin;
         private object _windowsLock = new object();
         internal bool IsInitialized;
-        public IconSize TaskIconSize;
+        private IconSize _taskIconSize;
 
         private static int WM_SHELLHOOKMESSAGE = -1;
         private static int WM_TASKBARCREATEDMESSAGE = -1;
@@ -32,6 +32,35 @@ namespace ManagedShell.WindowsTasks
 
         internal ITaskCategoryProvider TaskCategoryProvider;
         private TaskCategoryChangeDelegate CategoryChangeDelegate;
+
+        public IconSize TaskIconSize
+        {
+            get { return _taskIconSize; }
+            set
+            {
+                if (value == _taskIconSize)
+                {
+                    return;
+                }
+
+                _taskIconSize = value;
+
+                if (!IsInitialized)
+                {
+                    return;
+                }
+
+                foreach (var window in Windows)
+                {
+                    if (!window.ShowInTaskbar)
+                    {
+                        return;
+                    }
+
+                    window.UpdateProperties();
+                }
+            }
+        }
 
         public TasksService() : this(DEFAULT_ICON_SIZE)
         {
