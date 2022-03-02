@@ -110,8 +110,6 @@ namespace ManagedShell.WindowsTray
                 }
 
                 // the backing var is updated by the above called methods
-
-                OnPropertyChanged();
             }
         }
 
@@ -250,8 +248,15 @@ namespace ManagedShell.WindowsTray
             {
                 // already pinned, just moving
                 List<string> icons = _notificationArea.PinnedNotifyIcons.ToList();
+                int insertPos = position;
                 icons.Remove(Identifier);
-                icons.Insert(position, Identifier);
+
+                if (PinOrder < position && position > 0)
+                {
+                    insertPos -= 1;
+                }
+
+                icons.Insert(insertPos, Identifier);
                 _notificationArea.PinnedNotifyIcons = icons.ToArray();
                 updated = true;
             }
@@ -266,6 +271,7 @@ namespace ManagedShell.WindowsTray
 
             if (updated)
             {
+                OnPropertyChanged("IsPinned");
                 _notificationArea.UpdatePinnedIcons();
             }
         }
@@ -284,6 +290,7 @@ namespace ManagedShell.WindowsTray
             _isPinned = false;
             PinOrder = 0;
 
+            OnPropertyChanged("IsPinned");
             _notificationArea.UpdatePinnedIcons();
         }
 
@@ -294,7 +301,11 @@ namespace ManagedShell.WindowsTray
                 string item = _notificationArea.PinnedNotifyIcons[i].ToLower();
                 if (item == GUID.ToString().ToLower() || (GUID == default && item == (Path.ToLower() + ":" + UID.ToString())))
                 {
-                    _isPinned = true;
+                    if (!_isPinned)
+                    {
+                        _isPinned = true;
+                        OnPropertyChanged("IsPinned");
+                    }
                     PinOrder = i;
                     break;
                 }
