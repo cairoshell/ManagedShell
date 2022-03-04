@@ -2984,6 +2984,9 @@ namespace ManagedShell.Interop
             IntPtr hInstance,
             IntPtr lpParam);
 
+        [DllImport(User32_DllName)]
+        public static extern IntPtr GetKeyboardLayout(uint thread);
+        
         public enum VK : int
         {
             ///<summary>
