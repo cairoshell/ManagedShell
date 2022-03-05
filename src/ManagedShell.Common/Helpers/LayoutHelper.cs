@@ -18,9 +18,12 @@ namespace ManagedShell.Common.Helpers
             return result;
         }
 
-        public static int SetKeyboardLayout(int layoutId)
+        public static bool SetKeyboardLayout(int layoutId)
         {
-            return NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint) NativeMethods.LKLFlags.KLF_ACTIVATE);
+            return NativeMethods.PostMessage(0xffff,
+                (uint) NativeMethods.WM.INPUTLANGCHANGEREQUEST,
+                0,
+                NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint)(NativeMethods.KLF.SUBSTITUTE_OK | NativeMethods.KLF.ACTIVATE)));
         }
     }
 }
