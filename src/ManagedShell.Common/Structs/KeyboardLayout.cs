@@ -2,8 +2,8 @@
 {
     public struct KeyboardLayout
     {
-        public int HKL;
-        public string NativeName;
-        public string ThreeLetterName;
+        public int HKL { get; set; }
+        public string NativeName { get; set; }
+        public string ThreeLetterName { get; set; }
     }
 }
