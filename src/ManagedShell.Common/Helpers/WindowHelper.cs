@@ -8,6 +8,12 @@ namespace ManagedShell.Common.Helpers
     {
         public const string TrayWndClass = "Shell_TrayWnd";
 
+        public static void SetWindowNoActivate(IntPtr handle)
+        {
+            SetWindowLong(handle, GWL_EXSTYLE,
+                GetWindowLong(handle, GWL_EXSTYLE) | (int) ExtendedWindowStyles.WS_EX_NOACTIVATE);
+        }
+
         public static void ShowWindowBottomMost(IntPtr handle)
         {
             SetWindowPos(
@@ -29,7 +35,7 @@ namespace ManagedShell.Common.Helpers
                 0,
                 0,
                 0,
-                (int)SetWindowPosFlags.SWP_NOSIZE | (int)SetWindowPosFlags.SWP_NOMOVE | (int)SetWindowPosFlags.SWP_SHOWWINDOW/* | (int)SetWindowPosFlags.SWP_NOACTIVATE | SWP_NOZORDER | SWP_NOOWNERZORDER*/);
+                (int)SetWindowPosFlags.SWP_NOSIZE | (int)SetWindowPosFlags.SWP_NOMOVE | (int)SetWindowPosFlags.SWP_SHOWWINDOW | (int)SetWindowPosFlags.SWP_NOACTIVATE /* | SWP_NOZORDER | SWP_NOOWNERZORDER*/);
         }
 
         public static void ShowWindowDesktop(IntPtr hwnd)

@@ -3,6 +3,7 @@ using ManagedShell.Interop;
 using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
+using System;
 
 namespace ManagedShell.Common.Helpers
 {
@@ -39,10 +40,8 @@ namespace ManagedShell.Common.Helpers
 
         public static bool SetKeyboardLayout(int layoutId)
         {
-            return NativeMethods.PostMessage(0xffff,
-                (uint) NativeMethods.WM.INPUTLANGCHANGEREQUEST,
-                0,
-                NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint)(NativeMethods.KLF.SUBSTITUTE_OK | NativeMethods.KLF.ACTIVATE)));
+            var loadedHkl = new IntPtr(NativeMethods.LoadKeyboardLayout(((short)layoutId).ToString("x8"), (uint)NativeMethods.KLF.SUBSTITUTE_OK));
+            return NativeMethods.PostMessage(NativeMethods.GetForegroundWindow(), (int)NativeMethods.WM.INPUTLANGCHANGEREQUEST, IntPtr.Zero, loadedHkl);
         }
     }
 }
