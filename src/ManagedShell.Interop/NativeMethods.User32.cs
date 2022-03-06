@@ -2984,6 +2984,31 @@ namespace ManagedShell.Interop
             IntPtr hInstance,
             IntPtr lpParam);
 
+        [DllImport(User32_DllName)]
+        public static extern int GetKeyboardLayout(uint idThread);
+
+        [DllImport(User32_DllName)]
+        public static extern int GetKeyboardLayoutList(int nBuff, long[] lpList);
+
+        [DllImport(User32_DllName)]
+        public static extern int LoadKeyboardLayout(string pwszKLID, uint flags);
+
+        [DllImport(User32_DllName)]
+        public static extern int ActivateKeyboardLayout(int hkl, uint flags);
+
+        [DllImport(User32_DllName)]
+        public static extern bool PostMessage(int hWnd, uint msg, int wParam, long lParam);
+
+        public enum KLF : uint
+        {
+            ACTIVATE = 0x00000001,
+            NOTELLSHELL = 0x00000080,
+            REORDER = 0x00000008,
+            REPLACELANG = 0x00000010,
+            SUBSTITUTE_OK = 0x00000002,
+            SETFORPROCESS = 0x00000100
+        }
+
         public enum VK : int
         {
             ///<summary>
