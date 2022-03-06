@@ -9,11 +9,9 @@ namespace ManagedShell.Common.Helpers
 {
     public static class KeyboardLayoutHelper
     {
-        public static KeyboardLayout GetKeyboardLayout(bool currentThread = false)
+        public static KeyboardLayout GetKeyboardLayout()
         {
-            uint threadId = 0;
-            if (!currentThread)
-                threadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
+            uint threadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
             var layout = NativeMethods.GetKeyboardLayout(threadId);
 
             return new KeyboardLayout()
