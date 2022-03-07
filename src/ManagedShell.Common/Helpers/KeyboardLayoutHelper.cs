@@ -27,8 +27,7 @@ namespace ManagedShell.Common.Helpers
 
         public static bool SetKeyboardLayout(int layoutId)
         {
-            var loadedHkl = new IntPtr(NativeMethods.LoadKeyboardLayout(((short)layoutId).ToString("x8"), (uint)NativeMethods.KLF.SUBSTITUTE_OK));
-            return NativeMethods.PostMessage(NativeMethods.GetForegroundWindow(), (int)NativeMethods.WM.INPUTLANGCHANGEREQUEST, IntPtr.Zero, loadedHkl);
+            return NativeMethods.PostMessage(NativeMethods.GetForegroundWindow(), (int)NativeMethods.WM.INPUTLANGCHANGEREQUEST, IntPtr.Zero, new IntPtr(layoutId));
         }
     }
 }
