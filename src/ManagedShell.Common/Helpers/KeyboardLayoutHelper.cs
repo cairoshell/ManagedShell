@@ -1,7 +1,6 @@
 ﻿using ManagedShell.Common.Structs;
 using ManagedShell.Interop;
 using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System;
 
@@ -14,12 +13,7 @@ namespace ManagedShell.Common.Helpers
             uint threadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
             var layout = NativeMethods.GetKeyboardLayout(threadId);
 
-            return new KeyboardLayout()
-            {
-                HKL = layout,
-                NativeName = CultureInfo.GetCultureInfo((short)layout).NativeName,
-                ThreeLetterName = CultureInfo.GetCultureInfo((short)layout).ThreeLetterISOLanguageName.ToUpper()
-            };
+            return new KeyboardLayout(layout);
         }
 
         public static List<KeyboardLayout> GetKeyboardLayoutList()
@@ -28,12 +22,7 @@ namespace ManagedShell.Common.Helpers
             var result = new long[size];
             NativeMethods.GetKeyboardLayoutList(size, result);
 
-            return result.Select(x => new KeyboardLayout()
-            {
-                HKL = (int)x,
-                NativeName = CultureInfo.GetCultureInfo((short)x).NativeName,
-                ThreeLetterName = CultureInfo.GetCultureInfo((short)x).ThreeLetterISOLanguageName.ToUpper()
-            }).ToList();
+            return result.Select(x => new KeyboardLayout((int)x)).ToList();
         }
 
         public static bool SetKeyboardLayout(int layoutId)
