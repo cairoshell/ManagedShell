@@ -1884,6 +1884,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName, SetLastError = true)]
         public static extern bool SetProp(IntPtr hWnd, string lpString, IntPtr hData);
 
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern IntPtr RemoveProp(IntPtr hWnd, string lpString);
+
         public enum TBPFLAG
         {
             TBPF_NOPROGRESS = 0,
