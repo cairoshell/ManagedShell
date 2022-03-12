@@ -278,6 +278,7 @@ namespace ManagedShell.WindowsTray
                     try
                     {
                         bool exists = false;
+                        bool titleChanged = false;
 
                         // hide icons while we are shell which require UWP support & we have a separate implementation for
                         if (nicData.guidItem == new Guid(VOLUME_GUID) && ((EnvironmentHelper.IsAppRunningAsShell && EnvironmentHelper.IsWindows10OrBetter) || GroupPolicyHelper.HideScaVolume))
@@ -304,7 +305,10 @@ namespace ManagedShell.WindowsTray
                             trayIcon.IsHidden = nicData.dwState == 1;
 
                         if ((NIF.TIP & nicData.uFlags) != 0 && !string.IsNullOrEmpty(nicData.szTip))
+                        {
                             trayIcon.Title = nicData.szTip;
+                            titleChanged = true;
+                        }
 
                         if ((NIF.ICON & nicData.uFlags) != 0)
                         {
@@ -369,6 +373,12 @@ namespace ManagedShell.WindowsTray
                         {
                             if ((NIF.INFO & nicData.uFlags) != 0)
                                 handleBalloonData(nicData, trayIcon);
+
+                            if (titleChanged && trayIcon.GUID == default && !trayIcon.IsPinned)
+                            {
+                                // set properties used for pinning
+                                trayIcon.SetPinValues();
+                            }
 
                             ShellLogger.Debug($"NotificationArea: Modified: {trayIcon.Title}");
                         }
