@@ -202,7 +202,7 @@ namespace ManagedShell.WindowsTray
             get
             {
                 if (GUID != default) return GUID.ToString();
-                else return Path + ":" + UID.ToString();
+                else return Path + ":" + UID.ToString() + ":" + Title;
             }
         }
 
@@ -249,7 +249,14 @@ namespace ManagedShell.WindowsTray
                 // already pinned, just moving
                 List<string> icons = _notificationArea.PinnedNotifyIcons.ToList();
                 int insertPos = position;
-                icons.Remove(Identifier);
+
+                for (int i = 0; i < icons.Count; i++)
+                {
+                    if (IsEqualByIdentifier(icons[i]))
+                    {
+                        icons.RemoveAt(i);
+                    }
+                }
 
                 if (PinOrder < position && position > 0)
                 {
@@ -284,7 +291,15 @@ namespace ManagedShell.WindowsTray
             }
 
             List<string> icons = _notificationArea.PinnedNotifyIcons.ToList();
-            icons.Remove(Identifier);
+
+            for (int i = 0; i < icons.Count; i++)
+            {
+                if (IsEqualByIdentifier(icons[i]))
+                {
+                    icons.RemoveAt(i);
+                }
+            }
+
             _notificationArea.PinnedNotifyIcons = icons.ToArray();
 
             _isPinned = false;
@@ -298,8 +313,8 @@ namespace ManagedShell.WindowsTray
         {
             for (int i = 0; i < _notificationArea.PinnedNotifyIcons.Length; i++)
             {
-                string item = _notificationArea.PinnedNotifyIcons[i].ToLower();
-                if (item == GUID.ToString().ToLower() || (GUID == default && item == (Path.ToLower() + ":" + UID.ToString())))
+                string item = _notificationArea.PinnedNotifyIcons[i];
+                if (IsEqualByIdentifier(item))
                 {
                     if (!_isPinned)
                     {
@@ -310,6 +325,41 @@ namespace ManagedShell.WindowsTray
                     break;
                 }
             }
+        }
+
+        public bool IsEqualByIdentifier(string otherIdentifier)
+        {
+            otherIdentifier = otherIdentifier.ToLower();
+
+            if (otherIdentifier == GUID.ToString().ToLower())
+            {
+                return true;
+            }
+
+            if (GUID != default || Path == null)
+            {
+                // Ignore below checks
+                return false;
+            }
+
+            if (otherIdentifier == Path.ToLower() + ":" + UID.ToString())
+            {
+                return true;
+            }
+
+            string[] otherIdentifierArray = otherIdentifier.Split(new[] { ':' }, 4);
+
+            if (otherIdentifierArray.Length < 4 || Title == null)
+            {
+                return false;
+            }
+
+            if (otherIdentifierArray[0] + ":" + otherIdentifierArray[1] == Path.ToLower() && otherIdentifierArray[3] == Title.ToLower())
+            {
+                return true;
+            }
+
+            return false;
         }
         #endregion
 
