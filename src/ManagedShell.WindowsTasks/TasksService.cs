@@ -580,35 +580,64 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        // set property on hook window that should receive ITaskbarList messages
         private void setTaskbarListHwnd(IntPtr hwndHook)
         {
-            // set property on hook window that should receive ITaskbarList messages
+            bool resetProp = true;
 
-            IntPtr taskbarHwnd = FindWindow("Shell_TrayWnd", "");
-            if (taskbarHwnd != IntPtr.Zero)
+            // get the topmost tray
+            IntPtr taskbarHwnd = WindowHelper.FindWindowsTray(IntPtr.Zero);
+            
+            if (taskbarHwnd == IntPtr.Zero)
             {
-                if (hwndHook == IntPtr.Zero)
-                {
-                    // Try to find and use the handle of the Explorer hook window
-                    EnumChildWindows(taskbarHwnd, (hwnd, lParam) =>
-                    {
-                        StringBuilder cName = new StringBuilder(256);
-                        GetClassName(hwnd, cName, cName.Capacity);
-                        if (cName.ToString() == "MSTaskSwWClass")
-                        {
-                            hwndHook = hwnd;
-                            return false;
-                        }
-
-                        return true;
-                    }, 0);
-                }
-
-                if (hwndHook != IntPtr.Zero)
-                {
-                    SetProp(taskbarHwnd, "TaskbandHWND", hwndHook);
-                }
+                return;
             }
+
+            // if our tray is running, there may also be a second tray running
+            IntPtr systemTaskbarHwnd = WindowHelper.FindWindowsTray(taskbarHwnd);
+
+            if (hwndHook == IntPtr.Zero)
+            {
+                // no target hwnd provided
+                // Try to find and use the handle of the Explorer hook window
+                resetProp = false;
+                hwndHook = getChildHwndByClass(systemTaskbarHwnd == IntPtr.Zero ? taskbarHwnd : systemTaskbarHwnd, "MSTaskSwWClass");
+            }
+
+            if (hwndHook == IntPtr.Zero)
+            {
+                // if still no hwnd to hook, we can't do anything
+                return;
+            }
+
+            ShellLogger.Debug("TasksService: Adding TaskbandHWND prop to hwnd: " + taskbarHwnd);
+            SetProp(taskbarHwnd, "TaskbandHWND", hwndHook);
+
+            // Remove the property from the Explorer taskbar, if it is not the only tray
+            if (resetProp && systemTaskbarHwnd != IntPtr.Zero)
+            {
+                ShellLogger.Debug("TasksService: Removing TaskbandHWND prop from hwnd: " + systemTaskbarHwnd);
+                RemoveProp(systemTaskbarHwnd, "TaskbandHWND");
+            }
+        }
+
+        private IntPtr getChildHwndByClass(IntPtr parentHwnd, string wndClass)
+        {
+            IntPtr childHwnd = IntPtr.Zero;
+            EnumChildWindows(parentHwnd, (hwnd, lParam) =>
+            {
+                StringBuilder cName = new StringBuilder(256);
+                GetClassName(hwnd, cName, cName.Capacity);
+                if (cName.ToString() == wndClass)
+                {
+                    childHwnd = hwnd;
+                    return false;
+                }
+
+                return true;
+            }, 0);
+
+            return childHwnd;
         }
 
         internal ObservableCollection<ApplicationWindow> Windows
