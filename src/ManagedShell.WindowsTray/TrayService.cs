@@ -351,6 +351,7 @@ namespace ManagedShell.WindowsTray
             if (taskbarHwnd == HwndTray) return;
 
             ShellLogger.Debug("TrayService: Raising Shell_TrayWnd");
+            SetWindowsTrayBottommost();
             MakeTrayTopmost();
         }
 
