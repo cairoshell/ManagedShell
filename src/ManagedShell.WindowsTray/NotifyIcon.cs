@@ -342,19 +342,27 @@ namespace ManagedShell.WindowsTray
                 return false;
             }
 
-            if (otherIdentifier == Path.ToLower() + ":" + UID.ToString())
+            string pathLower = Path.ToLower();
+
+            if (otherIdentifier.StartsWith(pathLower + ":" + UID.ToString()))
             {
                 return true;
             }
 
             string[] otherIdentifierArray = otherIdentifier.Split(new[] { ':' }, 4);
 
-            if (otherIdentifierArray.Length < 4 || Title == null)
+            if (otherIdentifierArray.Length < 4)
             {
                 return false;
             }
 
-            if (otherIdentifierArray[0] + ":" + otherIdentifierArray[1] == Path.ToLower() && otherIdentifierArray[3] == Title.ToLower())
+            string cleanTitle = Title;
+            if (cleanTitle == null)
+            {
+                cleanTitle = "";
+            }
+
+            if (otherIdentifierArray[0] + ":" + otherIdentifierArray[1] == pathLower && otherIdentifierArray[3] == cleanTitle.ToLower())
             {
                 return true;
             }

@@ -14,11 +14,11 @@ namespace ManagedShell.WindowsTray
 {
     public class NotificationArea : DependencyObject, IDisposable
     {
-        const string HEALTH_GUID = "7820ae76-23e3-4229-82c1-e41cb67d5b9c";
-        const string MEETNOW_GUID = "7820ae83-23e3-4229-82c1-e41cb67d5b9c";
-        const string NETWORK_GUID = "7820ae74-23e3-4229-82c1-e41cb67d5b9c";
-        const string POWER_GUID = "7820ae75-23e3-4229-82c1-e41cb67d5b9c";
-        const string VOLUME_GUID = "7820ae73-23e3-4229-82c1-e41cb67d5b9c";
+        public const string HEALTH_GUID = "7820ae76-23e3-4229-82c1-e41cb67d5b9c";
+        public const string MEETNOW_GUID = "7820ae83-23e3-4229-82c1-e41cb67d5b9c";
+        public const string NETWORK_GUID = "7820ae74-23e3-4229-82c1-e41cb67d5b9c";
+        public const string POWER_GUID = "7820ae75-23e3-4229-82c1-e41cb67d5b9c";
+        public const string VOLUME_GUID = "7820ae73-23e3-4229-82c1-e41cb67d5b9c";
 
         public static readonly string[] DEFAULT_PINNED = {
             HEALTH_GUID,
