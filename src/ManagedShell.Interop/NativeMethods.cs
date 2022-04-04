@@ -42,10 +42,14 @@ namespace ManagedShell.Interop
         }
 
         // lo = x; hi = y
-        public static IntPtr MakeLParam(int loWord, int hiWord)
+        public static int MakeLParam(int loWord, int hiWord)
         {
-            int i = ((short)hiWord << 16) | ((short)loWord & 0xffff);
-            return new IntPtr(i);
+            return ((short)hiWord << 16) | ((short)loWord & 0xffff);
+        }
+
+        public static IntPtr MakeLParamIntPtr(int loWord, int hiWord)
+        {
+            return new IntPtr(MakeLParam(loWord, hiWord));
         }
     }
 }
