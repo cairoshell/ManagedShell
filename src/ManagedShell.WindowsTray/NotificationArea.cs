@@ -246,18 +246,18 @@ namespace ManagedShell.WindowsTray
             if (icon != null)
             {
                 if (dwMessage == 1)
-                    return MakeLParam(icon.Placement.Left, icon.Placement.Top);
+                    return MakeLParamIntPtr(icon.Placement.Left, icon.Placement.Top);
                 else if (dwMessage == 2)
-                    return MakeLParam(icon.Placement.Right, icon.Placement.Bottom);
+                    return MakeLParamIntPtr(icon.Placement.Right, icon.Placement.Bottom);
             }
             else if (guidItem == new Guid(VOLUME_GUID))
             {
                 // If the shell is using sndvol32 as a volume control, it won't have a corresponding
                 // tray icon in Windows 10+, but it still requests the icon location. Provide the tray.
                 if (dwMessage == 1)
-                    return MakeLParam(trayHostSizeData.rc.Left, trayHostSizeData.rc.Top);
+                    return MakeLParamIntPtr(trayHostSizeData.rc.Left, trayHostSizeData.rc.Top);
                 else if (dwMessage == 2)
-                    return MakeLParam(trayHostSizeData.rc.Right, trayHostSizeData.rc.Bottom);
+                    return MakeLParamIntPtr(trayHostSizeData.rc.Right, trayHostSizeData.rc.Bottom);
             }
 
             return IntPtr.Zero;
