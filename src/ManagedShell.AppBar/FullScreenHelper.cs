@@ -47,10 +47,16 @@ namespace ManagedShell.AppBar
                     continue;
                 }
 
-                if (appCurrentState == null || app.screen.DeviceName != appCurrentState.screen.DeviceName)
+                if (appCurrentState != null && app.hWnd != hWnd && 
+                    app.screen.DeviceName == appCurrentState.screen.DeviceName &&
+                    Screen.FromHandle(hWnd).DeviceName != appCurrentState.screen.DeviceName)
                 {
-                    removeApps.Add(app);
+                    // if the full-screen window is no longer foreground, keep it
+                    // as long as the foreground window is on a different screen.
+                    continue;
                 }
+
+                removeApps.Add(app);
             }
 
             // remove any changed windows we found
