@@ -566,7 +566,7 @@ namespace ManagedShell.WindowsTasks
             else
             {
                 NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
-                NativeMethods.SetForegroundWindow(Handle);
+                makeForeground();
 
                 if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
             }
@@ -586,7 +586,7 @@ namespace ManagedShell.WindowsTasks
             IntPtr retval = IntPtr.Zero;
             NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_RESTORE, 0, 2, 200, ref retval);
 
-            NativeMethods.SetForegroundWindow(Handle);
+            makeForeground();
         }
 
         public void Maximize()
@@ -598,7 +598,12 @@ namespace ManagedShell.WindowsTasks
                 IntPtr retval = IntPtr.Zero;
                 NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_RESTORE, 0, 2, 200, ref retval);
             }
-            NativeMethods.SetForegroundWindow(Handle);
+            makeForeground();
+        }
+
+        private void makeForeground()
+        {
+            NativeMethods.SetForegroundWindow(NativeMethods.GetLastActivePopup(Handle));
         }
 
         internal IntPtr DoClose()
