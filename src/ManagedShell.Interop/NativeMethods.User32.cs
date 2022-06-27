@@ -316,6 +316,9 @@ namespace ManagedShell.Interop
         public static extern bool SetForegroundWindow(IntPtr hWnd);
 
         [DllImport(User32_DllName)]
+        public static extern IntPtr GetLastActivePopup(IntPtr hWnd);
+
+        [DllImport(User32_DllName)]
         public static extern IntPtr GetParent(IntPtr handle);
 
         public struct WINDOWPLACEMENT
