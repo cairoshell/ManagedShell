@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
 using ManagedShell.Common.Logging;
 using ManagedShell.ShellFolders.Enums;
@@ -41,6 +42,8 @@ namespace ManagedShell.ShellFolders
             {
                 ShellLogger.Error($"ShellLinkHelper: Unable to create link from {linkTargetPath} to {destinationPath}", e);
             }
+
+            Marshal.FinalReleaseComObject(link);
         }
 
         public static IShellLink Load(IntPtr userInputHwnd, string existingLinkPath)
