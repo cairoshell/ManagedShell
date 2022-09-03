@@ -123,8 +123,7 @@ namespace ManagedShell.Common.Helpers
                     getOSVersion();
                 }
 
-                // This has an upper-bound due to the volatility of the undocumented dark mode API
-                return (osVersionMajor >= 10 && osVersionBuild >= 18362 && osVersionBuild <= 22000);
+                return (osVersionMajor >= 10 && osVersionBuild >= 18362);
             }
         }
 
