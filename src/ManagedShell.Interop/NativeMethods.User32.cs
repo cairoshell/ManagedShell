@@ -1909,6 +1909,7 @@ namespace ManagedShell.Interop
         public static int WINEVENT_OUTOFCONTEXT = 0;
         public static int WINEVENT_SKIPOWNPROCESS = 2;
         public static int EVENT_OBJECT_UNCLOAKED = 0x8018;
+        public static int EVENT_OBJECT_LOCATIONCHANGE = 0x800B;
 
         public delegate void WinEventProc(IntPtr hWinEventHook, uint eventType, IntPtr hwnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime);
 
@@ -3706,5 +3707,15 @@ namespace ManagedShell.Interop
             ///</summary>
             OEM_CLEAR = 0xFE
         }
+
+        public const int MONITOR_DEFAULTTONULL = 0x00000000;
+        public const int MONITOR_DEFAULTTOPRIMARY = 0x00000001;
+        public const int MONITOR_DEFAULTTONEAREST = 0x00000002;
+
+        [DllImport(User32_DllName)]
+        public static extern IntPtr MonitorFromPoint(Point pt, int dwFlags);
+
+        [DllImport(User32_DllName)]
+        public static extern IntPtr MonitorFromWindow(IntPtr hWnd, int dwFlags);
     }
 }
