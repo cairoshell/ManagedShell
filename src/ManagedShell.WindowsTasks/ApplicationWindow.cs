@@ -258,6 +258,30 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private IntPtr _hMonitor;
+
+        public IntPtr HMonitor
+        {
+            get
+            {
+                if (_hMonitor == IntPtr.Zero)
+                {
+                    SetMonitor();
+                }
+
+                return _hMonitor;
+            }
+
+            private set
+            {
+                if (_hMonitor != value)
+                {
+                    _hMonitor = value;
+                    OnPropertyChanged("HMonitor");
+                }
+            }
+        }
+
         public bool IsMinimized
         {
             get { return NativeMethods.IsIconic(Handle); }
@@ -501,6 +525,11 @@ namespace ManagedShell.WindowsTasks
                     _iconLoading = false;
                 }, CancellationToken.None, TaskCreationOptions.None, IconHelper.IconScheduler);
             }
+        }
+
+        internal void SetMonitor()
+        {
+            HMonitor = NativeMethods.MonitorFromWindow(Handle, NativeMethods.MONITOR_DEFAULTTONEAREST);
         }
 
         public void SetOverlayIcon(IntPtr hIcon)

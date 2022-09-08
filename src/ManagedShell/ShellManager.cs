@@ -56,7 +56,7 @@ namespace ManagedShell
 
             if (config.EnableTasksService && config.AutoStartTasksService)
             {
-                Tasks.Initialize();
+                Tasks.Initialize(true);
             }
         }
 

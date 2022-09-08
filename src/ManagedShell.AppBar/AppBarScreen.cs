@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using ManagedShell.Interop;
+using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.Windows.Forms;
 
@@ -14,14 +16,18 @@ namespace ManagedShell.AppBar
         
         public Rectangle WorkingArea { get; set; }
 
+        public IntPtr HMonitor { get; set; }
+
         public static AppBarScreen FromScreen(Screen screen)
         {
+            IntPtr hMonitor = NativeMethods.MonitorFromPoint(new Point(screen.Bounds.X, screen.Bounds.Y), NativeMethods.MONITOR_DEFAULTTONEAREST);
             return new AppBarScreen
             {
                 Bounds = screen.Bounds,
                 DeviceName = screen.DeviceName,
                 Primary = screen.Primary,
-                WorkingArea = screen.WorkingArea
+                WorkingArea = screen.WorkingArea,
+                HMonitor = hMonitor
             };
         }
 

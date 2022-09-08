@@ -29,6 +29,8 @@ namespace ManagedShell.WindowsTasks
         private static int TASKBARBUTTONCREATEDMESSAGE = -1;
         private static IntPtr uncloakEventHook = IntPtr.Zero;
         private WinEventProc uncloakEventProc;
+        private static IntPtr moveEventHook = IntPtr.Zero;
+        private WinEventProc moveEventProc;
 
         internal ITaskCategoryProvider TaskCategoryProvider;
         private TaskCategoryChangeDelegate CategoryChangeDelegate;
@@ -71,7 +73,7 @@ namespace ManagedShell.WindowsTasks
             TaskIconSize = iconSize;
         }
 
-        internal void Initialize()
+        internal void Initialize(bool withMultiMonTracking)
         {
             if (IsInitialized)
             {
@@ -111,6 +113,24 @@ namespace ManagedShell.WindowsTasks
                             0,
                             0,
                             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS);
+                    }
+                }
+
+                if (withMultiMonTracking)
+                {
+                    // set event hook for move events
+                    moveEventProc = MoveEventCallback;
+
+                    if (moveEventHook == IntPtr.Zero)
+                    {
+                        moveEventHook = SetWinEventHook(
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            IntPtr.Zero,
+                            moveEventProc,
+                            0,
+                            0,
+                            WINEVENT_OUTOFCONTEXT);
                     }
                 }
 
@@ -175,6 +195,7 @@ namespace ManagedShell.WindowsTasks
                 ShellLogger.Debug("TasksService: Deregistering hooks");
                 DeregisterShellHookWindow(_HookWin.Handle);
                 if (uncloakEventHook != IntPtr.Zero) UnhookWinEvent(uncloakEventHook);
+                if (moveEventHook != IntPtr.Zero) UnhookWinEvent(moveEventHook);
                 _HookWin.DestroyHandle();
                 setTaskbarListHwnd(IntPtr.Zero);
             }
@@ -566,6 +587,18 @@ namespace ManagedShell.WindowsTasks
             }
 
             msg.Result = DefWindowProc(msg.HWnd, msg.Msg, msg.WParam, msg.LParam);
+        }
+
+        private void MoveEventCallback(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
+        {
+            if (hWnd != IntPtr.Zero && idObject == 0 && idChild == 0)
+            {
+                if (Windows.Any(i => i.Handle == hWnd))
+                {
+                    ApplicationWindow win = Windows.First(wnd => wnd.Handle == hWnd);
+                    win.SetMonitor();
+                }
+            }
         }
 
         private void UncloakEventCallback(IntPtr hWinEventHook, uint eventType, IntPtr hWnd, int idObject, int idChild, uint dwEventThread, uint dwmsEventTime)
