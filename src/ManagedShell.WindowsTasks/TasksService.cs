@@ -73,7 +73,7 @@ namespace ManagedShell.WindowsTasks
             TaskIconSize = iconSize;
         }
 
-        internal void Initialize()
+        internal void Initialize(bool withMultiMonTracking)
         {
             if (IsInitialized)
             {
@@ -116,19 +116,22 @@ namespace ManagedShell.WindowsTasks
                     }
                 }
 
-                // set event hook for move events
-                moveEventProc = MoveEventCallback;
-
-                if (moveEventHook == IntPtr.Zero)
+                if (withMultiMonTracking)
                 {
-                    moveEventHook = SetWinEventHook(
-                        EVENT_OBJECT_LOCATIONCHANGE,
-                        EVENT_OBJECT_LOCATIONCHANGE,
-                        IntPtr.Zero,
-                        moveEventProc,
-                        0,
-                        0,
-                        WINEVENT_OUTOFCONTEXT);
+                    // set event hook for move events
+                    moveEventProc = MoveEventCallback;
+
+                    if (moveEventHook == IntPtr.Zero)
+                    {
+                        moveEventHook = SetWinEventHook(
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            IntPtr.Zero,
+                            moveEventProc,
+                            0,
+                            0,
+                            WINEVENT_OUTOFCONTEXT);
+                    }
                 }
 
                 // set window for ITaskbarList

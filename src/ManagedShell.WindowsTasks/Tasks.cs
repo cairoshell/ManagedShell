@@ -30,18 +30,18 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public void Initialize(ITaskCategoryProvider taskCategoryProvider)
+        public void Initialize(ITaskCategoryProvider taskCategoryProvider, bool withMultiMonTracking = false)
         {
             if (!_tasksService.IsInitialized)
             {
                 SetTaskCategoryProvider(taskCategoryProvider);
-                Initialize();
+                Initialize(withMultiMonTracking);
             }
         }
 
-        public void Initialize()
+        public void Initialize(bool withMultiMonTracking = false)
         {
-            _tasksService.Initialize();
+            _tasksService.Initialize(withMultiMonTracking);
         }
 
         public void SetTaskCategoryProvider(ITaskCategoryProvider taskCategoryProvider)
