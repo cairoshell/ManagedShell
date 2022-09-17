@@ -56,6 +56,10 @@ namespace ManagedShell.AppBar
                     return appBarMessage_GetState(amd, ref handled);
                 case ABMsg.ABM_GETAUTOHIDEBAR:
                     return appBarMessage_GetAutoHideBar(amd, ref handled);
+                case ABMsg.ABM_ACTIVATE:
+                case ABMsg.ABM_WINDOWPOSCHANGED:
+                    handled = true;
+                    return (IntPtr)1;
             }
             return IntPtr.Zero;
         }

@@ -12,6 +12,7 @@ namespace ManagedShell
         {
             EnableTasksService = true,
             AutoStartTasksService = true,
+            MultiMonAwareTasksService = true,
             TaskIconSize = TasksService.DEFAULT_ICON_SIZE,
             
             EnableTrayService = true,
@@ -56,7 +57,7 @@ namespace ManagedShell
 
             if (config.EnableTasksService && config.AutoStartTasksService)
             {
-                Tasks.Initialize(true);
+                Tasks.Initialize(config.MultiMonAwareTasksService);
             }
         }
 
