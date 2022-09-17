@@ -22,7 +22,7 @@ namespace ManagedShell
         public bool AutoStartTasksService;
 
         /// <summary>
-        /// Controls whether the tasks service will be multi-mon aware.<br />
+        /// Controls whether the tasks service will be multi-mon aware when using AutoStartTasksService.<br />
         /// This keeps the HMonitor property of each ApplicationWindow updated.<br />
         /// <br />
         /// By default, this is enabled.
