@@ -16,18 +16,35 @@ namespace ManagedShell.WindowsTasks
         {
             _tasksService = tasksService;
             // prepare collections
-            groupedWindows = CollectionViewSource.GetDefaultView(_tasksService.Windows);
-            groupedWindows.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
-            groupedWindows.CollectionChanged += groupedWindows_Changed;
-            groupedWindows.Filter = groupedWindows_Filter;
+            groupedWindows = CreateGroupedWindowsCollection();
+        }
 
-            if (groupedWindows is ICollectionViewLiveShaping taskbarItemsView)
+        public ICollectionView CreateGroupedWindowsCollection()
+        {
+            ICollectionView collection;
+            if (groupedWindows == null)
+            {
+                collection = CollectionViewSource.GetDefaultView(_tasksService.Windows);
+            }
+            else
+            {
+                collection = new CollectionViewSource { Source = groupedWindows.SourceCollection }.View;
+            }
+
+            collection.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
+            collection.CollectionChanged += groupedWindows_Changed;
+            collection.Filter = groupedWindows_Filter;
+
+            if (collection is ICollectionViewLiveShaping taskbarItemsView)
             {
                 taskbarItemsView.IsLiveFiltering = true;
+                taskbarItemsView.LiveFilteringProperties.Add("HMonitor");
                 taskbarItemsView.LiveFilteringProperties.Add("ShowInTaskbar");
                 taskbarItemsView.IsLiveGrouping = true;
                 taskbarItemsView.LiveGroupingProperties.Add("Category");
             }
+
+            return collection;
         }
 
         public void Initialize(ITaskCategoryProvider taskCategoryProvider, bool withMultiMonTracking = false)
