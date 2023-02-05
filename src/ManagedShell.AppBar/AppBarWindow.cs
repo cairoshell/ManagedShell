@@ -27,6 +27,7 @@ namespace ManagedShell.AppBar
         public IntPtr Handle;
         public bool AllowClose;
         public bool IsClosing;
+        public bool IsOpening = true;
         protected double DesiredHeight;
         protected double DesiredWidth;
         private bool EnableBlur;
@@ -99,10 +100,11 @@ namespace ManagedShell.AppBar
             // set initial DPI. We do it here so that we get the correct value when DPI has changed since initial user logon to the system.
             if (Screen.Primary)
             {
-                DpiHelper.DpiScale = PresentationSource.FromVisual(Application.Current.MainWindow).CompositionTarget.TransformToDevice.M11;
+                DpiHelper.DpiScale = PresentationSource.FromVisual(this).CompositionTarget.TransformToDevice.M11;
             }
 
-            DpiScale = PresentationSource.FromVisual(this).CompositionTarget.TransformToDevice.M11;
+            // use system DPI initially; when we set position we will get WM_DPICHANGED and set it correctly
+            DpiScale = DpiHelper.DpiScale;
 
             SetPosition();
 
@@ -119,6 +121,8 @@ namespace ManagedShell.AppBar
 
             // register for full-screen notifications
             _fullScreenHelper.FullScreenApps.CollectionChanged += FullScreenApps_CollectionChanged;
+
+            IsOpening = false;
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
@@ -220,14 +224,18 @@ namespace ManagedShell.AppBar
             }
             else if (msg == (int)NativeMethods.WM.DPICHANGED)
             {
-                if (Screen.Primary)
-                {
-                    DpiHelper.DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
-                }
-
                 DpiScale = (wParam.ToInt32() & 0xFFFF) / 96d;
 
-                ProcessScreenChange(ScreenSetupReason.DpiChange);
+                if (Screen.Primary)
+                {
+                    DpiHelper.DpiScale = DpiScale;
+                }
+
+                // suppress this if we are opening, because we're getting this message as a result of positioning
+                if (!IsOpening)
+                {
+                    ProcessScreenChange(ScreenSetupReason.DpiChange);
+                }
             }
             else if (msg == (int)NativeMethods.WM.DISPLAYCHANGE)
             {
@@ -274,11 +282,11 @@ namespace ManagedShell.AppBar
             {
                 if (Orientation == Orientation.Vertical)
                 {
-                    _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
+                    _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, Screen.Bounds.Height, AppBarEdge);
                 }
                 else
                 {
-                    _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
+                    _appBarManager.ABSetPos(this, Screen.Bounds.Width, DesiredHeight * DpiScale, AppBarEdge);
                 }
             }
         }
