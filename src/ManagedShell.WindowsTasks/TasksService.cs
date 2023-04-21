@@ -18,7 +18,10 @@ namespace ManagedShell.WindowsTasks
     public class TasksService : DependencyObject, IDisposable
     {
         public static readonly IconSize DEFAULT_ICON_SIZE = IconSize.Small;
-        
+
+        public event EventHandler<WindowActivatedEventArgs> WindowActivated;
+        public event EventHandler<EventArgs> DesktopActivated;
+
         private NativeWindowEx _HookWin;
         private object _windowsLock = new object();
         internal bool IsInitialized;
@@ -377,7 +380,18 @@ namespace ManagedShell.WindowsTasks
                                             if (wind.WinFileName == win.WinFileName && wind.Handle != win.Handle)
                                                 wind.SetShowInTaskbar();
                                         }
+
+                                        WindowActivatedEventArgs args = new WindowActivatedEventArgs
+                                        {
+                                            Window = win
+                                        };
+
+                                        WindowActivated?.Invoke(this, args);
                                     }
+                                }
+                                else
+                                {
+                                    DesktopActivated?.Invoke(this, new EventArgs());
                                 }
                                 break;
 
