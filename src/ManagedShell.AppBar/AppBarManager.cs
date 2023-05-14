@@ -17,7 +17,14 @@ namespace ManagedShell.AppBar
         private AppBarMessageDelegate _appBarMessageDelegate;
         private int uCallBack;
 
+        private int retryNum;
+        private Rect retryRect;
+        private DateTime retryTimestamp;
+        private int maxRetryNum = 20;
+        private TimeSpan maxRetryTimespan = TimeSpan.FromSeconds(10);
+
         public List<AppBarWindow> AppBars { get; } = new List<AppBarWindow>();
+        public List<AppBarWindow> AutoHideBars { get; } = new List<AppBarWindow>();
         public EventHandler<AppBarEventArgs> AppBarEvent;
 
         public AppBarManager(ExplorerHelper explorerHelper)
@@ -55,6 +62,7 @@ namespace ManagedShell.AppBar
                 case ABMsg.ABM_GETSTATE:
                     return appBarMessage_GetState(amd, ref handled);
                 case ABMsg.ABM_GETAUTOHIDEBAR:
+                case ABMsg.ABM_GETAUTOHIDEBAREX:
                     return appBarMessage_GetAutoHideBar(amd, ref handled);
                 case ABMsg.ABM_ACTIVATE:
                 case ABMsg.ABM_WINDOWPOSCHANGED:
@@ -168,26 +176,56 @@ namespace ManagedShell.AppBar
                 return IntPtr.Zero;
             }
 
-            // AppBarWindow does not currently manage auto-hide, it is the responsibility of the shell.
-            // This should be implemented in the future to allow apps to check the state of an AppBar.
-            // For now, always indicate that the bar is not auto-hide.
-
             handled = true;
+
+            if (AutoHideBars.Count > 0)
+            {
+                return (IntPtr)ABState.AutoHide;
+            }
+
             return (IntPtr)ABState.Default;
         }
 
         private IntPtr appBarMessage_GetAutoHideBar(APPBARMSGDATAV3 amd, ref bool handled)
         {
-            // AppBarWindow does not currently manage auto-hide, it is the responsibility of the shell.
-            // This should be implemented in the future to allow apps to check if there are any auto-hide bars.
-            // For now, always return NULL, indicating no auto-hide bars.
+            var autoHideBar = AutoHideBars.Find(bar => (int)bar.AppBarEdge == amd.abd.uEdge && bar.AppBarMode == AppBarMode.AutoHide);
 
             handled = true;
+
+            if (autoHideBar != null)
+            {
+                // Return the notification area hwnd instead of the AppBar's. Why?
+                // Some apps (Firefox) check the class of the AppBar matches Shell_TrayWnd.
+                // However, an AppBarWindow should be providing its coordinates to a
+                // NotificationArea to position it appropriately anyway.
+                return _explorerHelper?._notificationArea?.Handle ?? autoHideBar.Handle;
+            }
+
             return IntPtr.Zero;
         }
         #endregion
 
         #region AppBar message helpers
+        public void RegisterAutoHideBar(AppBarWindow window)
+        {
+            if (AutoHideBars.Contains(window))
+            {
+                return;
+            }
+
+            AutoHideBars.Add(window);
+        }
+
+        public void UnregisterAutoHideBar(AppBarWindow window)
+        {
+            if (!AutoHideBars.Contains(window))
+            {
+                return;
+            }
+
+            AutoHideBars.Remove(window);
+        }
+
         public int RegisterBar(AppBarWindow abWindow, double width, double height, AppBarEdge edge = AppBarEdge.Top)
         {
             lock (appBarLock)
@@ -385,12 +423,48 @@ namespace ManagedShell.AppBar
 
                 abWindow.AfterAppBarPos(isSameCoords, abd.rc);
 
-                if (((abd.uEdge == (int)AppBarEdge.Top || abd.uEdge == (int)AppBarEdge.Bottom) && abd.rc.Bottom - abd.rc.Top < sHeight) ||
-                    ((abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right) && abd.rc.Right - abd.rc.Left < sWidth))
+                if ((((abd.uEdge == (int)AppBarEdge.Top || abd.uEdge == (int)AppBarEdge.Bottom) && abd.rc.Bottom - abd.rc.Top < sHeight) ||
+                    ((abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right) && abd.rc.Right - abd.rc.Left < sWidth)) && allowRetry(abd.rc))
                 {
+                    // The system did not respect the coordinates we selected, resulting in an unexpected window size.
                     ABSetPos(abWindow, width, height, edge);
                 }
             }
+        }
+
+        private bool allowRetry(Rect rect)
+        {
+            // The system did not respect the coordinates we selected. This may or may not need remediation, so keep track of attempts to prevent infinite looping.
+
+            if (rect.Top == retryRect.Top && rect.Left == retryRect.Left && rect.Right == retryRect.Right && rect.Bottom == retryRect.Bottom)
+            {
+                // Repeat rect
+                if (DateTime.Now.Subtract(retryTimestamp) < maxRetryTimespan)
+                {
+                    // within retry span
+                    if (retryNum >= maxRetryNum)
+                    {
+                        // hit max retries
+                        ShellLogger.Debug("AppBarManager: Max retries limit reached");
+                        return false;
+                    }
+                    else
+                    {
+                        // allow retry
+                        ShellLogger.Debug("AppBarManager: Allowing retry of ABSetPos");
+                        retryNum++;
+                        return true;
+                    }
+                }
+            }
+
+            // Reset
+            ShellLogger.Debug("AppBarManager: Resetting retry of ABSetPos");
+            retryNum = 0;
+            retryRect = rect;
+            retryTimestamp = DateTime.Now;
+
+            return true;
         }
         #endregion
 
@@ -433,7 +507,7 @@ namespace ManagedShell.AppBar
             {
                 if (window.Screen.DeviceName == screen.DeviceName)
                 {
-                    if ((window.EnableAppBar || !enabledBarsOnly) && (window.RequiresScreenEdge || !edgeBarsOnly))
+                    if ((window.AppBarMode == AppBarMode.Normal || !enabledBarsOnly) && (window.RequiresScreenEdge || !edgeBarsOnly))
                     {
                         if (window.AppBarEdge == AppBarEdge.Top)
                         {
