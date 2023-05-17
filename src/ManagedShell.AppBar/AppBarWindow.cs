@@ -83,8 +83,10 @@ namespace ManagedShell.AppBar
         protected internal bool RequiresScreenEdge;
         protected internal double AutoHideShowMargin = 2;
         protected internal double AutoHideDelayMs = 400;
-        protected internal double AutoHideAnimationMs = 150;
+        protected internal double AutoHideAnimationMs = 300;
+        protected internal double AutoHideShowAnimationMs = 150;
 
+        private bool _isDragWithin;
         private bool _isMouseWithin;
         private bool _isContextMenuOpen;
         private DispatcherTimer _peekAutoHideTimer;
@@ -103,6 +105,9 @@ namespace ManagedShell.AppBar
             Closing += OnClosing;
             SourceInitialized += OnSourceInitialized;
 
+            PreviewDragEnter += AppBarWindow_PreviewDragEnter;
+            PreviewDragLeave += AppBarWindow_PreviewDragLeave;
+            PreviewDrop += AppBarWindow_PreviewDrop;
             MouseEnter += AppBarWindow_MouseEnter;
             MouseLeave += AppBarWindow_MouseLeave;
             ContextMenuOpening += AppBarWindow_ContextMenuOpening;
@@ -139,8 +144,6 @@ namespace ManagedShell.AppBar
 
             if (e.PropertyName == "AllowAutoHide")
             {
-                ShellLogger.Debug($"AllowAutoHide: {AllowAutoHide}");
-
                 if (AllowAutoHide)
                 {
                     AnimateAutoHide(false);
@@ -198,8 +201,9 @@ namespace ManagedShell.AppBar
                 }
             }
 
-            var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(AutoHideAnimationMs).Duration());
+            var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(isShowing ? AutoHideShowAnimationMs : AutoHideAnimationMs).Duration());
             animation.BeginTime = isShowing ? TimeSpan.Zero : TimeSpan.FromMilliseconds(AutoHideDelayMs);
+            animation.EasingFunction = new SineEase();
 
             Storyboard.SetTarget(animation, AutoHideElement);
             Storyboard.SetTargetProperty(animation, new PropertyPath($"RenderTransform.(TranslateTransform.{(Orientation == Orientation.Horizontal ? 'Y' : 'X')})"));
@@ -337,46 +341,37 @@ namespace ManagedShell.AppBar
 
         private void AppBarWindow_ContextMenuClosing(object sender, ContextMenuEventArgs e)
         {
-            bool currentAutoHide = AllowAutoHide;
-            _isContextMenuOpen = false;
-
-            if (AllowAutoHide != currentAutoHide)
-            {
-                OnPropertyChanged("AllowAutoHide");
-            }
+            SetAutoHideStateVar(ref _isContextMenuOpen, false);
         }
 
         private void AppBarWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            bool currentAutoHide = AllowAutoHide;
-            _isContextMenuOpen = true;
-
-            if (AllowAutoHide != currentAutoHide)
-            {
-                OnPropertyChanged("AllowAutoHide");
-            }
+            SetAutoHideStateVar(ref _isContextMenuOpen, true);
         }
 
-        private void AppBarWindow_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        private void AppBarWindow_PreviewDragEnter(object sender, DragEventArgs e)
         {
-            bool currentAutoHide = AllowAutoHide;
-            _isMouseWithin = false;
+            SetAutoHideStateVar(ref _isDragWithin, true);
+        }
 
-            if (AllowAutoHide != currentAutoHide)
-            {
-                OnPropertyChanged("AllowAutoHide");
-            }
+        private void AppBarWindow_PreviewDragLeave(object sender, DragEventArgs e)
+        {
+            SetAutoHideStateVar(ref _isDragWithin, false);
+        }
+
+        private void AppBarWindow_PreviewDrop(object sender, DragEventArgs e)
+        {
+            SetAutoHideStateVar(ref _isDragWithin, false);
         }
 
         private void AppBarWindow_MouseEnter(object sender, System.Windows.Input.MouseEventArgs e)
         {
-            bool currentAutoHide = AllowAutoHide;
-            _isMouseWithin = true;
+            SetAutoHideStateVar(ref _isMouseWithin, true);
+        }
 
-            if (AllowAutoHide != currentAutoHide)
-            {
-                OnPropertyChanged("AllowAutoHide");
-            }
+        private void AppBarWindow_MouseLeave(object sender, System.Windows.Input.MouseEventArgs e)
+        {
+            SetAutoHideStateVar(ref _isMouseWithin, false);
         }
 
         protected virtual IntPtr WndProc(IntPtr hwnd, int msg, IntPtr wParam, IntPtr lParam, ref bool handled)
@@ -509,6 +504,17 @@ namespace ManagedShell.AppBar
             if (rect.Height >= 0) Height = rect.Height / DpiScale;
         }
 
+        private void SetAutoHideStateVar(ref bool varToSet, bool newValue)
+        {
+            bool currentAutoHide = AllowAutoHide;
+            varToSet = newValue;
+
+            if (AllowAutoHide != currentAutoHide)
+            {
+                OnPropertyChanged("AllowAutoHide");
+            }
+        }
+
         private void ProcessScreenChange(ScreenSetupReason reason)
         {
             // process screen changes if we are on the primary display and the designated window
@@ -603,7 +609,7 @@ namespace ManagedShell.AppBar
 
         protected virtual bool ShouldAllowAutoHide()
         {
-            return AppBarMode == AppBarMode.AutoHide && !_isMouseWithin && !_isContextMenuOpen;
+            return AppBarMode == AppBarMode.AutoHide && !_isMouseWithin && !_isContextMenuOpen && !_isDragWithin;
         }
 
         protected virtual void CustomClosing() { }
