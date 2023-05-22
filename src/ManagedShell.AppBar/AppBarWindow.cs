@@ -81,10 +81,10 @@ namespace ManagedShell.AppBar
             get => ShouldAllowAutoHide();
         }
         protected internal bool RequiresScreenEdge;
-        protected internal double AutoHideShowMargin = 2;
-        protected internal double AutoHideDelayMs = 400;
-        protected internal double AutoHideAnimationMs = 300;
-        protected internal double AutoHideShowAnimationMs = 150;
+        protected double AutoHideShowMargin = 2;
+        protected double AutoHideDelayMs = 400;
+        protected double AutoHideAnimationMs = 300;
+        protected double AutoHideShowAnimationMs = 150;
 
         private bool _isDragWithin;
         private bool _isMouseWithin;
@@ -551,6 +551,13 @@ namespace ManagedShell.AppBar
             if (EnableBlur != enable && Handle != IntPtr.Zero && AllowsTransparency)
             {
                 EnableBlur = enable;
+
+                if (enable && AppBarMode == AppBarMode.AutoHide && AllowAutoHide)
+                {
+                    // If we're auto-hidden, don't actually enable blur right now.
+                    return;
+                }
+
                 WindowHelper.SetWindowBlur(Handle, enable);
             }
         }
