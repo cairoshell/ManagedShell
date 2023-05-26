@@ -146,11 +146,11 @@ namespace ManagedShell.AppBar
             {
                 if (AllowAutoHide)
                 {
-                    AnimateAutoHide(false);
+                    AnimateAutoHide(true);
                 }
                 else
                 {
-                    AnimateAutoHide(true);
+                    AnimateAutoHide(false);
                 }
             }
             else if (e.PropertyName == "AppBarMode")
@@ -176,21 +176,21 @@ namespace ManagedShell.AppBar
             }
         }
 
-        private void AnimateAutoHide(bool isShowing)
+        private void AnimateAutoHide(bool isHiding)
         {
             if (AutoHideElement == null)
             {
                 return;
             }
 
-            if (!isShowing && AppBarMode != AppBarMode.AutoHide)
+            if (isHiding && AppBarMode != AppBarMode.AutoHide)
             {
                 return;
             }
 
             double animTo = 0;
 
-            if (!isShowing)
+            if (isHiding)
             {
                 animTo = Orientation == Orientation.Horizontal ? DesiredHeight : DesiredWidth;
                 animTo -= AutoHideShowMargin;
@@ -201,8 +201,8 @@ namespace ManagedShell.AppBar
                 }
             }
 
-            var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(isShowing ? AutoHideShowAnimationMs : AutoHideAnimationMs).Duration());
-            animation.BeginTime = isShowing ? TimeSpan.Zero : TimeSpan.FromMilliseconds(AutoHideDelayMs);
+            var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(isHiding ? AutoHideAnimationMs : AutoHideShowAnimationMs).Duration());
+            animation.BeginTime = isHiding ? TimeSpan.FromMilliseconds(AutoHideDelayMs) : TimeSpan.Zero;
             animation.EasingFunction = new SineEase();
 
             Storyboard.SetTarget(animation, AutoHideElement);
@@ -212,17 +212,14 @@ namespace ManagedShell.AppBar
             storyboard.Children.Add(animation);
 
             animation.CurrentStateInvalidated += (object sender, EventArgs e) => {
-                if (!isShowing && EnableBlur && Handle != IntPtr.Zero && AllowsTransparency && ((AnimationClock)sender).CurrentState == ClockState.Active && AllowAutoHide)
+                if (((AnimationClock)sender).CurrentState == ClockState.Active)
                 {
-                    WindowHelper.SetWindowBlur(Handle, false);
+                    OnAutoHideAnimationBegin(isHiding);
                 }
             };
 
             storyboard.Completed += (object sender, EventArgs e) => {
-                if (isShowing && EnableBlur && Handle != IntPtr.Zero && AllowsTransparency && !AllowAutoHide)
-                {
-                    WindowHelper.SetWindowBlur(Handle, true);
-                }
+                OnAutoHideAnimationComplete(isHiding);
             };
 
             storyboard.Begin(AutoHideElement);
@@ -232,7 +229,7 @@ namespace ManagedShell.AppBar
         {
             _peekAutoHideTimer?.Stop();
 
-            AnimateAutoHide(true);
+            AnimateAutoHide(false);
 
             _peekAutoHideTimer = new DispatcherTimer();
             _peekAutoHideTimer.Interval = TimeSpan.FromMilliseconds(msToPeek);
@@ -241,7 +238,7 @@ namespace ManagedShell.AppBar
                 _peekAutoHideTimer?.Stop();
                 if (AllowAutoHide)
                 {
-                    AnimateAutoHide(false);
+                    AnimateAutoHide(true);
                 }
             };
             _peekAutoHideTimer.Start();
@@ -292,6 +289,24 @@ namespace ManagedShell.AppBar
 
             IsOpening = false;
             OnPropertyChanged("AllowAutoHide");
+        }
+
+        protected virtual void OnAutoHideAnimationBegin(bool isHiding)
+        {
+            if (isHiding && EnableBlur && Handle != IntPtr.Zero && AllowsTransparency && AllowAutoHide)
+            {
+                // Disable blur if enabled and hiding
+                WindowHelper.SetWindowBlur(Handle, false);
+            }
+        }
+
+        protected virtual void OnAutoHideAnimationComplete(bool isHiding)
+        {
+            if (!isHiding && EnableBlur && Handle != IntPtr.Zero && AllowsTransparency && !AllowAutoHide)
+            {
+                // Re-enable blur if enabled and showing
+                WindowHelper.SetWindowBlur(Handle, true);
+            }
         }
 
         private void OnClosing(object sender, CancelEventArgs e)
