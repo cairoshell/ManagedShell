@@ -597,6 +597,9 @@ namespace ManagedShell.WindowsTasks
                         ShellLogger.Debug("TasksService: ITaskbarList: SetTabProperties HWND:" + msg.WParam);
                         msg.Result = IntPtr.Zero;
                         return;
+                    default:
+                        ShellLogger.Debug($"TasksService: Unknown ITaskbarList Msg: {msg.Msg} LParam: {msg.LParam} WParam: {msg.WParam}");
+                        break;
                 }
             }
 

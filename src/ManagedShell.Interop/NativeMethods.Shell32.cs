@@ -54,7 +54,8 @@ namespace ManagedShell.Interop
             ABM_GETAUTOHIDEBAR,
             ABM_SETAUTOHIDEBAR,
             ABM_WINDOWPOSCHANGED,
-            ABM_SETSTATE
+            ABM_SETSTATE,
+            ABM_GETAUTOHIDEBAREX
         }
 
         public enum ABEdge : int
