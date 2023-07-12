@@ -83,6 +83,7 @@ namespace ManagedShell.AppBar
         protected internal bool RequiresScreenEdge;
         protected double AutoHideShowMargin = 2;
         protected double AutoHideDelayMs = 400;
+        protected double AutoHideShowDelayMs = 0;
         protected double AutoHideAnimationMs = 300;
         protected double AutoHideShowAnimationMs = 150;
 
@@ -202,7 +203,7 @@ namespace ManagedShell.AppBar
             }
 
             var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(isHiding ? AutoHideAnimationMs : AutoHideShowAnimationMs).Duration());
-            animation.BeginTime = isHiding ? TimeSpan.FromMilliseconds(AutoHideDelayMs) : TimeSpan.Zero;
+            animation.BeginTime = TimeSpan.FromMilliseconds(isHiding ? AutoHideDelayMs : AutoHideShowDelayMs);
             animation.EasingFunction = new SineEase();
 
             Storyboard.SetTarget(animation, AutoHideElement);
@@ -513,10 +514,14 @@ namespace ManagedShell.AppBar
 
         internal void SetAppBarPosition(NativeMethods.Rect rect)
         {
-            Top = rect.Top / DpiScale;
-            Left = rect.Left / DpiScale;
-            if (rect.Width >= 0) Width = rect.Width / DpiScale;
-            if (rect.Height >= 0) Height = rect.Height / DpiScale;
+            int swp = (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE;
+
+            if (rect.Width < 0 || rect.Height < 0)
+            {
+                swp |= (int)NativeMethods.SetWindowPosFlags.SWP_NOSIZE;
+            }
+
+            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, rect.Left, rect.Top, rect.Width, rect.Height, swp);
         }
 
         private void SetAutoHideStateVar(ref bool varToSet, bool newValue)
@@ -650,6 +655,10 @@ namespace ManagedShell.AppBar
         public virtual void SetPosition()
         {
             double edgeOffset = 0;
+            int left;
+            int top;
+            int height;
+            int width;
 
             if (!RequiresScreenEdge)
             {
@@ -658,35 +667,37 @@ namespace ManagedShell.AppBar
 
             if (Orientation == Orientation.Vertical)
             {
-                Top = Screen.Bounds.Top / DpiScale;
-                Height = Screen.Bounds.Height / DpiScale;
-                Width = DesiredWidth;
+                top = Screen.Bounds.Top;
+                height = Screen.Bounds.Height;
+                width = (int)(DesiredWidth * DpiScale);
 
                 if (AppBarEdge == AppBarEdge.Left)
                 {
-                    Left = Screen.Bounds.Left / DpiScale + edgeOffset;
+                    left = Screen.Bounds.Left + (int)(edgeOffset * DpiScale);
                 }
                 else
                 {
-                    Left = Screen.Bounds.Right / DpiScale - Width - edgeOffset;
+                    left = Screen.Bounds.Right - width - (int)(edgeOffset * DpiScale);
                 }
             }
             else
             {
-                Left = Screen.Bounds.Left / DpiScale;
-                Width = Screen.Bounds.Width / DpiScale;
-                Height = DesiredHeight;
+                left = Screen.Bounds.Left;
+                width = Screen.Bounds.Width;
+                height = (int)(DesiredHeight * DpiScale);
 
                 if (AppBarEdge == AppBarEdge.Top)
                 {
-                    Top = (Screen.Bounds.Top / DpiScale) + edgeOffset;
+                    top = Screen.Bounds.Top + (int)(edgeOffset * DpiScale);
                 }
                 else
                 {
-                    Top = Screen.Bounds.Bottom / DpiScale - Height - edgeOffset;
+                    top = Screen.Bounds.Bottom - height - (int)(edgeOffset * DpiScale);
                 }
             }
-            
+
+            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, left, top, width, height, (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE);
+
 
             if (EnvironmentHelper.IsAppRunningAsShell)
             {
