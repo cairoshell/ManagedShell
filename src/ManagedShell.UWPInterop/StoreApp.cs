@@ -13,6 +13,7 @@ namespace ManagedShell.UWPInterop
         public readonly string AppUserModelId;
         public string DisplayName;
         public string EntryPoint;
+        public string HostId;
         public string IconColor;
 
         public string SmallIconPath;

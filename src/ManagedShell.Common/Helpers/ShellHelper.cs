@@ -7,6 +7,7 @@ using System.Text;
 using ManagedShell.Common.Logging;
 using static ManagedShell.Interop.NativeMethods;
 using ManagedShell.Common.Enums;
+using ManagedShell.Common.Interfaces;
 
 namespace ManagedShell.Common.Helpers
 {
@@ -49,6 +50,21 @@ namespace ManagedShell.Common.Helpers
             {
                 // No 'Open' command associated with this filetype in the registry
                 ShowOpenWithDialog(proc.StartInfo.FileName);
+                return false;
+            }
+        }
+
+        public static bool ActivateApplication(string appUserModelId, string args = "")
+        {
+            var aam = new ApplicationActivationManager() as IApplicationActivationManager;
+            try
+            {
+                aam.ActivateApplication(appUserModelId, args, ActivateOptions.None);
+                return true;
+            }
+            catch (Exception ex)
+            {
+                ShellLogger.Error($"Error activating application {appUserModelId} with args \"{args}\". ({ex.Message})");
                 return false;
             }
         }
