@@ -26,7 +26,7 @@ jobs:
         fetch-depth: 0
 
     - name: Install nbgv
-      uses: dotnet/nbgv@v0.4.0
+      uses: dotnet/nbgv@v0.4.1
 
     - name: Build
       run: dotnet build $env:project -c $env:config --disable-parallel
