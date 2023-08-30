@@ -228,6 +228,11 @@ namespace ManagedShell.AppBar
 
         protected void PeekDuringAutoHide(int msToPeek = 500)
         {
+            if (AppBarMode != AppBarMode.AutoHide)
+            {
+                return;
+            }
+
             _peekAutoHideTimer?.Stop();
 
             AnimateAutoHide(false);
