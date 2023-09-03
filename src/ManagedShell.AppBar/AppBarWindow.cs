@@ -196,7 +196,7 @@ namespace ManagedShell.AppBar
                 animTo = Orientation == Orientation.Horizontal ? DesiredHeight : DesiredWidth;
                 animTo -= AutoHideShowMargin;
 
-                if (AppBarEdge == AppBarEdge.Left || AppBarEdge == AppBarEdge.Top)
+                if (AppBarEdge == AppBarEdge.Top || AppBarEdge == ((FlowDirection == FlowDirection.LeftToRight) ? AppBarEdge.Left : AppBarEdge.Right))
                 {
                     animTo *= -1;
                 }
