@@ -58,7 +58,14 @@ namespace ManagedShell.ShellFolders
                 persistFile.Load(existingLinkPath, (int)STGM.READ);
 
                 // attempt to resolve a broken shortcut
-                shellLink.Resolve(userInputHwnd, 0);
+                SLR_FLAGS flags = new SLR_FLAGS();
+
+                if (userInputHwnd == IntPtr.Zero)
+                {
+                    flags = SLR_FLAGS.SLR_NO_UI;
+                }
+
+                shellLink.Resolve(userInputHwnd, flags);
             }
             catch (Exception e)
             {
