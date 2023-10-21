@@ -374,6 +374,7 @@ namespace ManagedShell.WindowsTray
         #region Mouse events
 
         private DateTime _lastLClick = DateTime.Now;
+        private DateTime _lastMClick = DateTime.Now;
         private DateTime _lastRClick = DateTime.Now;
 
         public void IconMouseEnter(uint mouse)
@@ -425,6 +426,24 @@ namespace ManagedShell.WindowsTray
 
                 _lastLClick = DateTime.Now;
             }
+            else if (button == MouseButton.Middle)
+            {
+                if (handleClickOverride(false))
+                {
+                    return;
+                }
+
+                if (DateTime.Now.Subtract(_lastMClick).TotalMilliseconds <= doubleClickTime)
+                {
+                    SendMessage((uint)WM.MBUTTONDBLCLK, mouse);
+                }
+                else
+                {
+                    SendMessage((uint)WM.MBUTTONDOWN, mouse);
+                }
+
+                _lastMClick = DateTime.Now;
+            }
             else if (button == MouseButton.Right)
             {
                 if (DateTime.Now.Subtract(_lastRClick).TotalMilliseconds <= doubleClickTime)
@@ -457,6 +476,17 @@ namespace ManagedShell.WindowsTray
                 if (Version >= 3) SendMessage((uint)NIN.SELECT, mouse);
 
                 _lastLClick = DateTime.Now;
+            }
+            else if (button == MouseButton.Middle)
+            {
+                if (handleClickOverride(true))
+                {
+                    return;
+                }
+
+                SendMessage((uint)WM.MBUTTONUP, mouse);
+
+                _lastMClick = DateTime.Now;
             }
             else if (button == MouseButton.Right)
             {
