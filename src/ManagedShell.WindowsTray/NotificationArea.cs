@@ -269,7 +269,8 @@ namespace ManagedShell.WindowsTray
 
         private bool SysTrayCallback(uint message, SafeNotifyIconData nicData)
         {
-            if (nicData.hWnd == IntPtr.Zero)
+            // We always need hWnd for new icons, or for existing icons if no GUID is present
+            if (nicData.hWnd == IntPtr.Zero && (nicData.guidItem == Guid.Empty || (NIM)message == NIM.NIM_ADD))
                 return false;
 
             NotifyIcon trayIcon = new NotifyIcon(this, nicData.hWnd);
@@ -336,8 +337,11 @@ namespace ManagedShell.WindowsTray
                             }
                         }
 
-                        trayIcon.HWnd = nicData.hWnd;
-                        trayIcon.UID = nicData.uID;
+                        if (nicData.hWnd != IntPtr.Zero)
+                        {
+                            trayIcon.HWnd = nicData.hWnd;
+                            trayIcon.UID = nicData.uID;
+                        }
 
                         if ((NIF.GUID & nicData.uFlags) != 0)
                             trayIcon.GUID = nicData.guidItem;
@@ -350,6 +354,10 @@ namespace ManagedShell.WindowsTray
 
                         if (!exists)
                         {
+                            // we need a valid hWnd to add a new icon
+                            if (nicData.hWnd == IntPtr.Zero)
+                                return false;
+
                             // default placement to a menu bar-like rect
                             trayIcon.Placement = defaultPlacement;
 

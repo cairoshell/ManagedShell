@@ -34,7 +34,19 @@ namespace ManagedShell.WindowsTray
             Title = nicData.szInfoTitle;
             Info = nicData.szInfo;
             Flags = nicData.dwInfoFlags;
-            Timeout = (int)nicData.uVersion;
+            if ((int)nicData.uVersion >= 1000)
+            {
+                // Potentially valid timeout provided
+                Timeout = (int)nicData.uVersion;
+            }
+            else
+            {
+                // Fall back to the system duration
+                uint timeoutDuration = 5;
+                SystemParametersInfo(SPI.GETMESSAGEDURATION, 0, ref timeoutDuration, SPIF.None);
+                // Convert from sec to msec
+                Timeout = (int)timeoutDuration * 1000;
+            }
             Received = DateTime.Now;
 
             if (Flags.HasFlag(NIIF.ERROR))
