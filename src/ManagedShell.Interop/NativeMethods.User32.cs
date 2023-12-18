@@ -1546,7 +1546,12 @@ namespace ManagedShell.Interop
             /// <summary>
             /// Not implemented.
             /// </summary>
-            SPI_SETFONTSMOOTHINGORIENTATION = 0x2013,
+            SETFONTSMOOTHINGORIENTATION = 0x2013,
+
+            /// <summary>
+            /// Retrieves the time that notification pop-ups should be displayed, in seconds.
+            /// </summary>
+            GETMESSAGEDURATION = 0x2016,
         }
 
         [Flags]
@@ -1684,6 +1689,9 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName)]
         public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, IntPtr pvParam, SPIF fWinIni);
+
+        [DllImport(User32_DllName)]
+        public static extern bool SystemParametersInfo(SPI uiAction, uint uiParam, ref uint pvParam, SPIF fWinIni);
 
         [DllImport(User32_DllName, SetLastError = true)]
         public static extern IntPtr SetParent(IntPtr hWndChild, IntPtr hWndNewParent);
