@@ -36,7 +36,7 @@ jobs:
         config: ${{ matrix.buildconfig }}
 
     - name: Upload build artifacts
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: ManagedShell nupkg
         path: '**\*.nupkg'
