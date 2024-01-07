@@ -18,9 +18,26 @@ namespace ManagedShell.AppBar
         protected readonly AppBarManager _appBarManager;
         protected readonly ExplorerHelper _explorerHelper;
         protected readonly FullScreenHelper _fullScreenHelper;
+
         public AppBarScreen Screen;
-        public double DpiScale = 1.0;
         protected bool ProcessScreenChanges = true;
+
+        private double _dpiScale = 1.0;
+        public double DpiScale
+        {
+            get
+            {
+                return _dpiScale;
+            }
+            set
+            {
+                if (_dpiScale != value)
+                {
+                    _dpiScale = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
 
         // Window properties
         private WindowInteropHelper helper;
