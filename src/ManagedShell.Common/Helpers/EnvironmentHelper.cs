@@ -109,7 +109,7 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
-        public static bool IsWindows1123H2OrBetter
+        public static bool IsWindows1122H2OrBetter
         {
             get
             {
@@ -118,7 +118,7 @@ namespace ManagedShell.Common.Helpers
                     getOSVersion();
                 }
 
-                return (osVersionMajor >= 10 && osVersionBuild >= 22631);
+                return (osVersionMajor >= 10 && osVersionBuild >= 22621);
             }
         }
 
