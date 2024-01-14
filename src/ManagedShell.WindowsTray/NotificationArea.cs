@@ -31,7 +31,11 @@ namespace ManagedShell.WindowsTray
             VOLUME_GUID
         };
 
-        internal static readonly List<string> Win11ActionCenterIcons = new List<string>()
+        internal static readonly List<string> Win11ActionCenterIcons = EnvironmentHelper.IsWindows1122H2OrBetter ? new List<string>()
+        {
+            // In 22H2, the network and power flyouts work again
+            VOLUME_GUID
+        } : new List<string>()
         {
             NETWORK_GUID,
             POWER_GUID,
