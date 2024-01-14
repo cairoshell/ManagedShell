@@ -31,7 +31,12 @@ namespace ManagedShell.WindowsTray
             VOLUME_GUID
         };
 
-        internal static readonly List<string> Win11ActionCenterIcons = new List<string>()
+        internal static readonly List<string> Win11ActionCenterIcons = EnvironmentHelper.IsWindows1123H2OrBetter ? new List<string>()
+        {
+            // In 23H2, the Network icon reliably responds to click events!
+            POWER_GUID,
+            VOLUME_GUID
+        } : new List<string>()
         {
             NETWORK_GUID,
             POWER_GUID,

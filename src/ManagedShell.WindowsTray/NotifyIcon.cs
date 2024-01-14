@@ -544,7 +544,11 @@ namespace ManagedShell.WindowsTray
                     ShellHelper.ShowActionCenter();
                 }
 
-                return true;
+                if (!EnvironmentHelper.IsWindows1123H2OrBetter)
+                {
+                    // Some earlier Windows 11 versions have a crash when sending click events
+                    return true;
+                }
             }
 
             return false;
