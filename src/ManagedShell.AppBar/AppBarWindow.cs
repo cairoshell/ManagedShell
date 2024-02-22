@@ -173,7 +173,6 @@ namespace ManagedShell.AppBar
             }
             else if (e.PropertyName == "AppBarMode")
             {
-                OnPropertyChanged("AllowAutoHide");
                 if (AppBarMode == AppBarMode.Normal)
                 {
                     RegisterAppBar();
@@ -186,15 +185,17 @@ namespace ManagedShell.AppBar
                 if (AppBarMode == AppBarMode.AutoHide)
                 {
                     _appBarManager.RegisterAutoHideBar(this);
+                    OnPropertyChanged("AllowAutoHide");
                 }
                 else
                 {
                     _appBarManager.UnregisterAutoHideBar(this);
+                    AnimateAutoHide(false, true);
                 }
             }
         }
 
-        private void AnimateAutoHide(bool isHiding)
+        private void AnimateAutoHide(bool isHiding, bool immediate = false)
         {
             if (AutoHideElement == null)
             {
@@ -220,7 +221,7 @@ namespace ManagedShell.AppBar
             }
 
             var animation = new DoubleAnimation(animTo, TimeSpan.FromMilliseconds(isHiding ? AutoHideAnimationMs : AutoHideShowAnimationMs).Duration());
-            animation.BeginTime = TimeSpan.FromMilliseconds(isHiding ? AutoHideDelayMs : AutoHideShowDelayMs);
+            animation.BeginTime = TimeSpan.FromMilliseconds(immediate ? 0 : isHiding ? AutoHideDelayMs : AutoHideShowDelayMs);
             animation.EasingFunction = new SineEase();
 
             Storyboard.SetTarget(animation, AutoHideElement);
@@ -243,7 +244,7 @@ namespace ManagedShell.AppBar
             storyboard.Begin(AutoHideElement);
         }
 
-        protected void PeekDuringAutoHide(int msToPeek = 500)
+        protected void PeekDuringAutoHide(int msToPeek = 1000)
         {
             if (AppBarMode != AppBarMode.AutoHide)
             {
@@ -252,7 +253,7 @@ namespace ManagedShell.AppBar
 
             _peekAutoHideTimer?.Stop();
 
-            AnimateAutoHide(false);
+            AnimateAutoHide(false, true);
 
             _peekAutoHideTimer = new DispatcherTimer();
             _peekAutoHideTimer.Interval = TimeSpan.FromMilliseconds(msToPeek);
@@ -261,7 +262,7 @@ namespace ManagedShell.AppBar
                 _peekAutoHideTimer?.Stop();
                 if (AllowAutoHide)
                 {
-                    AnimateAutoHide(true);
+                    AnimateAutoHide(true, true);
                 }
             };
             _peekAutoHideTimer.Start();
@@ -658,7 +659,7 @@ namespace ManagedShell.AppBar
 
         protected virtual bool ShouldAllowAutoHide()
         {
-            return AppBarMode == AppBarMode.AutoHide && !_isMouseWithin && !_isContextMenuOpen && !_isDragWithin;
+            return AppBarMode == AppBarMode.AutoHide && !_isMouseWithin && !_isContextMenuOpen && !_isDragWithin && (_peekAutoHideTimer == null || !_peekAutoHideTimer.IsEnabled);
         }
 
         protected virtual void CustomClosing() { }
