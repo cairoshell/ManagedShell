@@ -3014,6 +3014,39 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern bool PostMessage(int hWnd, uint msg, int wParam, long lParam);
 
+        [DllImport(User32_DllName)]
+        public static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport(User32_DllName)]
+        public static extern IntPtr GetTopWindow(IntPtr hWnd);
+
+        [DllImport(User32_DllName)]
+        public static extern IntPtr GetDesktopWindow();
+
+        public delegate bool EnumWindowsProc(IntPtr hWnd, IntPtr lParam);
+
+        [DllImport(User32_DllName)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        public static extern bool EnumThreadWindows(uint dwThreadId, EnumWindowsProc lpfn, IntPtr lParam);
+
+        [DllImport(User32_DllName)]
+        public static extern ushort CascadeWindows(IntPtr hwndParent, uint wHow, IntPtr lpRect, uint cKids, IntPtr[] lpKids);
+
+        [DllImport(User32_DllName)]
+        public static extern ushort CascadeWindows(IntPtr hwndParent, uint wHow, IntPtr lpRect, uint cKids, IntPtr lpKids);
+
+        [DllImport(User32_DllName)]
+        public static extern int TileWindows(IntPtr hwndParent, MDITILE wHow, IntPtr lpRect, int cKids, IntPtr[] lpKids);
+
+        [DllImport(User32_DllName)]
+        public static extern int TileWindows(IntPtr hwndParent, MDITILE wHow, IntPtr lpRect, int cKids, IntPtr lpKids);
+
+        public enum MDITILE : int
+        {
+            VERTICAL = 0x0000,
+            HORIZONTAL = 0x0001
+        }
+
         public enum KLF : uint
         {
             ACTIVATE = 0x00000001,
