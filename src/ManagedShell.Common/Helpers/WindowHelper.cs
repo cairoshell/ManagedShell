@@ -116,19 +116,29 @@ namespace ManagedShell.Common.Helpers
                 sizeof(int));
         }
 
-        public static void PeekWindow(bool show, IntPtr targetHwnd, IntPtr callingHwnd)
+        public static void Peek(bool show, IntPtr targetHwnd, IntPtr callingHwnd, AeroPeekType type)
         {
             uint enable = 0;
             if (show) enable = 1;
 
             if (EnvironmentHelper.IsWindows81OrBetter)
             {
-                DwmActivateLivePreview(enable, targetHwnd, callingHwnd, AeroPeekType.Window, IntPtr.Zero);
+                DwmActivateLivePreview(enable, targetHwnd, callingHwnd, type, IntPtr.Zero);
             }
             else
             {
-                DwmActivateLivePreview(enable, targetHwnd, callingHwnd, AeroPeekType.Window);
+                DwmActivateLivePreview(enable, targetHwnd, callingHwnd, type);
             }
+        }
+
+        public static void PeekWindow(bool show, IntPtr targetHwnd, IntPtr callingHwnd)
+        {
+            Peek(show, targetHwnd, callingHwnd, AeroPeekType.Window);
+        }
+
+        public static void PeekDesktop(bool show, IntPtr targetHwnd, IntPtr callingHwnd)
+        {
+            Peek(show, targetHwnd, callingHwnd, AeroPeekType.Desktop);
         }
 
         public static void SetWindowBlur(IntPtr hWnd, bool enable)

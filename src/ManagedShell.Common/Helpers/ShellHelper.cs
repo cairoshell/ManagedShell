@@ -320,6 +320,13 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        public static void ToggleDesktop()
+        {
+            var toggleDesktopTrayCommand = new IntPtr(407);
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(IntPtr.Zero);
+            PostMessage(hTrayWnd, (int)WM.COMMAND, toggleDesktopTrayCommand, IntPtr.Zero);
+        }
+
         public static string GetPathForWindowHandle(IntPtr hWnd)
         {
             StringBuilder outFileName = new StringBuilder(1024);
