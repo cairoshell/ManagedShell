@@ -219,19 +219,15 @@ namespace ManagedShell.Common.Helpers
             ShellKeyCombo(VK.LWIN, VK.TAB);
         }
 
-        public static void ShowActionCenter()
+        public static void ToggleActionCenter()
         {
-            ShellKeyCombo(VK.LWIN, VK.KEY_A);
+            var acKeyCombo = MakeLParam((int)System.Windows.Input.ModifierKeys.Windows, (int)VK.KEY_A);
+            PostMessage(0xffff, (uint)WM.HOTKEY, 500, acKeyCombo);
         }
 
-        public static void ShowNotificationCenter()
+        public static void ToggleNotificationCenter()
         {
-            if (!EnvironmentHelper.IsWindows11OrBetter)
-            {
-                return;
-            }
-
-            ShellKeyCombo(VK.LWIN, VK.KEY_N);
+            PostMessage(0xffff, (uint)WM.HOTKEY, 591, 0);
         }
 
         public static void ShowStartMenu()
@@ -459,7 +455,7 @@ namespace ManagedShell.Common.Helpers
             return (info.dwStyle & 0x10000000) == 0x10000000;
         }
 
-        private static void ShellKeyCombo(VK wVk_1, VK wVk_2)
+        public static void ShellKeyCombo(VK wVk_1, VK wVk_2)
         {
             INPUT[] inputs = new INPUT[4];
 
