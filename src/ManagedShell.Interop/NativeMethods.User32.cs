@@ -3000,10 +3000,10 @@ namespace ManagedShell.Interop
             IntPtr lpParam);
 
         [DllImport(User32_DllName)]
-        public static extern int GetKeyboardLayout(uint idThread);
+        public static extern IntPtr GetKeyboardLayout(uint idThread);
 
         [DllImport(User32_DllName)]
-        public static extern int GetKeyboardLayoutList(int nBuff, long[] lpList);
+        public static extern uint GetKeyboardLayoutList(int nBuff, IntPtr[] lpList);
 
         [DllImport(User32_DllName)]
         public static extern int LoadKeyboardLayout(string pwszKLID, uint flags);

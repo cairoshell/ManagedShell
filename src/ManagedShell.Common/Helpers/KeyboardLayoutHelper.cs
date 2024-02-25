@@ -1,48 +1,40 @@
 ﻿using ManagedShell.Common.Structs;
 using ManagedShell.Interop;
 using System.Collections.Generic;
-using System.Globalization;
-using System.Linq;
+using System;
 
 namespace ManagedShell.Common.Helpers
 {
     public static class KeyboardLayoutHelper
     {
-        public static KeyboardLayout GetKeyboardLayout(bool currentThread = false)
+        public static KeyboardLayout GetKeyboardLayout()
         {
-            uint threadId = 0;
-            if (!currentThread)
-                threadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
+            uint threadId = NativeMethods.GetWindowThreadProcessId(NativeMethods.GetForegroundWindow(), out _);
             var layout = NativeMethods.GetKeyboardLayout(threadId);
 
-            return new KeyboardLayout()
-            {
-                HKL = layout,
-                NativeName = CultureInfo.GetCultureInfo((short)layout).NativeName,
-                ThreeLetterName = CultureInfo.GetCultureInfo((short)layout).ThreeLetterISOLanguageName.ToUpper()
-            };
+            return new KeyboardLayout((uint)layout);
         }
 
         public static List<KeyboardLayout> GetKeyboardLayoutList()
         {
-            var size = NativeMethods.GetKeyboardLayoutList(0, null);
-            var result = new long[size];
-            NativeMethods.GetKeyboardLayoutList(size, result);
+            var keyboardLayouts = new List<KeyboardLayout>();
 
-            return result.Select(x => new KeyboardLayout()
+            var size = NativeMethods.GetKeyboardLayoutList(0, null);
+            var layoutIds = new IntPtr[size];
+            NativeMethods.GetKeyboardLayoutList(layoutIds.Length, layoutIds);
+
+            foreach (var layoutId in layoutIds)
             {
-                HKL = (int)x,
-                NativeName = CultureInfo.GetCultureInfo((short)x).NativeName,
-                ThreeLetterName = CultureInfo.GetCultureInfo((short)x).ThreeLetterISOLanguageName.ToUpper()
-            }).ToList();
+                var keyboardLayout = new KeyboardLayout((uint)layoutId);
+                keyboardLayouts.Add(keyboardLayout);
+            }
+
+            return keyboardLayouts;
         }
 
-        public static bool SetKeyboardLayout(int layoutId)
+        public static bool SetKeyboardLayout(uint layoutId)
         {
-            return NativeMethods.PostMessage(0xffff,
-                (uint) NativeMethods.WM.INPUTLANGCHANGEREQUEST,
-                0,
-                NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint)(NativeMethods.KLF.SUBSTITUTE_OK | NativeMethods.KLF.ACTIVATE)));
+            return NativeMethods.PostMessage(NativeMethods.GetForegroundWindow(), (int)NativeMethods.WM.INPUTLANGCHANGEREQUEST, IntPtr.Zero, new IntPtr(layoutId));
         }
     }
 }
