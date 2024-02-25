@@ -9,6 +9,7 @@ namespace ManagedShell.Common.Structs
         public ushort KeyboardId { get; set; }
 
         public string NativeName { get; set; }
+        public string TwoLetterName { get; set; }
         public string ThreeLetterName { get; set; }
         public string DisplayName { get; set; }
 
@@ -20,6 +21,7 @@ namespace ManagedShell.Common.Structs
 
             var cultureInfo = CultureInfo.GetCultureInfo(LanguageId);
             NativeName = cultureInfo.NativeName;
+            TwoLetterName = cultureInfo.TwoLetterISOLanguageName.ToUpper();
             ThreeLetterName = cultureInfo.ThreeLetterWindowsLanguageName;
             DisplayName = cultureInfo.DisplayName;
         }
