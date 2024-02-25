@@ -4,6 +4,7 @@ namespace ManagedShell.Common.Structs
 {
     public struct KeyboardLayout
     {
+        public uint Id { get; set; }
         public ushort LanguageId { get; set; }
         public ushort KeyboardId { get; set; }
 
@@ -13,6 +14,7 @@ namespace ManagedShell.Common.Structs
 
         public KeyboardLayout(uint layoutId)
         {
+            Id = layoutId;
             LanguageId = (ushort)(layoutId & 0xFFFF);
             KeyboardId = (ushort)(layoutId >> 16);
 
