@@ -541,7 +541,7 @@ namespace ManagedShell.WindowsTray
             {
                 if (performAction)
                 {
-                    ShellHelper.ShowActionCenter();
+                    ShellHelper.ToggleActionCenter();
                 }
 
                 if (!EnvironmentHelper.IsWindows1122H2OrBetter)
