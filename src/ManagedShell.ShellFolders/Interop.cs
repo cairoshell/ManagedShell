@@ -7,7 +7,7 @@ using ManagedShell.ShellFolders.Structs;
 
 namespace ManagedShell.ShellFolders
 {
-    class Interop
+    public class Interop
     {
         public const uint CMD_FIRST = 1;
         public const uint CMD_LAST = 30000;

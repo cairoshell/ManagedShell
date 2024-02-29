@@ -219,19 +219,29 @@ namespace ManagedShell.Common.Helpers
             ShellKeyCombo(VK.LWIN, VK.TAB);
         }
 
-        public static void ShowActionCenter()
+        public static void ToggleActionCenter()
         {
-            ShellKeyCombo(VK.LWIN, VK.KEY_A);
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(WindowHelper.FindWindowsTray(IntPtr.Zero));
+            ToggleActionCenter(hTrayWnd);
         }
 
-        public static void ShowNotificationCenter()
+        public static void ToggleActionCenter(IntPtr hTrayWnd)
         {
-            if (!EnvironmentHelper.IsWindows11OrBetter)
-            {
-                return;
-            }
+            IntPtr runGlobalHotKey = new IntPtr(500);
+            IntPtr acKeyCombo = new IntPtr(MakeLParam((int)System.Windows.Input.ModifierKeys.Windows, (int)VK.KEY_A));
+            PostMessage(hTrayWnd, (int)WM.HOTKEY, runGlobalHotKey, acKeyCombo);
+        }
 
-            ShellKeyCombo(VK.LWIN, VK.KEY_N);
+        public static void ToggleNotificationCenter()
+        {
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(WindowHelper.FindWindowsTray(IntPtr.Zero));
+            ToggleNotificationCenter(hTrayWnd);
+        }
+
+        public static void ToggleNotificationCenter(IntPtr hTrayWnd)
+        {
+            IntPtr nfyGlobalHotKey = new IntPtr(591);
+            PostMessage(hTrayWnd, (int)WM.HOTKEY, nfyGlobalHotKey, IntPtr.Zero);
         }
 
         public static void ShowStartMenu()
@@ -322,6 +332,13 @@ namespace ManagedShell.Common.Helpers
             {
                 SendMessageTimeout(hWnd, (uint)WM.COMMAND, toggleDesktopCommand, IntPtr.Zero, 0, 5000, ref hWnd);
             }
+        }
+
+        public static void ToggleDesktop()
+        {
+            var toggleDesktopTrayCommand = new IntPtr(407);
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(IntPtr.Zero);
+            PostMessage(hTrayWnd, (int)WM.COMMAND, toggleDesktopTrayCommand, IntPtr.Zero);
         }
 
         public static string GetPathForWindowHandle(IntPtr hWnd)
@@ -459,7 +476,7 @@ namespace ManagedShell.Common.Helpers
             return (info.dwStyle & 0x10000000) == 0x10000000;
         }
 
-        private static void ShellKeyCombo(VK wVk_1, VK wVk_2)
+        public static void ShellKeyCombo(VK wVk_1, VK wVk_2)
         {
             INPUT[] inputs = new INPUT[4];
 
