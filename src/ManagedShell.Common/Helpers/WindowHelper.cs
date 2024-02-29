@@ -194,11 +194,20 @@ namespace ManagedShell.Common.Helpers
         {
             IntPtr taskbarHwnd = FindWindow(TrayWndClass, "");
 
-            if (hwndIgnore != IntPtr.Zero)
+            if (taskbarHwnd != IntPtr.Zero && hwndIgnore != IntPtr.Zero)
             {
-                while (taskbarHwnd == hwndIgnore)
+                IntPtr nextHwnd = taskbarHwnd;
+
+                // We won't be able to ignore if there's only one
+                while (nextHwnd != IntPtr.Zero)
                 {
-                    taskbarHwnd = FindWindowEx(IntPtr.Zero, taskbarHwnd, TrayWndClass, "");
+                    if (nextHwnd != hwndIgnore)
+                    {
+                        taskbarHwnd = nextHwnd;
+                        break;
+                    }
+
+                    nextHwnd = FindWindowEx(IntPtr.Zero, nextHwnd, TrayWndClass, "");
                 }
             }
 

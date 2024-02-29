@@ -221,12 +221,12 @@ namespace ManagedShell.Common.Helpers
 
         public static void ToggleActionCenter()
         {
-            ToggleActionCenter(IntPtr.Zero);
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(WindowHelper.FindWindowsTray(IntPtr.Zero));
+            ToggleActionCenter(hTrayWnd);
         }
 
-        public static void ToggleActionCenter(IntPtr hwndIgnore)
+        public static void ToggleActionCenter(IntPtr hTrayWnd)
         {
-            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(hwndIgnore);
             IntPtr runGlobalHotKey = new IntPtr(500);
             IntPtr acKeyCombo = new IntPtr(MakeLParam((int)System.Windows.Input.ModifierKeys.Windows, (int)VK.KEY_A));
             PostMessage(hTrayWnd, (int)WM.HOTKEY, runGlobalHotKey, acKeyCombo);
@@ -234,12 +234,12 @@ namespace ManagedShell.Common.Helpers
 
         public static void ToggleNotificationCenter()
         {
-            ToggleNotificationCenter(IntPtr.Zero);
+            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(WindowHelper.FindWindowsTray(IntPtr.Zero));
+            ToggleNotificationCenter(hTrayWnd);
         }
 
-        public static void ToggleNotificationCenter(IntPtr hwndIgnore)
+        public static void ToggleNotificationCenter(IntPtr hTrayWnd)
         {
-            IntPtr hTrayWnd = WindowHelper.FindWindowsTray(hwndIgnore);
             IntPtr nfyGlobalHotKey = new IntPtr(591);
             PostMessage(hTrayWnd, (int)WM.HOTKEY, nfyGlobalHotKey, IntPtr.Zero);
         }
