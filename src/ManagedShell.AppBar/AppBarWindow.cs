@@ -692,30 +692,30 @@ namespace ManagedShell.AppBar
             {
                 top = Screen.Bounds.Top;
                 height = Screen.Bounds.Height;
-                width = (int)(DesiredWidth * DpiScale);
+                width = Convert.ToInt32(DesiredWidth * DpiScale);
 
                 if (AppBarEdge == AppBarEdge.Left)
                 {
-                    left = Screen.Bounds.Left + (int)(edgeOffset * DpiScale);
+                    left = Screen.Bounds.Left + Convert.ToInt32(edgeOffset * DpiScale);
                 }
                 else
                 {
-                    left = Screen.Bounds.Right - width - (int)(edgeOffset * DpiScale);
+                    left = Screen.Bounds.Right - width - Convert.ToInt32(edgeOffset * DpiScale);
                 }
             }
             else
             {
                 left = Screen.Bounds.Left;
                 width = Screen.Bounds.Width;
-                height = (int)(DesiredHeight * DpiScale);
+                height = Convert.ToInt32(DesiredHeight * DpiScale);
 
                 if (AppBarEdge == AppBarEdge.Top)
                 {
-                    top = Screen.Bounds.Top + (int)(edgeOffset * DpiScale);
+                    top = Screen.Bounds.Top + Convert.ToInt32(edgeOffset * DpiScale);
                 }
                 else
                 {
-                    top = Screen.Bounds.Bottom - height - (int)(edgeOffset * DpiScale);
+                    top = Screen.Bounds.Bottom - height - Convert.ToInt32(edgeOffset * DpiScale);
                 }
             }
 

@@ -325,8 +325,8 @@ namespace ManagedShell.AppBar
                     uEdge = (int)edge
                 };
 
-                int sWidth = (int)width;
-                int sHeight = (int)height;
+                int sWidth = Convert.ToInt32(width);
+                int sHeight = Convert.ToInt32(height);
 
                 int top = 0;
                 int left = 0;
@@ -531,10 +531,10 @@ namespace ManagedShell.AppBar
                 }
             }
 
-            rc.Top = screen.Bounds.Top + (int)(topEdgeWindowHeight * dpiScale);
-            rc.Bottom = screen.Bounds.Bottom - (int)(bottomEdgeWindowHeight * dpiScale);
-            rc.Left = screen.Bounds.Left + (int)(leftEdgeWindowWidth * dpiScale);
-            rc.Right = screen.Bounds.Right - (int)(rightEdgeWindowWidth * dpiScale);
+            rc.Top = screen.Bounds.Top + Convert.ToInt32(topEdgeWindowHeight * dpiScale);
+            rc.Bottom = screen.Bounds.Bottom - Convert.ToInt32(bottomEdgeWindowHeight * dpiScale);
+            rc.Left = screen.Bounds.Left + Convert.ToInt32(leftEdgeWindowWidth * dpiScale);
+            rc.Right = screen.Bounds.Right - Convert.ToInt32(rightEdgeWindowWidth * dpiScale);
 
             return rc;
         }
