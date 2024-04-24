@@ -7,6 +7,7 @@ using System.Runtime.CompilerServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Interop;
+using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
 using Application = System.Windows.Application;
@@ -385,7 +386,11 @@ namespace ManagedShell.AppBar
 
         private void AppBarWindow_ContextMenuOpening(object sender, ContextMenuEventArgs e)
         {
-            SetAutoHideStateVar(ref _isContextMenuOpen, true);
+            // ContextMenuOpening fires even if the element has no context menu defined, so we must check
+            if (HasContextMenu(e.OriginalSource as FrameworkElement))
+            {
+                SetAutoHideStateVar(ref _isContextMenuOpen, true);
+            }
         }
 
         private void AppBarWindow_PreviewDragEnter(object sender, DragEventArgs e)
@@ -586,6 +591,24 @@ namespace ManagedShell.AppBar
                 Topmost = true;
                 WindowHelper.ShowWindowTopMost(Handle);
                 IsRaising = false;
+            }
+        }
+
+        private bool HasContextMenu(FrameworkElement fe)
+        {
+            if (fe == null)
+            {
+                return false;
+            }
+
+            if (fe.ContextMenu != null)
+            {
+                return true;
+            }
+            else
+            {
+                var parent = VisualTreeHelper.GetParent(fe) as FrameworkElement;
+                return HasContextMenu(parent);
             }
         }
 

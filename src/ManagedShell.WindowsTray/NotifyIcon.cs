@@ -197,7 +197,7 @@ namespace ManagedShell.WindowsTray
             set;
         }
 
-        private string Identifier
+        public string Identifier
         {
             get
             {
