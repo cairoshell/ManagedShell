@@ -326,7 +326,7 @@ namespace ManagedShell.WindowsTray
 
             if (inPinnedList != _isPinned)
             {
-                _isPinned = !_isPinned;
+                _isPinned = inPinnedList;
                 OnPropertyChanged("IsPinned");
             }
         }
