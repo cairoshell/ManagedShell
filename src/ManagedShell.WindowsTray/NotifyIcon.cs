@@ -311,19 +311,23 @@ namespace ManagedShell.WindowsTray
 
         public void SetPinValues()
         {
+            var inPinnedList = false;
+
             for (int i = 0; i < _notificationArea.PinnedNotifyIcons.Length; i++)
             {
                 string item = _notificationArea.PinnedNotifyIcons[i];
                 if (IsEqualByIdentifier(item))
                 {
-                    if (!_isPinned)
-                    {
-                        _isPinned = true;
-                        OnPropertyChanged("IsPinned");
-                    }
+                    inPinnedList = true;
                     PinOrder = i;
                     break;
                 }
+            }
+
+            if (inPinnedList != _isPinned)
+            {
+                _isPinned = inPinnedList;
+                OnPropertyChanged("IsPinned");
             }
         }
 
