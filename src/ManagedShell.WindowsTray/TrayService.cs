@@ -301,7 +301,7 @@ namespace ManagedShell.WindowsTray
                 ExtendedWindowStyles.WS_EX_TOOLWINDOW, trayClassReg, "",
                 WindowStyles.WS_POPUP | WindowStyles.WS_CLIPCHILDREN |
                 WindowStyles.WS_CLIPSIBLINGS, 0, 0, GetSystemMetrics(0),
-                (int)(23 * DpiHelper.DpiScale), IntPtr.Zero, IntPtr.Zero, hInstance, IntPtr.Zero);
+                Convert.ToInt32(23 * DpiHelper.DpiScale), IntPtr.Zero, IntPtr.Zero, hInstance, IntPtr.Zero);
 
             if (HwndTray == IntPtr.Zero)
             {
@@ -324,7 +324,7 @@ namespace ManagedShell.WindowsTray
             HwndNotify = CreateWindowEx(0, trayNotifyClassReg, null,
                 WindowStyles.WS_CHILD | WindowStyles.WS_CLIPCHILDREN |
                 WindowStyles.WS_CLIPSIBLINGS, 0, 0, GetSystemMetrics(0),
-                (int)(23 * DpiHelper.DpiScale), HwndTray, IntPtr.Zero, hInstance, IntPtr.Zero);
+                Convert.ToInt32(23 * DpiHelper.DpiScale), HwndTray, IntPtr.Zero, hInstance, IntPtr.Zero);
 
             if (HwndNotify == IntPtr.Zero)
             {

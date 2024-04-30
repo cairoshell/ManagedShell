@@ -561,7 +561,7 @@ namespace ManagedShell.ShellFolders
                 try
                 {
                     int iconPoints = IconHelper.GetSize(size);
-                    SIZE imageSize = new SIZE { cx = (int)(iconPoints * DpiHelper.DpiScale), cy = (int)(iconPoints * DpiHelper.DpiScale) };
+                    SIZE imageSize = new SIZE { cx = Convert.ToInt32(iconPoints * DpiHelper.DpiScale), cy = Convert.ToInt32(iconPoints * DpiHelper.DpiScale) };
 
                     IntPtr hBitmap = IntPtr.Zero;
                     SIIGBF flags = 0;

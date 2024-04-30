@@ -59,14 +59,14 @@ namespace ManagedShell.Common.Helpers
         /// <param name="pixelY">returns the Y value in pixels</param>
         public static void TransformToPixels(double unitX, double unitY, out int pixelX, out int pixelY)
         {
-            pixelX = (int)(DpiScale * unitX);
-            pixelY = (int)(DpiScale * unitY);
+            pixelX = Convert.ToInt32(DpiScale * unitX);
+            pixelY = Convert.ToInt32(DpiScale * unitY);
         }
 
         public static void TransformFromPixels(double unitX, double unitY, out int pixelX, out int pixelY)
         {
-            pixelX = (int)(unitX / DpiScale);
-            pixelY = (int)(unitY / DpiScale);
+            pixelX = Convert.ToInt32(unitX / DpiScale);
+            pixelY = Convert.ToInt32(unitY / DpiScale);
         }
 
         private static double GetDpiScale()
