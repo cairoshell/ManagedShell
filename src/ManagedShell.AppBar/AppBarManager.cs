@@ -406,8 +406,8 @@ namespace ManagedShell.AppBar
                 {
                     bool topUnchanged = abd.rc.Top == Math.Round(abWindow.Top * abWindow.DpiScale);
                     bool leftUnchanged = abd.rc.Left == Math.Round(abWindow.Left * abWindow.DpiScale);
-                    bool bottomUnchanged = abd.rc.Bottom == Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.Height * abWindow.DpiScale));
-                    bool rightUnchanged = abd.rc.Right == Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.Width * abWindow.DpiScale));
+                    bool bottomUnchanged = abd.rc.Bottom == Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.ActualHeight * abWindow.DpiScale));
+                    bool rightUnchanged = abd.rc.Right == Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.ActualWidth * abWindow.DpiScale));
 
                     isSameCoords = topUnchanged
                                    && leftUnchanged
@@ -417,7 +417,7 @@ namespace ManagedShell.AppBar
 
                 if (!isSameCoords)
                 {
-                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {abWindow.Top * abWindow.DpiScale}x{abWindow.Left * abWindow.DpiScale}x{Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.Height * abWindow.DpiScale))}x{Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.Width * abWindow.DpiScale))}");
+                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {abWindow.Top * abWindow.DpiScale}x{abWindow.Left * abWindow.DpiScale}x{Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.ActualHeight * abWindow.DpiScale))}x{Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.ActualWidth * abWindow.DpiScale))}");
                     abWindow.SetAppBarPosition(abd.rc);
                 }
 
