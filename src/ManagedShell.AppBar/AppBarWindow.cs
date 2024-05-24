@@ -664,7 +664,21 @@ namespace ManagedShell.AppBar
         #endregion
 
         #region Virtual methods
-        public virtual void AfterAppBarPos(bool isSameCoords, NativeMethods.Rect rect) { }
+        public virtual void AfterAppBarPos(bool isSameCoords, NativeMethods.Rect rect)
+        {
+            if (!isSameCoords)
+            {
+                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };
+                timer.Tick += (sender1, args) =>
+                {
+                    // set position again, since WPF may have overridden the original change from AppBarHelper
+                    SetAppBarPosition(rect);
+
+                    timer.Stop();
+                };
+                timer.Start();
+            }
+        }
 
         protected virtual bool ShouldAllowAutoHide()
         {
