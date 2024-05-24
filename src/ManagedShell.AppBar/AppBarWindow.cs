@@ -50,6 +50,7 @@ namespace ManagedShell.AppBar
         protected double DesiredHeight;
         protected double DesiredWidth;
         private bool EnableBlur;
+        private bool IsAppBarMoving;
 
         // AppBar properties
         private int AppBarMessageId = -1;
@@ -466,6 +467,39 @@ namespace ManagedShell.AppBar
                     wndPos.hwndInsertAfter = (IntPtr)NativeMethods.WindowZOrder.HWND_TOPMOST;
                     wndPos.UpdateMessage(lParam);
                 }
+
+                // If the system translates us outside of our AppBar position by our size, undo it
+                if (!IsAppBarMoving && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0)
+                {
+                    bool isTranslated = false;
+
+                    switch (AppBarEdge)
+                    {
+                        case AppBarEdge.Left:
+                            isTranslated = wndPos.x == Convert.ToInt32((Left + ActualWidth) * DpiScale) && wndPos.y == Convert.ToInt32(Top * DpiScale);
+                            wndPos.x = Convert.ToInt32(Left * DpiScale);
+                            break;
+                        case AppBarEdge.Right:
+                            isTranslated = wndPos.x == Convert.ToInt32((Left - ActualWidth) * DpiScale) && wndPos.y == Convert.ToInt32(Top * DpiScale);
+                            wndPos.x = Convert.ToInt32(Left * DpiScale);
+                            break;
+                        case AppBarEdge.Top:
+                            isTranslated = wndPos.y == Convert.ToInt32((Top + ActualHeight) * DpiScale) && wndPos.x == Convert.ToInt32(Left * DpiScale);
+                            wndPos.y = Convert.ToInt32(Top * DpiScale);
+                            break;
+                        case AppBarEdge.Bottom:
+                            isTranslated = wndPos.y == Convert.ToInt32((Top - ActualHeight) * DpiScale) && wndPos.x == Convert.ToInt32(Left * DpiScale);
+                            wndPos.y = Convert.ToInt32(Top * DpiScale);
+                            break;
+                    }
+
+                    if (isTranslated)
+                    {
+                        wndPos.UpdateMessage(lParam);
+                    }
+                }
+
+                IsAppBarMoving = false;
             }
             else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
@@ -549,6 +583,7 @@ namespace ManagedShell.AppBar
                 swp |= (int)NativeMethods.SetWindowPosFlags.SWP_NOSIZE;
             }
 
+            IsAppBarMoving = true;
             NativeMethods.SetWindowPos(Handle, IntPtr.Zero, rect.Left, rect.Top, rect.Width, rect.Height, swp);
         }
 
