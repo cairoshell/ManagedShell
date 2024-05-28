@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 
 namespace ManagedShell.Common.Logging
 {
@@ -30,6 +31,9 @@ namespace ManagedShell.Common.Logging
         private static bool _isInfo;
         private static bool _isWarning;
         private static LogSeverity _severity;
+
+        // Contains the orphaned log events recorded before any observers are attached.
+        private static List<LogEventArgs> _orphanedEvents = new List<LogEventArgs>();
 
         /// <summary>
         /// Private constructor. Initializes default severity to "Debug".
@@ -204,15 +208,22 @@ namespace ManagedShell.Common.Logging
             {
                 Log(null, e);
             }
+            else
+            {
+                _orphanedEvents.Add(e);
+            }
         }
 
         /// <summary>
         /// Attach a listening observer logging device to logger.
         /// </summary>
         /// <param name="observer">Observer (listening device).</param>
-        public static void Attach(ILog observer)
+        /// <param name="flushOrphanedEvents">If this is the first observer, whether any log events emitted prior should be re-emitted.</param>
+        public static void Attach(ILog observer, bool flushOrphanedEvents = false)
         {
             Log += observer.Log;
+
+            if (flushOrphanedEvents) FlushOrphanedLogEvents();
         }
 
         /// <summary>
@@ -224,16 +235,36 @@ namespace ManagedShell.Common.Logging
             Log -= observer.Log;
         }
 
-        public static void Attach(ILog[] observers)
+        public static void Attach(ILog[] observers, bool flushOrphanedEvents = false)
         {
             foreach (var observer in observers)
                 Attach(observer);
+
+            if (flushOrphanedEvents) FlushOrphanedLogEvents();
         }
 
         public static void Detach(ILog[] observers)
         {
             foreach (var observer in observers)
                 Detach(observer);
+        }
+
+        /// <summary>
+        /// Called from the Attach method to re-emit log events that occurred prior to the first observer being attached.
+        /// </summary>
+        private static void FlushOrphanedLogEvents()
+        {
+            if (Log == null)
+            {
+                return;
+            }
+
+            foreach (var log in _orphanedEvents)
+            {
+                OnLog(log);
+            }
+
+            _orphanedEvents.Clear();
         }
     }
 }
