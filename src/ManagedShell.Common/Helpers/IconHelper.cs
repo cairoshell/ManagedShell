@@ -168,7 +168,7 @@ namespace ManagedShell.Common.Helpers
         {
             if (filename.EndsWith(".settingcontent-ms"))
             {
-                return "C:\\Windows\\ImmersiveControlPanel\\SystemSettings.exe";
+                return Environment.GetEnvironmentVariable("WINDIR") + "\\ImmersiveControlPanel\\SystemSettings.exe";
             }
 
             return filename;

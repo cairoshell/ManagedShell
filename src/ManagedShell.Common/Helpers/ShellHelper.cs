@@ -200,7 +200,7 @@ namespace ManagedShell.Common.Helpers
             owProc.StartInfo.UseShellExecute = true;
             owProc.StartInfo.FileName = Environment.GetEnvironmentVariable("WINDIR") + @"\system32\rundll32.exe";
             owProc.StartInfo.Arguments =
-                @"C:\WINDOWS\system32\shell32.dll,OpenAs_RunDLL " + fileName;
+                Environment.GetEnvironmentVariable("WINDIR") + @"\system32\shell32.dll,OpenAs_RunDLL " + fileName;
             owProc.Start();
         }
 
