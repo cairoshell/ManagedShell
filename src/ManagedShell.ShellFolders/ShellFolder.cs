@@ -100,12 +100,12 @@ namespace ManagedShell.ShellFolders
 
                 if (watchChanges)
                 {
-                    BeginWatchingChanges();
+                    InitChangeWatcher();
                 }
             }
         }
 
-        public void BeginWatchingChanges()
+        private void InitChangeWatcher()
         {
             if (_changeWatcher != null || _shellItem == null || !IsFileSystem || !IsFolder)
             {
@@ -113,6 +113,12 @@ namespace ManagedShell.ShellFolders
             }
 
             _changeWatcher = new ChangeWatcher(_watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+        }
+
+        public void BeginWatchingChanges()
+        {
+            InitChangeWatcher();
+            _changeWatcher?.StartWatching();
         }
 
         public void StopWatchingChanges()
