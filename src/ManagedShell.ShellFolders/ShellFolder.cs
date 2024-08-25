@@ -404,12 +404,9 @@ namespace ManagedShell.ShellFolders
         public new void Dispose()
         {
             _isDisposed = true;
-            if (_changeWatcher != null)
-            {
-                _changeWatcher.Dispose();
-                _changeWatcher = null;
-            }
-            
+            StopWatchingChanges();
+
+
             try
             {
                 if (_files != null)
