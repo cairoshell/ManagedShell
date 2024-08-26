@@ -3725,5 +3725,33 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName)]
         public static extern IntPtr MonitorFromWindow(IntPtr hWnd, int dwFlags);
+
+        public const int DBT_DEVICEARRIVAL = 0x8000;
+        public const int DBT_DEVICEQUERYREMOVE = 0x8001;
+        public const int DBT_DEVICEQUERYREMOVEFAILED = 0x8002;
+        public const int DBT_DEVICEREMOVECOMPLETE = 0x8004;
+        public const int DBT_DEVTYP_VOLUME = 0x2;
+        public const int DBT_DEVTYP_HANDLE = 0x6;
+        public const int FILE_FLAG_BACKUP_SEMANTICS = 0x02000000;
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct DEV_BROADCAST_HANDLE
+        {
+            public int dbch_size;
+            public int dbch_devicetype;
+            public int dbch_reserved;
+            public IntPtr dbch_handle;
+            public IntPtr dbch_hdevnotify;
+            public Guid dbch_eventguid;
+            public int dbch_nameoffset;
+            [MarshalAs(UnmanagedType.ByValArray, SizeConst = 1, ArraySubType = UnmanagedType.I1)]
+            public byte[] dbch_data;
+        }
+
+        [DllImport(User32_DllName, CharSet = CharSet.Auto, SetLastError = true)]
+        public static extern IntPtr RegisterDeviceNotification(IntPtr recipient, IntPtr notificationFilter, int flags);
+
+        [DllImport(User32_DllName)]
+        public static extern bool UnregisterDeviceNotification(IntPtr handle);
     }
 }
