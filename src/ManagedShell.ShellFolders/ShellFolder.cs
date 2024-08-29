@@ -18,10 +18,11 @@ namespace ManagedShell.ShellFolders
 
         private readonly IntPtr _hwndInput;
         private readonly bool _loadAsync;
-        private readonly ChangeWatcher _changeWatcher;
+        private ChangeWatcher _changeWatcher;
 
         private bool _isDisposed;
         private IntPtr _shellFolderPtr;
+        private List<string> _watchList = new List<string>();
 
         public bool IsDesktop { get; private set; }
 
@@ -82,10 +83,7 @@ namespace ManagedShell.ShellFolders
 
             if (_shellItem != null && IsFileSystem && IsFolder)
             {
-                List<string> watchList = new List<string>
-                {
-                    Path
-                };
+                _watchList.Add(Path);
 
                 if (IsDesktop)
                 {
@@ -96,15 +94,42 @@ namespace ManagedShell.ShellFolders
 
                     if (!string.IsNullOrEmpty(publicDesktopPath))
                     {
-                        watchList.Add(publicDesktopPath);
+                        _watchList.Add(publicDesktopPath);
                     }
                 }
 
                 if (watchChanges)
                 {
-                    _changeWatcher = new ChangeWatcher(watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+                    InitChangeWatcher();
                 }
             }
+        }
+
+        private void InitChangeWatcher()
+        {
+            if (_changeWatcher != null || _shellItem == null || !IsFileSystem || !IsFolder)
+            {
+                return;
+            }
+
+            _changeWatcher = new ChangeWatcher(_watchList, ChangedEventHandler, CreatedEventHandler, DeletedEventHandler, RenamedEventHandler);
+        }
+
+        public void BeginWatchingChanges()
+        {
+            InitChangeWatcher();
+            _changeWatcher?.StartWatching();
+        }
+
+        public void StopWatchingChanges()
+        {
+            if (_changeWatcher == null)
+            {
+                return;
+            }
+
+            _changeWatcher.Dispose();
+            _changeWatcher = null;
         }
 
         private void HandleDesktopFolder(string parsingName)
@@ -385,8 +410,9 @@ namespace ManagedShell.ShellFolders
         public new void Dispose()
         {
             _isDisposed = true;
-            _changeWatcher?.Dispose();
-            
+            StopWatchingChanges();
+
+
             try
             {
                 if (_files != null)
