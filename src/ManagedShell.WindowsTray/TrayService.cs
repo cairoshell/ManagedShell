@@ -1,6 +1,7 @@
 using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using static ManagedShell.Interop.NativeMethods;
@@ -268,14 +269,11 @@ namespace ManagedShell.WindowsTray
 
             if (HwndFwd != IntPtr.Zero)
             {
-                foreach (int postFwdMsg in ForwardMessagesPost)
+                if (msg >= (int)WM.USER && ForwardMessagesPost.Contains(msg))
                 {
-                    if (msg == postFwdMsg)
-                    {
-                        ShellLogger.Debug($"TrayService: Forwarding message via PostMessage: {msg}");
-                        PostMessage(HwndFwd, (uint)msg, wParam, lParam);
-                        return DefWindowProc(hWnd, msg, wParam, lParam);
-                    }
+                    ShellLogger.Debug($"TrayService: Forwarding message via PostMessage: {msg}");
+                    PostMessage(HwndFwd, (uint)msg, wParam, lParam);
+                    return DefWindowProc(hWnd, msg, wParam, lParam);
                 }
                 return SendMessage(HwndFwd, msg, wParam, lParam);
             }
