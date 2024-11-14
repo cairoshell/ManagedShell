@@ -3014,6 +3014,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern bool PostMessage(int hWnd, uint msg, int wParam, long lParam);
 
+        [DllImport(User32_DllName)]
+        public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
+
         public enum KLF : uint
         {
             ACTIVATE = 0x00000001,

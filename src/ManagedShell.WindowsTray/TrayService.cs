@@ -1,6 +1,7 @@
 using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
 using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Windows.Threading;
 using static ManagedShell.Interop.NativeMethods;
@@ -11,6 +12,7 @@ namespace ManagedShell.WindowsTray
     {
         private const string NotifyWndClass = "TrayNotifyWnd";
         private const string TrayWndClass = "Shell_TrayWnd";
+        private readonly int[] ForwardMessagesPost = { (int)WM.USER + 372 };
 
         private AppBarMessageDelegate appBarMessageDelegate;
         private IconDataDelegate iconDataDelegate;
@@ -267,6 +269,12 @@ namespace ManagedShell.WindowsTray
 
             if (HwndFwd != IntPtr.Zero)
             {
+                if (msg >= (int)WM.USER && ForwardMessagesPost.Contains(msg))
+                {
+                    ShellLogger.Debug($"TrayService: Forwarding message via PostMessage: {msg}");
+                    PostMessage(HwndFwd, (uint)msg, wParam, lParam);
+                    return DefWindowProc(hWnd, msg, wParam, lParam);
+                }
                 return SendMessage(HwndFwd, msg, wParam, lParam);
             }
 
