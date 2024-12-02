@@ -31,7 +31,7 @@ namespace ManagedShell.ShellFolders
                 {
                     FileSystemWatcher watcher = new FileSystemWatcher(path)
                     {
-                        NotifyFilter = NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
+                        NotifyFilter = NotifyFilters.Attributes | NotifyFilters.DirectoryName | NotifyFilters.FileName | NotifyFilters.LastWrite | NotifyFilters.Size
                     };
 
                     watcher.Changed += _changedEventHandler;
