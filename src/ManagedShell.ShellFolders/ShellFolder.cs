@@ -257,13 +257,21 @@ namespace ManagedShell.ShellFolders
                     if (file.Path == e.FullPath)
                     {
                         exists = true;
-                        file.Refresh();
+
+                        if (FileIsHidden(file.Path))
+                        {
+                            RemoveFile(file.Path);
+                        }
+                        else
+                        {
+                            file.Refresh();
+                        }
 
                         break;
                     }
                 }
 
-                if (!exists)
+                if (!exists && !FileIsHidden(e.FullPath))
                 {
                     AddFile(e.FullPath);
                 }
@@ -276,7 +284,7 @@ namespace ManagedShell.ShellFolders
             {
                 ShellLogger.Info($"ShellFolder: Item {e.ChangeType}: {e.Name} ({e.FullPath})");
 
-                if (!FileExists(e.FullPath))
+                if (!FileExists(e.FullPath) && !FileIsHidden(e.FullPath))
                 {
                     AddFile(e.FullPath);
                 }
@@ -301,7 +309,7 @@ namespace ManagedShell.ShellFolders
 
                 int existing = RemoveFile(e.OldFullPath);
 
-                if (!FileExists(e.FullPath))
+                if (!FileExists(e.FullPath) && !FileIsHidden(e.FullPath))
                 {
                     AddFile(e.FullPath, existing);
                 }
@@ -404,6 +412,23 @@ namespace ManagedShell.ShellFolders
             }
 
             return exists;
+        }
+
+        private bool FileIsHidden(string parsingName)
+        {
+            try
+            {
+                FileAttributes attributes = File.GetAttributes(parsingName);
+                if ((attributes & FileAttributes.Hidden) == FileAttributes.Hidden)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                ShellLogger.Warning($"ShellFolder: Unable to retrieve attributes for {parsingName}: {ex.Message}");
+            }
+            return false;
         }
         #endregion
 
