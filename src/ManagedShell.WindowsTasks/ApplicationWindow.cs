@@ -411,13 +411,6 @@ namespace ManagedShell.WindowsTasks
             return desc;
         }
 
-        internal void Uncloak()
-        {
-            ShellLogger.Debug($"ApplicationWindow: Uncloak event received for {Title}");
-
-            SetShowInTaskbar();
-        }
-
         private void setIcon()
         {
             if (!_iconLoading && ShowInTaskbar)
