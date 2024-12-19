@@ -403,6 +403,7 @@ namespace ManagedShell.Common.Helpers
                 StringBuilder outAumid = new StringBuilder((int)len);
 
                 GetApplicationUserModelId(hProcess, ref len, outAumid);
+                CloseHandle((int)hProcess);
 
                 if (outAumid.Length > 0)
                 {

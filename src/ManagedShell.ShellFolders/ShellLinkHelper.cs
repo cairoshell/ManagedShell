@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Runtime.InteropServices;
 using System.Runtime.InteropServices.ComTypes;
+using System.Text;
 using ManagedShell.Common.Logging;
+using ManagedShell.Interop;
 using ManagedShell.ShellFolders.Enums;
 using ManagedShell.ShellFolders.Interfaces;
 
@@ -73,6 +75,58 @@ namespace ManagedShell.ShellFolders
             }
 
             return shellLink;
+        }
+
+        public static string GetLinkTarget(IntPtr userInputHwnd, string filePath)
+        {
+            IShellLink link = Load(userInputHwnd, filePath);
+            string target = "";
+
+            // First, query Windows Installer to see if this is an installed application shortcut
+            StringBuilder product = new StringBuilder(39);
+            StringBuilder feature = new StringBuilder(39);
+            StringBuilder component = new StringBuilder(39);
+
+            uint result = NativeMethods.MsiGetShortcutTarget(filePath, product, feature, component);
+
+            if (result == 0)
+            {
+                // This is a Windows Installer shortcut
+                int pathLength = 1024;
+                StringBuilder path = new StringBuilder(pathLength);
+                int installState = NativeMethods.MsiGetComponentPath(product.ToString(), component.ToString(), path, ref pathLength);
+                if (installState == 1)
+                {
+                    // Locally installed application
+                    target = path.ToString();
+                }
+            }
+
+            if (string.IsNullOrEmpty(target))
+            {
+                // Check for an associated identifier list to get an IShellItem object from
+                IntPtr pidl = IntPtr.Zero;
+                link.GetIDList(out pidl);
+
+                if (pidl != IntPtr.Zero)
+                {
+                    IShellItem _shellItem;
+                    Interop.SHCreateItemFromIDList(pidl, typeof(IShellItem).GUID, out _shellItem);
+                    ShellItem item = new ShellItem(_shellItem);
+                    target = item.Path;
+                    string aumid = item.GetAumid();
+                }
+            }
+
+            if (string.IsNullOrEmpty(target))
+            {
+                // Get the shortcut path as a last resort
+                StringBuilder builder = new StringBuilder(260);
+                link.GetPath(builder, 260, out Structs.WIN32_FIND_DATA pfd, SLGP_FLAGS.SLGP_RAWPATH);
+                target = builder.ToString();
+            }
+
+            return target;
         }
     }
 }
