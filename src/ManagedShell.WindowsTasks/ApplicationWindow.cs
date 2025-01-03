@@ -376,7 +376,7 @@ namespace ManagedShell.WindowsTasks
                 StringBuilder cName = new StringBuilder(256);
                 NativeMethods.GetClassName(Handle, cName, cName.Capacity);
                 string className = cName.ToString();
-                if (className == "ApplicationFrameWindow" || className == "Windows.UI.Core.CoreWindow")
+                if (className == "ApplicationFrameWindow" || className == "Windows.UI.Core.CoreWindow" || className == "StartMenuSizingFrame")
                 {
                     if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                     {
@@ -587,7 +587,12 @@ namespace ManagedShell.WindowsTasks
             }
             else
             {
-                NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
+                // If the window is maximized, use ShowMaximize so that it doesn't un-maximize
+                if (GetWindowShowStyle(Handle) != NativeMethods.WindowShowStyle.ShowMaximized || 
+                    !NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.ShowMaximized))
+                {
+                    NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
+                }
                 makeForeground();
 
                 if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
