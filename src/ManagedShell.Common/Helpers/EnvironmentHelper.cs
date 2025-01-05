@@ -135,6 +135,19 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        public static bool IsWindows1124H2OrBetter
+        {
+            get
+            {
+                if (osVersionMajor == 0)
+                {
+                    getOSVersion();
+                }
+
+                return (osVersionMajor >= 10 && osVersionBuild >= 26100);
+            }
+        }
+
         public static bool IsWindows10DarkModeSupported
         {
             get
