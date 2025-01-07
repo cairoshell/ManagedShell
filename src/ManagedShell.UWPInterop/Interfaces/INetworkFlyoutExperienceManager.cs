@@ -3,11 +3,9 @@ using System.Runtime.InteropServices;
 
 namespace ManagedShell.UWPInterop.Interfaces
 {
-    [ComImport, Guid("E44F17E6-AB85-409C-8D01-17D74BEC150E"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
+    [ComImport, Guid("e44f17e6-ab85-409c-8d01-17d74bec150e"), InterfaceType(ComInterfaceType.InterfaceIsIUnknown)]
     internal interface INetworkFlyoutExperienceManager
     {
-        // Note: Invoking methods on ComInterfaceType.InterfaceIsIInspectable interfaces
-        // is no longer supported in the CLR, but can be simulated with IUnknown.
         void GetIids(out int iidCount, out IntPtr iids);
         void GetRuntimeClassName(out IntPtr className);
         void GetTrustLevel(out int trustLevel);

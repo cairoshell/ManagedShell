@@ -8,21 +8,30 @@ namespace ManagedShell.UWPInterop
 {
     public static class ImmersiveShellHelper
     {
-        private static Guid CLSID_ShellExperienceManagerFactory = new Guid("2E8FCB18-A0EE-41AD-8EF8-77FB3A370CA5");
-        private static Guid IID_TrayClockFlyoutExperienceManager = new Guid("b1604325-6b59-427b-bf1b-80a2db02d3d8");
+        private static Guid CLSID_ShellExperienceManagerFactory = new Guid("2e8fcb18-a0ee-41ad-8ef8-77fb3a370ca5");
         private static Guid IID_ActionCenterExperienceManager = new Guid("df65db57-d504-456e-8bd7-004ce308d8d9");
         private static Guid IID_ControlCenterExperienceManager = new Guid("d669a58e-6b18-4d1d-9004-a8862adb0a20");
-        private static Guid IID_TrayMtcUvcFlyoutExperienceManager = new Guid("7154c95d-c519-49bd-a97e-645bbfabe111");
-        private static Guid IID_NetworkFlyoutExperienceManager = new Guid("E44F17E6-AB85-409C-8D01-17D74BEC150E");
-        private static Guid IID_NetworkFlyoutExperienceManager_19H2 = new Guid("c9ddc674-b44b-4c67-9d79-2b237d9be05a");
+        private static Guid IID_NetworkFlyoutExperienceManager = new Guid("e44f17e6-ab85-409c-8d01-17d74bec150e");
+        private static Guid IID_NetworkFlyoutExperienceManager_20H1 = new Guid("c9ddc674-b44b-4c67-9d79-2b237d9be05a");
         private static Guid IID_TrayBatteryFlyoutExperienceManager = new Guid("0a73aedc-1c68-410d-8d53-63af80951e8f");
+        private static Guid IID_TrayClockFlyoutExperienceManager = new Guid("b1604325-6b59-427b-bf1b-80a2db02d3d8");
+        private static Guid IID_TrayMtcUvcFlyoutExperienceManager = new Guid("7154c95d-c519-49bd-a97e-645bbfabe111");
 
         private static Interfaces.IServiceProvider _immersiveShell;
         private static IShellExperienceManagerFactory _shellExperienceManagerFactory;
+        private static IActionCenterExperienceManager _actionCenterExperienceManager;
+        private static IControlCenterExperienceManager _controlCenterExperienceManager;
+        private static INetworkFlyoutExperienceManager _networkFlyoutExperienceManager;
+        private static INetworkFlyoutExperienceManager_20H1 _networkFlyoutExperienceManager_20H1;
+        private static ITrayBatteryFlyoutExperienceManager _trayBatteryFlyoutExperienceManager;
         private static ITrayClockFlyoutExperienceManager _trayClockFlyoutExperienceManager;
+        private static ITrayMtcUvcFlyoutExperienceManager _trayMtcUvcFlyoutExperienceManager;
 
         public static void AllowExplorerFocus()
         {
+            // When invoking a flyout, the shell will attempt to make it the foreground window.
+            // When that fails, the flyout may not show, or input may not work as expected.
+            // Explicity allow Explorer to do this so that flyouts work consistently.
             try
             {
                 Interop.NativeMethods.GetWindowThreadProcessId(Interop.NativeMethods.FindWindowEx(IntPtr.Zero, IntPtr.Zero, "Progman", "Program Manager"), out uint procId);
@@ -34,6 +43,7 @@ namespace ManagedShell.UWPInterop
             }
         }
 
+        #region Interface helpers
         public static Interfaces.IServiceProvider GetImmersiveShell()
         {
             if (!EnvironmentHelper.IsWindows10OrBetter)
@@ -78,7 +88,7 @@ namespace ManagedShell.UWPInterop
             return null;
         }
 
-        private static IntPtr GetExperienceManagerFromFactory(string experienceManager)
+        internal static IntPtr GetExperienceManagerFromFactory(string experienceManager)
         {
             _shellExperienceManagerFactory ??= GetShellExperienceManagerFactory();
             if (_shellExperienceManagerFactory == null) return IntPtr.Zero;
@@ -101,33 +111,6 @@ namespace ManagedShell.UWPInterop
                 ShellLogger.Warning($"ImmersiveShell: Unable to create experience manager: {ex}");
                 return IntPtr.Zero;
             }
-        }
-
-        internal static ITrayClockFlyoutExperienceManager GetTrayClockFlyoutExperienceManager()
-        {
-            if (!EnvironmentHelper.IsWindows10OrBetter)
-            {
-                ShellLogger.Error("ImmersiveShell: ITrayClockFlyoutExperienceManager unsupported");
-                return null;
-            }
-
-            try
-            {
-                IntPtr pExperienceManagerInterface = GetExperienceManagerFromFactory("Windows.Internal.ShellExperience.TrayClockFlyout");
-                if (pExperienceManagerInterface == IntPtr.Zero) return null;
-
-                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_TrayClockFlyoutExperienceManager, out IntPtr pClockFlyoutManager) == 0)
-                {
-                    return (ITrayClockFlyoutExperienceManager)Marshal.GetObjectForIUnknown(pClockFlyoutManager);
-                }
-
-                ShellLogger.Warning("ImmersiveShell: Unable to query ITrayClockFlyoutExperienceManager");
-            }
-            catch (Exception ex)
-            {
-                ShellLogger.Warning($"ImmersiveShell: Unable to get ITrayClockFlyoutExperienceManager: {ex}");
-            }
-            return null;
         }
 
         public static IActionCenterExperienceManager GetActionCenterExperienceManager()
@@ -184,37 +167,9 @@ namespace ManagedShell.UWPInterop
             return null;
         }
 
-        internal static ITrayMtcUvcFlyoutExperienceManager GetMtcUtcExperienceManager()
-        {
-            if (!EnvironmentHelper.IsWindows10OrBetter)
-            {
-                ShellLogger.Error("ImmersiveShell: ITrayMtcUvcFlyoutExperienceManager unsupported");
-                return null;
-            }
-
-            try
-            {
-                IntPtr pExperienceManagerInterface = GetExperienceManagerFromFactory("Windows.Internal.ShellExperience.MtcUvc");
-                if (pExperienceManagerInterface == IntPtr.Zero) return null;
-
-                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_TrayMtcUvcFlyoutExperienceManager, out IntPtr pMtcUvcManager) == 0)
-                {
-                    return (ITrayMtcUvcFlyoutExperienceManager)Marshal.GetObjectForIUnknown(pMtcUvcManager);
-                }
-
-                ShellLogger.Warning("ImmersiveShell: Unable to query ITrayMtcUvcFlyoutExperienceManager");
-            }
-            catch (Exception ex)
-            {
-                ShellLogger.Warning($"ImmersiveShell: Unable to get ITrayMtcUvcFlyoutExperienceManager: {ex}");
-            }
-            return null;
-        }
-
         internal static INetworkFlyoutExperienceManager GetNetworkExperienceManager()
         {
-            // TODO: The version is wrong
-            if (!EnvironmentHelper.IsWindows10OrBetter)
+            if (!EnvironmentHelper.IsWindows10OrBetter || EnvironmentHelper.IsWindows1020H1OrBetter)
             {
                 ShellLogger.Error("ImmersiveShell: INetworkFlyoutExperienceManager unsupported");
                 return null;
@@ -239,12 +194,11 @@ namespace ManagedShell.UWPInterop
             return null;
         }
 
-        internal static INetworkFlyoutExperienceManager_19H2 GetNetworkExperienceManager_19H2()
+        internal static INetworkFlyoutExperienceManager_20H1 GetNetworkExperienceManager_20H1()
         {
-            // TODO: The version is wrong
-            if (!EnvironmentHelper.IsWindows10OrBetter)
+            if (!EnvironmentHelper.IsWindows1020H1OrBetter)
             {
-                ShellLogger.Error("ImmersiveShell: INetworkFlyoutExperienceManager_19H2 unsupported");
+                ShellLogger.Error("ImmersiveShell: INetworkFlyoutExperienceManager_20H1 unsupported");
                 return null;
             }
 
@@ -253,16 +207,16 @@ namespace ManagedShell.UWPInterop
                 IntPtr pExperienceManagerInterface = GetExperienceManagerFromFactory("Windows.Internal.ShellExperience.NetworkFlyout");
                 if (pExperienceManagerInterface == IntPtr.Zero) return null;
 
-                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_NetworkFlyoutExperienceManager_19H2, out IntPtr pNetworkManager) == 0)
+                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_NetworkFlyoutExperienceManager_20H1, out IntPtr pNetworkManager) == 0)
                 {
-                    return (INetworkFlyoutExperienceManager_19H2)Marshal.GetObjectForIUnknown(pNetworkManager);
+                    return (INetworkFlyoutExperienceManager_20H1)Marshal.GetObjectForIUnknown(pNetworkManager);
                 }
 
-                ShellLogger.Warning("ImmersiveShell: Unable to query INetworkFlyoutExperienceManager_19H2");
+                ShellLogger.Warning("ImmersiveShell: Unable to query INetworkFlyoutExperienceManager_20H1");
             }
             catch (Exception ex)
             {
-                ShellLogger.Warning($"ImmersiveShell: Unable to get INetworkFlyoutExperienceManager_19H2: {ex}");
+                ShellLogger.Warning($"ImmersiveShell: Unable to get INetworkFlyoutExperienceManager_20H1: {ex}");
             }
             return null;
         }
@@ -294,6 +248,84 @@ namespace ManagedShell.UWPInterop
             return null;
         }
 
+        internal static ITrayClockFlyoutExperienceManager GetTrayClockFlyoutExperienceManager()
+        {
+            if (!EnvironmentHelper.IsWindows10OrBetter)
+            {
+                ShellLogger.Error("ImmersiveShell: ITrayClockFlyoutExperienceManager unsupported");
+                return null;
+            }
+
+            try
+            {
+                IntPtr pExperienceManagerInterface = GetExperienceManagerFromFactory("Windows.Internal.ShellExperience.TrayClockFlyout");
+                if (pExperienceManagerInterface == IntPtr.Zero) return null;
+
+                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_TrayClockFlyoutExperienceManager, out IntPtr pClockFlyoutManager) == 0)
+                {
+                    return (ITrayClockFlyoutExperienceManager)Marshal.GetObjectForIUnknown(pClockFlyoutManager);
+                }
+
+                ShellLogger.Warning("ImmersiveShell: Unable to query ITrayClockFlyoutExperienceManager");
+            }
+            catch (Exception ex)
+            {
+                ShellLogger.Warning($"ImmersiveShell: Unable to get ITrayClockFlyoutExperienceManager: {ex}");
+            }
+            return null;
+        }
+
+        internal static ITrayMtcUvcFlyoutExperienceManager GetMtcUtcExperienceManager()
+        {
+            if (!EnvironmentHelper.IsWindows10OrBetter)
+            {
+                ShellLogger.Error("ImmersiveShell: ITrayMtcUvcFlyoutExperienceManager unsupported");
+                return null;
+            }
+
+            try
+            {
+                IntPtr pExperienceManagerInterface = GetExperienceManagerFromFactory("Windows.Internal.ShellExperience.MtcUvc");
+                if (pExperienceManagerInterface == IntPtr.Zero) return null;
+
+                if (Marshal.QueryInterface(pExperienceManagerInterface, ref IID_TrayMtcUvcFlyoutExperienceManager, out IntPtr pMtcUvcManager) == 0)
+                {
+                    return (ITrayMtcUvcFlyoutExperienceManager)Marshal.GetObjectForIUnknown(pMtcUvcManager);
+                }
+
+                ShellLogger.Warning("ImmersiveShell: Unable to query ITrayMtcUvcFlyoutExperienceManager");
+            }
+            catch (Exception ex)
+            {
+                ShellLogger.Warning($"ImmersiveShell: Unable to get ITrayMtcUvcFlyoutExperienceManager: {ex}");
+            }
+            return null;
+        }
+        #endregion
+
+        #region Experience manager helpers
+        public static void ShowBatteryFlyout(Interop.NativeMethods.Rect anchorRect)
+        {
+            _trayBatteryFlyoutExperienceManager ??= GetBatteryExperienceManager();
+            if (_trayBatteryFlyoutExperienceManager == null) return;
+
+            AllowExplorerFocus();
+
+            try
+            {
+                if (_trayBatteryFlyoutExperienceManager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
+                {
+                    return;
+                }
+
+                ShellLogger.Warning("ImmersiveShell: Unable to show battery flyout");
+            }
+            catch (Exception ex)
+            {
+                ShellLogger.Warning($"ImmersiveShell: Unable to show battery flyout: {ex}");
+            }
+        }
+
         public static void ShowClockFlyout(Interop.NativeMethods.Rect anchorRect)
         {
             _trayClockFlyoutExperienceManager ??= GetTrayClockFlyoutExperienceManager();
@@ -316,25 +348,25 @@ namespace ManagedShell.UWPInterop
             }
         }
 
-        public static void ShowMediaFlyout(Interop.NativeMethods.Rect anchorRect)
+        public static void ShowSoundFlyout(Interop.NativeMethods.Rect anchorRect)
         {
-            ITrayMtcUvcFlyoutExperienceManager manager = GetMtcUtcExperienceManager();
-            if (manager == null) return;
+            _trayMtcUvcFlyoutExperienceManager ??= GetMtcUtcExperienceManager();
+            if (_trayMtcUvcFlyoutExperienceManager == null) return;
 
             AllowExplorerFocus();
 
             try
             {
-                if (manager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
+                if (_trayMtcUvcFlyoutExperienceManager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
                 {
                     return;
                 }
 
-                ShellLogger.Warning("ImmersiveShell: Unable to show media flyout");
+                ShellLogger.Warning("ImmersiveShell: Unable to show sound flyout");
             }
             catch (Exception ex)
             {
-                ShellLogger.Warning($"ImmersiveShell: Unable to show media flyout: {ex}");
+                ShellLogger.Warning($"ImmersiveShell: Unable to show sound flyout: {ex}");
             }
         }
 
@@ -344,23 +376,22 @@ namespace ManagedShell.UWPInterop
 
             try
             {
-                // TODO: The version is not right
-                if (EnvironmentHelper.IsWindows10RS4OrBetter)
+                if (EnvironmentHelper.IsWindows1020H1OrBetter)
                 {
-                    INetworkFlyoutExperienceManager_19H2 manager = GetNetworkExperienceManager_19H2();
-                    if (manager == null) return;
+                    _networkFlyoutExperienceManager_20H1 ??= GetNetworkExperienceManager_20H1();
+                    if (_networkFlyoutExperienceManager_20H1 == null) return;
 
-                    if (manager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height), 0) == 0)
+                    if (_networkFlyoutExperienceManager_20H1.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height), 0) == 0)
                     {
                         return;
                     }
                 }
                 else
                 {
-                    INetworkFlyoutExperienceManager manager = GetNetworkExperienceManager();
-                    if (manager == null) return;
+                    _networkFlyoutExperienceManager ??= GetNetworkExperienceManager();
+                    if (_networkFlyoutExperienceManager == null) return;
 
-                    if (manager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
+                    if (_networkFlyoutExperienceManager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
                     {
                         return;
                     }
@@ -374,38 +405,16 @@ namespace ManagedShell.UWPInterop
             }
         }
 
-        public static void ShowBatteryFlyout(Interop.NativeMethods.Rect anchorRect)
-        {
-            ITrayBatteryFlyoutExperienceManager manager = GetBatteryExperienceManager();
-            if (manager == null) return;
-
-            AllowExplorerFocus();
-
-            try
-            {
-                if (manager.ShowFlyout(new Windows.Foundation.Rect(anchorRect.Left, anchorRect.Top, anchorRect.Width, anchorRect.Height)) == 0)
-                {
-                    return;
-                }
-
-                ShellLogger.Warning("ImmersiveShell: Unable to show battery flyout");
-            }
-            catch (Exception ex)
-            {
-                ShellLogger.Warning($"ImmersiveShell: Unable to show battery flyout: {ex}");
-            }
-        }
-
         public static void ShowActionCenter()
         {
-            IActionCenterExperienceManager manager = GetActionCenterExperienceManager();
-            if (manager == null) return;
+            _actionCenterExperienceManager ??= GetActionCenterExperienceManager();
+            if (_actionCenterExperienceManager == null) return;
 
             AllowExplorerFocus();
 
             try
             {
-                manager.HotKeyInvoked(0);
+                _actionCenterExperienceManager.HotKeyInvoked(0);
             }
             catch (Exception ex)
             {
@@ -415,19 +424,20 @@ namespace ManagedShell.UWPInterop
 
         public static void ShowControlCenter()
         {
-            IControlCenterExperienceManager manager = GetControlCenterExperienceManager();
-            if (manager == null) return;
+            _controlCenterExperienceManager ??= GetControlCenterExperienceManager();
+            if (_controlCenterExperienceManager == null) return;
 
             AllowExplorerFocus();
 
             try
             {
-                manager.HotKeyInvoked(0);
+                _controlCenterExperienceManager.HotKeyInvoked(0);
             }
             catch (Exception ex)
             {
                 ShellLogger.Warning($"ImmersiveShell: Unable to show control center: {ex}");
             }
         }
+        #endregion
     }
 }

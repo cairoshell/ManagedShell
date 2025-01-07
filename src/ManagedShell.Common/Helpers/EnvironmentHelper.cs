@@ -109,6 +109,19 @@ namespace ManagedShell.Common.Helpers
             }
         }
 
+        public static bool IsWindows1020H1OrBetter
+        {
+            get
+            {
+                if (osVersionMajor == 0)
+                {
+                    getOSVersion();
+                }
+
+                return (osVersionMajor >= 10 && osVersionBuild >= 19041);
+            }
+        }
+
         public static bool IsWindows11OrBetter
         {
             get
