@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ManagedShell.Interop
 {
@@ -18,5 +19,8 @@ namespace ManagedShell.Interop
 
         [DllImport(ShlwApi_DllName, SetLastError = true)]
         public static extern bool SHUnlockShared(IntPtr pvData);
+
+        [DllImport(ShlwApi_DllName, BestFitMapping = false, CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = false, ThrowOnUnmappableChar = true)]
+        public static extern int SHLoadIndirectString(string pszSource, StringBuilder pszOutBuf, int cchOutBuf, IntPtr ppvReserved);
     }
 }

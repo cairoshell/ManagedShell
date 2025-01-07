@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Runtime.InteropServices;
 using System.Text;
 using System.Xml;
 using ManagedShell.Common.Enums;
@@ -395,14 +394,11 @@ namespace ManagedShell.UWPInterop
             return null;
         }
 
-        [DllImport("shlwapi.dll", BestFitMapping = false, CharSet = CharSet.Unicode, ExactSpelling = true, SetLastError = false, ThrowOnUnmappableChar = true)]
-        private static extern int SHLoadIndirectString(string pszSource, StringBuilder pszOutBuf, int cchOutBuf, IntPtr ppvReserved);
-
         internal static string ExtractStringFromPRIFile(string pathToPRI, string resourceKey)
         {
             string sWin8ManifestString = $"@{{{pathToPRI}? {resourceKey}}}";
             var outBuff = new StringBuilder(256);
-            int result = SHLoadIndirectString(sWin8ManifestString, outBuff, outBuff.Capacity, IntPtr.Zero);
+            int result = Interop.NativeMethods.SHLoadIndirectString(sWin8ManifestString, outBuff, outBuff.Capacity, IntPtr.Zero);
             return outBuff.ToString();
         }
     }
