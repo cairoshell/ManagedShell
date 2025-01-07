@@ -10,10 +10,7 @@ namespace ManagedShell.UWPInterop.Interfaces
         void GetRuntimeClassName(out IntPtr className);
         void GetTrustLevel(out int trustLevel);
 
-        [PreserveSig]
-        int ShowFlyout(Windows.Foundation.Rect rect, int unk);
-
-        [PreserveSig]
-        int HideFlyout();
+        void ShowFlyout(Windows.Foundation.Rect rect, int unk);
+        void HideFlyout();
     }
 }
