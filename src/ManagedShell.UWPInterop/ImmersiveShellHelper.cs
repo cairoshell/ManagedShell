@@ -115,7 +115,7 @@ namespace ManagedShell.UWPInterop
 
         public static IActionCenterExperienceManager GetActionCenterExperienceManager()
         {
-            if (!EnvironmentHelper.IsWindows10OrBetter)
+            if (!EnvironmentHelper.IsWindows10RS4OrBetter)
             {
                 ShellLogger.Error("ImmersiveShell: IActionCenterExperienceManager unsupported");
                 return null;
