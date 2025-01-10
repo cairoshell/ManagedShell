@@ -588,7 +588,7 @@ namespace ManagedShell.WindowsTasks
             else
             {
                 // If the window is maximized, use ShowMaximize so that it doesn't un-maximize
-                if (GetWindowShowStyle(Handle) != NativeMethods.WindowShowStyle.ShowMaximized || 
+                if (GetWindowShowStyle(Handle) != NativeMethods.WindowShowStyle.ShowMaximized ||
                     !NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.ShowMaximized))
                 {
                     NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
@@ -603,8 +603,9 @@ namespace ManagedShell.WindowsTasks
         {
             if ((WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0)
             {
-                IntPtr retval = IntPtr.Zero;
-                NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_MINIMIZE, 0, 2, 200, ref retval);
+                NativeMethods.GetWindowThreadProcessId(Handle, out uint procId);
+                NativeMethods.AllowSetForegroundWindow(procId);
+                NativeMethods.PostMessage(Handle, (int)NativeMethods.WM.SYSCOMMAND, (IntPtr)NativeMethods.SC_MINIMIZE, IntPtr.Zero);
             }
         }
 
