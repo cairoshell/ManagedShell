@@ -1,6 +1,5 @@
 ﻿using ManagedShell.Common.Helpers;
 using ManagedShell.Common.Logging;
-using ManagedShell.Interop;
 using System;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -21,6 +20,8 @@ namespace ManagedShell.WindowsTasks
 
         public event EventHandler<WindowActivatedEventArgs> WindowActivated;
         public event EventHandler<EventArgs> DesktopActivated;
+        public event EventHandler<EventArgs> FullScreenEntered;
+        public event EventHandler<EventArgs> FullScreenLeft;
 
         private NativeWindowEx _HookWin;
         private object _windowsLock = new object();
@@ -119,9 +120,10 @@ namespace ManagedShell.WindowsTasks
                     }
                 }
 
-                if (withMultiMonTracking)
+                if (withMultiMonTracking && !EnvironmentHelper.IsWindows8OrBetter)
                 {
                     // set event hook for move events
+                    // In Windows 8 and newer, use HSHELL_MONITORCHANGED instead
                     moveEventProc = MoveEventCallback;
 
                     if (moveEventHook == IntPtr.Zero)
@@ -421,13 +423,6 @@ namespace ManagedShell.WindowsTasks
                                 removeWindow(msg.LParam);
                                 break;
 
-                            case HSHELL.GETMINRECT:
-                                SHELLHOOKINFO winHandle = (SHELLHOOKINFO)Marshal.PtrToStructure(msg.LParam, typeof(SHELLHOOKINFO));
-                                winHandle.rc = new NativeMethods.Rect { Bottom = 100, Left = 0, Right = 100, Top = 0 };
-                                Marshal.StructureToPtr(winHandle, msg.LParam, true);
-                                msg.Result = winHandle.hwnd;
-                                return; // return here so the result isnt reset to DefWindowProc
-
                             case HSHELL.REDRAW:
                                 if (Windows.Any(i => i.Handle == msg.LParam))
                                 {
@@ -445,6 +440,32 @@ namespace ManagedShell.WindowsTasks
                                     addWindow(msg.LParam, ApplicationWindow.WindowState.Inactive, true);
                                 }
                                 break;
+
+                            case HSHELL.MONITORCHANGED:
+                                if (Windows.Any(i => i.Handle == msg.LParam))
+                                {
+                                    ApplicationWindow win = Windows.First(wnd => wnd.Handle == msg.LParam);
+                                    win.SetMonitor();
+                                    ShellLogger.Debug($"TasksService: Monitor changed for {win.Handle} ({win.Title})");
+                                }
+                                break;
+
+                            case HSHELL.FULLSCREENENTER:
+                                FullScreenEntered?.Invoke(this, new EventArgs());
+                                break;
+
+                            case HSHELL.FULLSCREENEXIT:
+                                FullScreenLeft?.Invoke(this, new EventArgs());
+                                break;
+
+                            // Doesn't seem to be respected?
+                            //case HSHELL.GETMINRECT:
+                            //    ShellLogger.Debug("TasksService: GetMinRect called.");
+                            //    SHELLHOOKINFO winHandle = Marshal.PtrToStructure<SHELLHOOKINFO>(msg.LParam);
+                            //    winHandle.rc = new ShortRect { Bottom = 100, Left = 0, Right = 100, Top = 0 };
+                            //    Marshal.StructureToPtr(winHandle, msg.LParam, true);
+                            //    msg.Result = (IntPtr)1;
+                            //    return; // return here so the result isnt reset to DefWindowProc
 
                             // TaskMan needs to return true if we provide our own task manager to prevent explorers.
                             // case HSHELL.TASKMAN:
@@ -483,7 +504,16 @@ namespace ManagedShell.WindowsTasks
                         return;
                     case (int)WM.USER + 60:
                         // MarkFullscreenWindow
+                        // Also sends WM_SHELLHOOK message
                         ShellLogger.Debug("TasksService: ITaskbarList: MarkFullscreenWindow HWND:" + msg.LParam + " Entering? " + msg.WParam);
+                        if (msg.WParam == IntPtr.Zero)
+                        {
+                            FullScreenLeft?.Invoke(this, new EventArgs());
+                        }
+                        else
+                        {
+                            FullScreenEntered?.Invoke(this, new EventArgs());
+                        }
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 64:

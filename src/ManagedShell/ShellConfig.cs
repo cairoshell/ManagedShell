@@ -24,6 +24,7 @@ namespace ManagedShell
         /// <summary>
         /// Controls whether the tasks service will be multi-mon aware when using AutoStartTasksService.<br />
         /// This keeps the HMonitor property of each ApplicationWindow updated.<br />
+        /// This setting applies only to Windows 7. The tasks service is always multi-mon aware on Windows 8 and newer.<br />
         /// <br />
         /// By default, this is enabled.
         /// </summary>

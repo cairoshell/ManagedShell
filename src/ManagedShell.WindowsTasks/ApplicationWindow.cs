@@ -120,6 +120,39 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private string _className;
+
+        public string ClassName
+        {
+            get
+            {
+                if (_className == null)
+                {
+                    setClassName();
+                }
+
+                return _className;
+            }
+        }
+
+        private void setClassName()
+        {
+            string className = "";
+            try
+            {
+                StringBuilder cName = new StringBuilder(256);
+                NativeMethods.GetClassName(Handle, cName, cName.Capacity);
+                className = cName.ToString();
+            }
+            catch { }
+
+            if (_className != className)
+            {
+                _className = className;
+                OnPropertyChanged("ClassName");
+            }
+        }
+
         private string _title;
 
         public string Title
@@ -324,6 +357,8 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        public bool CanMinimize => (WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0;
+
         private bool? _showInTaskbar;
 
         // True if this window should be shown in the taskbar
@@ -373,10 +408,7 @@ namespace ManagedShell.WindowsTasks
                 }
 
                 // UWP shell windows that are not cloaked should be hidden from the taskbar, too.
-                StringBuilder cName = new StringBuilder(256);
-                NativeMethods.GetClassName(Handle, cName, cName.Capacity);
-                string className = cName.ToString();
-                if (className == "ApplicationFrameWindow" || className == "Windows.UI.Core.CoreWindow" || className == "StartMenuSizingFrame")
+                if (ClassName == "ApplicationFrameWindow" || ClassName == "Windows.UI.Core.CoreWindow" || ClassName == "StartMenuSizingFrame")
                 {
                     if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                     {
@@ -384,7 +416,7 @@ namespace ManagedShell.WindowsTasks
                         return false;
                     }
                 }
-                else if (!EnvironmentHelper.IsWindows10OrBetter && (className == "ImmersiveBackgroundWindow" || className == "SearchPane" || className == "NativeHWNDHost" || className == "Shell_CharmWindow" || className == "ImmersiveLauncher") && WinFileName.ToLower().Contains("explorer.exe"))
+                else if (!EnvironmentHelper.IsWindows10OrBetter && (ClassName == "ImmersiveBackgroundWindow" || ClassName == "SearchPane" || ClassName == "NativeHWNDHost" || ClassName == "Shell_CharmWindow" || ClassName == "ImmersiveLauncher") && WinFileName.ToLower().Contains("explorer.exe"))
                 {
                     ShellLogger.Debug($"ApplicationWindow: Hiding immersive shell window {Title}");
                     return false;
@@ -580,33 +612,21 @@ namespace ManagedShell.WindowsTasks
 
         public void BringToFront()
         {
-            // call restore if window is minimized
-            if (IsMinimized)
-            {
-                Restore();
-            }
-            else
-            {
-                // If the window is maximized, use ShowMaximize so that it doesn't un-maximize
-                if (GetWindowShowStyle(Handle) != NativeMethods.WindowShowStyle.ShowMaximized ||
-                    !NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.ShowMaximized))
-                {
-                    NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
-                }
-                makeForeground();
+            makeForeground();
 
-                if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
-            }
+            if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
         }
 
         public void Minimize()
         {
-            if ((WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0)
+            if (!CanMinimize)
             {
-                NativeMethods.GetWindowThreadProcessId(Handle, out uint procId);
-                NativeMethods.AllowSetForegroundWindow(procId);
-                NativeMethods.PostMessage(Handle, (int)NativeMethods.WM.SYSCOMMAND, (IntPtr)NativeMethods.SC_MINIMIZE, IntPtr.Zero);
+                return;
             }
+
+            NativeMethods.GetWindowThreadProcessId(Handle, out uint procId);
+            NativeMethods.AllowSetForegroundWindow(procId);
+            NativeMethods.PostMessage(Handle, (int)NativeMethods.WM.SYSCOMMAND, (IntPtr)NativeMethods.SC_MINIMIZE, IntPtr.Zero);
         }
 
         public void Restore()
@@ -631,7 +651,7 @@ namespace ManagedShell.WindowsTasks
 
         private void makeForeground()
         {
-            NativeMethods.SetForegroundWindow(NativeMethods.GetLastActivePopup(Handle));
+            NativeMethods.SwitchToThisWindow(NativeMethods.GetLastActivePopup(Handle), true);
         }
 
         internal IntPtr DoClose()

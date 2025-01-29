@@ -237,7 +237,7 @@ namespace ManagedShell.Interop
         public struct SHELLHOOKINFO
         {
             public IntPtr hwnd;
-            public Rect rc;
+            public ShortRect rc;
         }
 
         [StructLayout(LayoutKind.Sequential)]
@@ -320,6 +320,9 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName)]
         public static extern IntPtr GetParent(IntPtr handle);
+
+        [DllImport(User32_DllName)]
+        public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
 
         public struct WINDOWPLACEMENT
         {
@@ -1898,6 +1901,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName, SetLastError = true)]
         public static extern IntPtr RemoveProp(IntPtr hWnd, string lpString);
 
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern IntPtr GetProp(IntPtr hWnd, string lpString);
+
         public enum TBPFLAG
         {
             TBPF_NOPROGRESS = 0,
@@ -2910,7 +2916,19 @@ namespace ManagedShell.Interop
             /// </summary>
             ENDTASK = 10,
             FLASH = (REDRAW | HSHELL_HIGHBIT),
-            RUDEAPPACTIVATED = (WINDOWACTIVATED | HSHELL_HIGHBIT)
+            RUDEAPPACTIVATED = (WINDOWACTIVATED | HSHELL_HIGHBIT),
+            /// <summary>
+            /// A window has moved to another monitor. Windows 8 and newer only.
+            /// </summary>
+            MONITORCHANGED = 16,
+            /// <summary>
+            /// A window has become full-screen. Windows 8 and newer only.
+            /// </summary>
+            FULLSCREENENTER = 53,
+            /// <summary>
+            /// A window has left full-screen. Windows 8 and newer only.
+            /// </summary>
+            FULLSCREENEXIT = 54
         }
 
         [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Ansi)]
