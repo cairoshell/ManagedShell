@@ -20,6 +20,10 @@ namespace ManagedShell.WindowsTasks
         private readonly TasksService _tasksService;
         StringBuilder titleBuilder = new StringBuilder(TITLE_LENGTH);
 
+        public delegate void GetButtonRectEventHandler(ref NativeMethods.ShortRect rect);
+
+        public event GetButtonRectEventHandler GetButtonRect;
+
         public ApplicationWindow(TasksService tasksService, IntPtr handle)
         {
             _tasksService = tasksService;
@@ -555,6 +559,13 @@ namespace ManagedShell.WindowsTasks
         internal void SetMonitor()
         {
             HMonitor = NativeMethods.MonitorFromWindow(Handle, NativeMethods.MONITOR_DEFAULTTONEAREST);
+        }
+
+        internal NativeMethods.ShortRect GetButtonRectFromShell()
+        {
+            NativeMethods.ShortRect rect = new NativeMethods.ShortRect();
+            GetButtonRect?.Invoke(ref rect);
+            return rect;
         }
 
         public void SetOverlayIcon(IntPtr hIcon)
