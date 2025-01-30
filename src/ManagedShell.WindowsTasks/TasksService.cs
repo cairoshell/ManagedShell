@@ -18,10 +18,11 @@ namespace ManagedShell.WindowsTasks
     {
         public static readonly IconSize DEFAULT_ICON_SIZE = IconSize.Small;
 
-        public event EventHandler<WindowActivatedEventArgs> WindowActivated;
+        public event EventHandler<WindowEventArgs> WindowActivated;
         public event EventHandler<EventArgs> DesktopActivated;
         public event EventHandler<EventArgs> FullScreenEntered;
         public event EventHandler<EventArgs> FullScreenLeft;
+        public event EventHandler<WindowEventArgs> MonitorChanged;
 
         private NativeWindowEx _HookWin;
         private object _windowsLock = new object();
@@ -385,7 +386,7 @@ namespace ManagedShell.WindowsTasks
                                                 wind.SetShowInTaskbar();
                                         }
 
-                                        WindowActivatedEventArgs args = new WindowActivatedEventArgs
+                                        WindowEventArgs args = new WindowEventArgs
                                         {
                                             Window = win
                                         };
@@ -449,6 +450,13 @@ namespace ManagedShell.WindowsTasks
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msgCopy.LParam);
                                     win.SetMonitor();
                                     ShellLogger.Debug($"TasksService: Monitor changed for {win.Handle} ({win.Title})");
+
+                                    WindowEventArgs args = new WindowEventArgs
+                                    {
+                                        Window = win
+                                    };
+
+                                    MonitorChanged?.Invoke(this, args);
                                 }
                                 break;
 

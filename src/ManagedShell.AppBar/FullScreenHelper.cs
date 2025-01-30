@@ -5,7 +5,6 @@ using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using System.Windows.Threading;
 using static ManagedShell.Interop.NativeMethods;
@@ -28,6 +27,7 @@ namespace ManagedShell.AppBar
                 // On Windows 8 and newer, TasksService will tell us when windows enter and exit full screen
                 _tasksService.FullScreenEntered += TasksService_Event;
                 _tasksService.FullScreenLeft += TasksService_Event;
+                _tasksService.MonitorChanged += TasksService_Event;
                 _tasksService.DesktopActivated += TasksService_Event;
                 _tasksService.WindowActivated += TasksService_Event;
                 return;
@@ -214,6 +214,7 @@ namespace ManagedShell.AppBar
             {
                 _tasksService.FullScreenEntered -= TasksService_Event;
                 _tasksService.FullScreenLeft -= TasksService_Event;
+                _tasksService.MonitorChanged -= TasksService_Event;
                 _tasksService.DesktopActivated -= TasksService_Event;
                 _tasksService.WindowActivated -= TasksService_Event;
                 return;
