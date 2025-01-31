@@ -361,7 +361,7 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
-        public bool CanMinimize => (WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0;
+        public bool CanMinimize => (WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0 && NativeMethods.IsWindowEnabled(Handle);
 
         private bool? _showInTaskbar;
 
