@@ -1701,6 +1701,9 @@ namespace ManagedShell.Interop
         public static extern bool IsWindowVisible(IntPtr hWnd);
 
         [DllImport(User32_DllName)]
+        public static extern bool IsWindowEnabled(IntPtr hWnd);
+
+        [DllImport(User32_DllName)]
         public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
 
         [DllImport(User32_DllName, SetLastError = true)]
