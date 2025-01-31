@@ -23,7 +23,7 @@ namespace ManagedShell.Common.SupportingClasses
             cp.Y = SystemInformation.VirtualScreen.Top;
 
             CreateHandle(cp);
-            MessageReceived += WndProc;
+            MessageReceived += ShellWndProc;
             NativeMethods.SetWindowLong(Handle, NativeMethods.GWL_EXSTYLE, 
                 NativeMethods.GetWindowLong(Handle, NativeMethods.GWL_EXSTYLE) & 
                 ~(int)NativeMethods.ExtendedWindowStyles.WS_EX_NOACTIVATE);
@@ -47,7 +47,7 @@ namespace ManagedShell.Common.SupportingClasses
             NativeMethods.DestroyWindow(Handle);
         }
 
-        private void WndProc(Message msg)
+        private void ShellWndProc(ref Message msg, ref bool handled)
         {
             // Window procedure for the native window
             // Because other desktop windows are children, we need to pass them some received events.

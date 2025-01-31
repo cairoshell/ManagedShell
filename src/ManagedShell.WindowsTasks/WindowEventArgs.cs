@@ -2,7 +2,7 @@
 
 namespace ManagedShell.WindowsTasks
 {
-    public class WindowActivatedEventArgs : EventArgs
+    public class WindowEventArgs : EventArgs
     {
         public ApplicationWindow Window;
     }

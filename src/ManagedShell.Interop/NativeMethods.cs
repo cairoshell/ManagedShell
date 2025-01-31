@@ -29,6 +29,30 @@ namespace ManagedShell.Interop
             public int Height => Bottom - Top;
         }
 
+        /// <summary>
+        /// Used by HSHELL_GETMINRECT
+        /// </summary>
+        [StructLayout(LayoutKind.Sequential)]
+        public struct ShortRect
+        {
+            public ShortRect(short left, short top, short right, short bottom)
+            {
+                Left = left;
+                Top = top;
+                Right = right;
+                Bottom = bottom;
+            }
+
+            public short Left;
+            public short Top;
+            public short Right;
+            public short Bottom;
+
+            public int Width => Right - Left;
+
+            public int Height => Bottom - Top;
+        }
+
         public struct POINT
         {
             public POINT(long x, long y)

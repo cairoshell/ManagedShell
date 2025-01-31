@@ -20,6 +20,10 @@ namespace ManagedShell.WindowsTasks
         private readonly TasksService _tasksService;
         StringBuilder titleBuilder = new StringBuilder(TITLE_LENGTH);
 
+        public delegate void GetButtonRectEventHandler(ref NativeMethods.ShortRect rect);
+
+        public event GetButtonRectEventHandler GetButtonRect;
+
         public ApplicationWindow(TasksService tasksService, IntPtr handle)
         {
             _tasksService = tasksService;
@@ -117,6 +121,39 @@ namespace ManagedShell.WindowsTasks
                     _category = value;
                     OnPropertyChanged("Category");
                 }
+            }
+        }
+
+        private string _className;
+
+        public string ClassName
+        {
+            get
+            {
+                if (_className == null)
+                {
+                    setClassName();
+                }
+
+                return _className;
+            }
+        }
+
+        private void setClassName()
+        {
+            string className = "";
+            try
+            {
+                StringBuilder cName = new StringBuilder(256);
+                NativeMethods.GetClassName(Handle, cName, cName.Capacity);
+                className = cName.ToString();
+            }
+            catch { }
+
+            if (_className != className)
+            {
+                _className = className;
+                OnPropertyChanged("ClassName");
             }
         }
 
@@ -324,6 +361,8 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        public bool CanMinimize => (WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0 && NativeMethods.IsWindowEnabled(Handle);
+
         private bool? _showInTaskbar;
 
         // True if this window should be shown in the taskbar
@@ -373,10 +412,7 @@ namespace ManagedShell.WindowsTasks
                 }
 
                 // UWP shell windows that are not cloaked should be hidden from the taskbar, too.
-                StringBuilder cName = new StringBuilder(256);
-                NativeMethods.GetClassName(Handle, cName, cName.Capacity);
-                string className = cName.ToString();
-                if (className == "ApplicationFrameWindow" || className == "Windows.UI.Core.CoreWindow" || className == "StartMenuSizingFrame")
+                if (ClassName == "ApplicationFrameWindow" || ClassName == "Windows.UI.Core.CoreWindow" || ClassName == "StartMenuSizingFrame")
                 {
                     if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                     {
@@ -384,7 +420,7 @@ namespace ManagedShell.WindowsTasks
                         return false;
                     }
                 }
-                else if (!EnvironmentHelper.IsWindows10OrBetter && (className == "ImmersiveBackgroundWindow" || className == "SearchPane" || className == "NativeHWNDHost" || className == "Shell_CharmWindow" || className == "ImmersiveLauncher") && WinFileName.ToLower().Contains("explorer.exe"))
+                else if (!EnvironmentHelper.IsWindows10OrBetter && (ClassName == "ImmersiveBackgroundWindow" || ClassName == "SearchPane" || ClassName == "NativeHWNDHost" || ClassName == "Shell_CharmWindow" || ClassName == "ImmersiveLauncher") && WinFileName.ToLower().Contains("explorer.exe"))
                 {
                     ShellLogger.Debug($"ApplicationWindow: Hiding immersive shell window {Title}");
                     return false;
@@ -525,6 +561,13 @@ namespace ManagedShell.WindowsTasks
             HMonitor = NativeMethods.MonitorFromWindow(Handle, NativeMethods.MONITOR_DEFAULTTONEAREST);
         }
 
+        internal NativeMethods.ShortRect GetButtonRectFromShell()
+        {
+            NativeMethods.ShortRect rect = new NativeMethods.ShortRect();
+            GetButtonRect?.Invoke(ref rect);
+            return rect;
+        }
+
         public void SetOverlayIcon(IntPtr hIcon)
         {
             if (hIcon == IntPtr.Zero)
@@ -601,12 +644,14 @@ namespace ManagedShell.WindowsTasks
 
         public void Minimize()
         {
-            if ((WindowStyles & (int)NativeMethods.WindowStyles.WS_MINIMIZEBOX) != 0)
+            if (!CanMinimize)
             {
-                NativeMethods.GetWindowThreadProcessId(Handle, out uint procId);
-                NativeMethods.AllowSetForegroundWindow(procId);
-                NativeMethods.PostMessage(Handle, (int)NativeMethods.WM.SYSCOMMAND, (IntPtr)NativeMethods.SC_MINIMIZE, IntPtr.Zero);
+                return;
             }
+
+            NativeMethods.GetWindowThreadProcessId(Handle, out uint procId);
+            NativeMethods.AllowSetForegroundWindow(procId);
+            NativeMethods.PostMessage(Handle, (int)NativeMethods.WM.SYSCOMMAND, (IntPtr)NativeMethods.SC_MINIMIZE, IntPtr.Zero);
         }
 
         public void Restore()
