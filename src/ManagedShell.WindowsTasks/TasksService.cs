@@ -269,13 +269,15 @@ namespace ManagedShell.WindowsTasks
             if (initialState != ApplicationWindow.WindowState.Inactive) win.State = initialState;
 
             // add window unless we need to validate it is eligible to show in taskbar
-            if (!sanityCheck || win.CanAddToTaskbar) Windows.Add(win);
+            if (!sanityCheck || win.CanAddToTaskbar)
+            {
+                Windows.Add(win);
+                ShellLogger.Debug($"TasksService: Added window {hWnd} ({win.Title})");
+            }
 
             // Only send TaskbarButtonCreated if we are shell, and if OS is not Server Core
             // This is because if Explorer is running, it will send the message, so we don't need to
             if (EnvironmentHelper.IsAppRunningAsShell) sendTaskbarButtonCreatedMessage(win.Handle);
-
-            ShellLogger.Debug($"TasksService: Added window {hWnd} ({win.Title})");
 
             return win;
         }

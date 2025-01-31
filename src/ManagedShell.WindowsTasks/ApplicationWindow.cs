@@ -623,9 +623,23 @@ namespace ManagedShell.WindowsTasks
 
         public void BringToFront()
         {
-            makeForeground();
+            // call restore if window is minimized
+            if (IsMinimized)
+            {
+                Restore();
+            }
+            else
+            {
+                // If the window is maximized, use ShowMaximize so that it doesn't un-maximize
+                if (GetWindowShowStyle(Handle) != NativeMethods.WindowShowStyle.ShowMaximized ||
+                    !NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.ShowMaximized))
+                {
+                    NativeMethods.ShowWindow(Handle, NativeMethods.WindowShowStyle.Show);
+                }
+                makeForeground();
 
-            if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
+                if (State == WindowState.Flashing) State = WindowState.Active; // some stubborn windows (Outlook) start flashing while already active, this lets us stop
+            }
         }
 
         public void Minimize()
@@ -662,7 +676,7 @@ namespace ManagedShell.WindowsTasks
 
         private void makeForeground()
         {
-            NativeMethods.SwitchToThisWindow(NativeMethods.GetLastActivePopup(Handle), true);
+            NativeMethods.SetForegroundWindow(NativeMethods.GetLastActivePopup(Handle));
         }
 
         internal IntPtr DoClose()

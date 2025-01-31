@@ -321,9 +321,6 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern IntPtr GetParent(IntPtr handle);
 
-        [DllImport(User32_DllName)]
-        public static extern void SwitchToThisWindow(IntPtr hWnd, bool fAltTab);
-
         public struct WINDOWPLACEMENT
         {
             public int length;
