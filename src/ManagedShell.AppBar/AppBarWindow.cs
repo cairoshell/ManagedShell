@@ -480,7 +480,7 @@ namespace ManagedShell.AppBar
                     DpiHelper.DpiScale = DpiScale;
                 }
 
-                // if we are opening, because we're getting this message as a result of positioning
+                // if we are opening, we're getting this message as a result of positioning
                 // if we are an AppBar, that code will fix our position, so skip in that case to prevent infinite resizing.
                 if (!IsOpening || AppBarMode != AppBarMode.Normal)
                 {
