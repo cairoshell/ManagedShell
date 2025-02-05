@@ -53,6 +53,7 @@ namespace ManagedShell.AppBar
 
         // AppBar properties
         private int AppBarMessageId = -1;
+        private NativeMethods.Rect _lastAppBarRect;
 
         private AppBarEdge _appBarEdge;
         public AppBarEdge AppBarEdge
@@ -667,13 +668,14 @@ namespace ManagedShell.AppBar
         #region Virtual methods
         public virtual void AfterAppBarPos(bool isSameCoords, NativeMethods.Rect rect)
         {
+            _lastAppBarRect = rect;
             if (!isSameCoords)
             {
                 var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };
                 timer.Tick += (sender1, args) =>
                 {
                     // set position again, since WPF may have overridden the original change from AppBarHelper
-                    SetAppBarPosition(rect);
+                    SetAppBarPosition(_lastAppBarRect);
 
                     timer.Stop();
                 };

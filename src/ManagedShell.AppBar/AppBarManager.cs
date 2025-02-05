@@ -402,12 +402,14 @@ namespace ManagedShell.AppBar
 
                 // check if new coords
                 bool isSameCoords = false;
+                Rect currentRect;
+                GetWindowRect(abWindow.Handle, out currentRect);
                 if (!isCreate)
                 {
-                    bool topUnchanged = abd.rc.Top == Math.Round(abWindow.Top * abWindow.DpiScale);
-                    bool leftUnchanged = abd.rc.Left == Math.Round(abWindow.Left * abWindow.DpiScale);
-                    bool bottomUnchanged = abd.rc.Bottom == Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.ActualHeight * abWindow.DpiScale));
-                    bool rightUnchanged = abd.rc.Right == Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.ActualWidth * abWindow.DpiScale));
+                    bool topUnchanged = abd.rc.Top == currentRect.Top;
+                    bool leftUnchanged = abd.rc.Left == currentRect.Left;
+                    bool bottomUnchanged = abd.rc.Bottom == currentRect.Bottom;
+                    bool rightUnchanged = abd.rc.Right == currentRect.Right;
 
                     isSameCoords = topUnchanged
                                    && leftUnchanged
@@ -417,7 +419,7 @@ namespace ManagedShell.AppBar
 
                 if (!isSameCoords)
                 {
-                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {abWindow.Top * abWindow.DpiScale}x{abWindow.Left * abWindow.DpiScale}x{Math.Round((abWindow.Top * abWindow.DpiScale) + (abWindow.ActualHeight * abWindow.DpiScale))}x{Math.Round((abWindow.Left * abWindow.DpiScale) + (abWindow.ActualWidth * abWindow.DpiScale))}");
+                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {currentRect.Top}x{currentRect.Left}x{currentRect.Bottom}x{currentRect.Right}");
                     abWindow.SetAppBarPosition(abd.rc);
                 }
 
