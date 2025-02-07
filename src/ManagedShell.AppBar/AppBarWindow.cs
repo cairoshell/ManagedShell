@@ -135,7 +135,6 @@ namespace ManagedShell.AppBar
             PropertyChanged += AppBarWindow_PropertyChanged;
 
             ResizeMode = ResizeMode.NoResize;
-            ShowInTaskbar = false;
             Title = "";
             Topmost = true;
             UseLayoutRounding = true;
