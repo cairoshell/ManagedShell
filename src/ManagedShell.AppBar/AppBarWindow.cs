@@ -425,14 +425,7 @@ namespace ManagedShell.AppBar
                 switch ((NativeMethods.AppBarNotifications)wParam.ToInt32())
                 {
                     case NativeMethods.AppBarNotifications.PosChanged:
-                        if (Orientation == Orientation.Vertical)
-                        {
-                            _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
-                        }
-                        else
-                        {
-                            _appBarManager.ABSetPos(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
-                        }
+                        _appBarManager.ABSetPos(this);
                         break;
 
                     case NativeMethods.AppBarNotifications.WindowArrange:
@@ -530,14 +523,7 @@ namespace ManagedShell.AppBar
             }
             else if (AppBarMode == AppBarMode.Normal)
             {
-                if (Orientation == Orientation.Vertical)
-                {
-                    _appBarManager.ABSetPos(this, DesiredWidth * DpiScale, Screen.Bounds.Height, AppBarEdge);
-                }
-                else
-                {
-                    _appBarManager.ABSetPos(this, Screen.Bounds.Width, DesiredHeight * DpiScale, AppBarEdge);
-                }
+                _appBarManager.ABSetPos(this);
             }
         }
 
@@ -636,15 +622,8 @@ namespace ManagedShell.AppBar
                 return;
             }
 
-            if (Orientation == Orientation.Vertical)
-            {
-                AppBarMessageId = _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale, AppBarEdge);
+            AppBarMessageId = _appBarManager.RegisterBar(this);
             }
-            else
-            {
-                AppBarMessageId = _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale, AppBarEdge);
-            }
-        }
 
         protected void UnregisterAppBar()
         {
@@ -653,14 +632,57 @@ namespace ManagedShell.AppBar
                 return;
             }
 
+            _appBarManager.RegisterBar(this);
+        }
+
+        public NativeMethods.Rect GetDesiredRect()
+        {
+            NativeMethods.Rect rect = new NativeMethods.Rect();
+            int edgeOffset = 0;
+
+            if (!RequiresScreenEdge)
+            {
+                edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
+            }
+
             if (Orientation == Orientation.Vertical)
             {
-                _appBarManager.RegisterBar(this, DesiredWidth * DpiScale, ActualHeight * DpiScale);
+                int width = Convert.ToInt32(DesiredWidth * DpiScale);
+
+                rect.Top = Screen.Bounds.Top;
+                rect.Bottom = Screen.Bounds.Bottom;
+
+                if (AppBarEdge == AppBarEdge.Left)
+                {
+                    rect.Left = Screen.Bounds.Left + edgeOffset;
+                    rect.Right = rect.Left + width;
             }
             else
             {
-                _appBarManager.RegisterBar(this, ActualWidth * DpiScale, DesiredHeight * DpiScale);
+                    rect.Right = Screen.Bounds.Right - edgeOffset;
+                    rect.Left = rect.Right - width;
             }
+        }
+            else
+            {
+                int height = Convert.ToInt32(DesiredHeight * DpiScale);
+
+                rect.Left = Screen.Bounds.Left;
+                rect.Right = Screen.Bounds.Right;
+
+                if (AppBarEdge == AppBarEdge.Bottom)
+                {
+                    rect.Bottom = Screen.Bounds.Bottom - edgeOffset;
+                    rect.Top = rect.Bottom - height;
+                }
+                else
+                {
+                    rect.Top = Screen.Bounds.Top + edgeOffset;
+                    rect.Bottom = rect.Top + height;
+                }
+            }
+
+            return rect;
         }
         #endregion
 
@@ -702,50 +724,8 @@ namespace ManagedShell.AppBar
 
         public virtual void SetPosition()
         {
-            double edgeOffset = 0;
-            int left;
-            int top;
-            int height;
-            int width;
-
-            if (!RequiresScreenEdge)
-            {
-                edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
-            }
-
-            if (Orientation == Orientation.Vertical)
-            {
-                top = Screen.Bounds.Top;
-                height = Screen.Bounds.Height;
-                width = Convert.ToInt32(DesiredWidth * DpiScale);
-
-                if (AppBarEdge == AppBarEdge.Left)
-                {
-                    left = Screen.Bounds.Left + Convert.ToInt32(edgeOffset * DpiScale);
-                }
-                else
-                {
-                    left = Screen.Bounds.Right - width - Convert.ToInt32(edgeOffset * DpiScale);
-                }
-            }
-            else
-            {
-                left = Screen.Bounds.Left;
-                width = Screen.Bounds.Width;
-                height = Convert.ToInt32(DesiredHeight * DpiScale);
-
-                if (AppBarEdge == AppBarEdge.Top)
-                {
-                    top = Screen.Bounds.Top + Convert.ToInt32(edgeOffset * DpiScale);
-                }
-                else
-                {
-                    top = Screen.Bounds.Bottom - height - Convert.ToInt32(edgeOffset * DpiScale);
-                }
-            }
-
-            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, left, top, width, height, (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE);
-
+            var desiredRect = GetDesiredRect();
+            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, desiredRect.Left, desiredRect.Top, desiredRect.Width, desiredRect.Height, (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE);
 
             if (EnvironmentHelper.IsAppRunningAsShell)
             {
