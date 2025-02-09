@@ -10,7 +10,6 @@ using System.Windows.Interop;
 using System.Windows.Media;
 using System.Windows.Media.Animation;
 using System.Windows.Threading;
-using Application = System.Windows.Application;
 
 namespace ManagedShell.AppBar
 {
@@ -42,6 +41,7 @@ namespace ManagedShell.AppBar
 
         // Window properties
         private WindowInteropHelper helper;
+        private bool IsMoving;
         private bool IsRaising;
         public IntPtr Handle;
         public bool AllowClose;
@@ -50,10 +50,10 @@ namespace ManagedShell.AppBar
         protected double DesiredHeight;
         protected double DesiredWidth;
         private bool EnableBlur;
+        public NativeMethods.Rect WindowRect = new NativeMethods.Rect();
 
         // AppBar properties
         private int AppBarMessageId = -1;
-        private NativeMethods.Rect _lastAppBarRect;
 
         private AppBarEdge _appBarEdge;
         public AppBarEdge AppBarEdge
@@ -289,13 +289,7 @@ namespace ManagedShell.AppBar
             // use system DPI initially; when we set position we will get WM_DPICHANGED and set it correctly
             DpiScale = DpiHelper.DpiScale;
 
-            SetPosition();
-
-            if (EnvironmentHelper.IsAppRunningAsShell)
-            {
-                // set position again, on a delay, in case one display has a different DPI. for some reason the system overrides us if we don't wait
-                DelaySetPosition();
-            }
+            SetWindowPosition(GetDesiredRect());
 
             if (AppBarMode == AppBarMode.Normal)
             {
@@ -444,7 +438,7 @@ namespace ManagedShell.AppBar
             }
             else if (msg == (int)NativeMethods.WM.ACTIVATE && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
             {
-                _appBarManager.AppBarActivate(hwnd);
+                _appBarManager.AppBarActivate(this);
             }
             else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGING)
             {
@@ -459,10 +453,61 @@ namespace ManagedShell.AppBar
                     wndPos.hwndInsertAfter = (IntPtr)NativeMethods.WindowZOrder.HWND_TOPMOST;
                     wndPos.UpdateMessage(lParam);
                 }
+
+                // WORKAROUND WPF bug: https://github.com/dotnet/wpf/issues/7561
+                // If there is no NOMOVE or NOSIZE or NOACTIVATE flag, and there is a NOZORDER flag, add the NOACTIVATE flag
+                if (!IsMoving && 
+                    (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0 &&
+                    (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOSIZE) == 0 &&
+                    (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE) == 0 &&
+                    (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOZORDER) != 0)
+                {
+                    wndPos.flags |= NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE;
+                    wndPos.UpdateMessage(lParam);
+                }
             }
-            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
+            else if (msg == (int)NativeMethods.WM.WINDOWPOSCHANGED)
             {
-                _appBarManager.AppBarWindowPosChanged(hwnd);
+                // Extract the WINDOWPOS structure corresponding to this message
+                NativeMethods.WINDOWPOS wndPos = NativeMethods.WINDOWPOS.FromMessage(lParam);
+
+                // Determine if our window rect has changed and update the cached values
+                bool changed = false;
+                if ((wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0 &&
+                    (wndPos.y != WindowRect.Top || wndPos.x != WindowRect.Left))
+                {
+                    int currentWidth = WindowRect.Width;
+                    int currentHeight = WindowRect.Height;
+                    WindowRect.Top = wndPos.y;
+                    WindowRect.Bottom = WindowRect.Top + currentHeight;
+                    WindowRect.Left = wndPos.x;
+                    WindowRect.Right = WindowRect.Left + currentWidth;
+                    changed = true;
+                }
+                if ((wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOSIZE) == 0 &&
+                    (WindowRect.Bottom != WindowRect.Top + wndPos.cy || WindowRect.Right != WindowRect.Left + wndPos.cx))
+                {
+                    WindowRect.Bottom = WindowRect.Top + wndPos.cy;
+                    WindowRect.Right = WindowRect.Left + wndPos.cx;
+                    changed = true;
+                }
+
+                if (changed && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
+                {
+                    // Tell other AppBars we changed
+                    _appBarManager.AppBarWindowPosChanged(this);
+                }
+
+                // Determine if we are intentionally moving
+                if (changed && !IsMoving && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0)
+                {
+                    // Someone else moved us! Let's restore state.
+                    ShellLogger.Debug($"AppBarWindow: Repositioning due to unexpected move to {wndPos.x},{wndPos.y}");
+                    if (UpdatePosition())
+                    {
+                        handled = true;
+                    }
+                }
             }
             else if (msg == (int)NativeMethods.WM.DPICHANGED)
             {
@@ -501,44 +546,6 @@ namespace ManagedShell.AppBar
         #endregion
 
         #region Helpers
-        private void DelaySetPosition()
-        {
-            // delay changing things when we are shell. it seems that explorer AppBars do this too.
-            // if we don't, the system moves things to bad places
-            var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };
-            timer.Start();
-            timer.Tick += (sender1, args) =>
-            {
-                SetPosition();
-                timer.Stop();
-            };
-        }
-
-        public void SetScreenPosition()
-        {
-            // set our position if running as shell, otherwise let AppBar do the work
-            if (EnvironmentHelper.IsAppRunningAsShell || AppBarMode != AppBarMode.Normal)
-            {
-                DelaySetPosition();
-            }
-            else if (AppBarMode == AppBarMode.Normal)
-            {
-                _appBarManager.ABSetPos(this);
-            }
-        }
-
-        internal void SetAppBarPosition(NativeMethods.Rect rect)
-        {
-            int swp = (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE;
-
-            if (rect.Width < 0 || rect.Height < 0)
-            {
-                swp |= (int)NativeMethods.SetWindowPosFlags.SWP_NOSIZE;
-            }
-
-            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, rect.Left, rect.Top, rect.Width, rect.Height, swp);
-        }
-
         private void SetAutoHideStateVar(ref bool varToSet, bool newValue)
         {
             bool currentAutoHide = AllowAutoHide;
@@ -623,7 +630,7 @@ namespace ManagedShell.AppBar
             }
 
             AppBarMessageId = _appBarManager.RegisterBar(this);
-            }
+        }
 
         protected void UnregisterAppBar()
         {
@@ -635,14 +642,14 @@ namespace ManagedShell.AppBar
             _appBarManager.RegisterBar(this);
         }
 
-        public NativeMethods.Rect GetDesiredRect()
+        protected internal NativeMethods.Rect GetDesiredRect()
         {
             NativeMethods.Rect rect = new NativeMethods.Rect();
             int edgeOffset = 0;
 
             if (!RequiresScreenEdge)
             {
-                edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen);
+                edgeOffset = _appBarManager.GetAppBarEdgeWindowsHeight(AppBarEdge, Screen, Handle);
             }
 
             if (Orientation == Orientation.Vertical)
@@ -656,13 +663,13 @@ namespace ManagedShell.AppBar
                 {
                     rect.Left = Screen.Bounds.Left + edgeOffset;
                     rect.Right = rect.Left + width;
-            }
-            else
-            {
+                }
+                else
+                {
                     rect.Right = Screen.Bounds.Right - edgeOffset;
                     rect.Left = rect.Right - width;
+                }
             }
-        }
             else
             {
                 int height = Convert.ToInt32(DesiredHeight * DpiScale);
@@ -684,26 +691,41 @@ namespace ManagedShell.AppBar
 
             return rect;
         }
+
+        protected internal bool SetWindowPosition(NativeMethods.Rect newRect)
+        {
+            var currentRect = WindowRect;
+            if (newRect.Top == currentRect.Top &&
+                newRect.Left == currentRect.Left &&
+                newRect.Bottom == currentRect.Bottom &&
+                newRect.Right == currentRect.Right)
+            {
+                // Rects are the same, we don't need to do anything here
+                return false;
+            }
+
+            int swp = (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE;
+            if (newRect.Width < 0 || newRect.Height < 0)
+            {
+                swp |= (int)NativeMethods.SetWindowPosFlags.SWP_NOSIZE;
+            }
+
+            IsMoving = true;
+            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, newRect.Left, newRect.Top, newRect.Width, newRect.Height, swp);
+            IsMoving = false;
+
+            if (EnvironmentHelper.IsAppRunningAsShell)
+            {
+                _appBarManager.SetWorkArea(Screen);
+            }
+
+            ShellLogger.Debug($"AppBarWindow: {(!string.IsNullOrEmpty(Title) ? Title : Name)} changed position (TxLxBxR) to {newRect.Top}x{newRect.Left}x{newRect.Bottom}x{newRect.Right} from {currentRect.Top}x{currentRect.Left}x{currentRect.Bottom}x{currentRect.Right}");
+
+            return true;
+        }
         #endregion
 
         #region Virtual methods
-        public virtual void AfterAppBarPos(bool isSameCoords, NativeMethods.Rect rect)
-        {
-            _lastAppBarRect = rect;
-            if (!isSameCoords)
-            {
-                var timer = new DispatcherTimer { Interval = TimeSpan.FromSeconds(0.1) };
-                timer.Tick += (sender1, args) =>
-                {
-                    // set position again, since WPF may have overridden the original change from AppBarHelper
-                    SetAppBarPosition(_lastAppBarRect);
-
-                    timer.Stop();
-                };
-                timer.Start();
-            }
-        }
-
         protected virtual bool ShouldAllowAutoHide()
         {
             return AppBarMode == AppBarMode.AutoHide && !_isMouseWithin && !_isContextMenuOpen && !_isDragWithin && (_peekAutoHideTimer == null || !_peekAutoHideTimer.IsEnabled);
@@ -719,18 +741,18 @@ namespace ManagedShell.AppBar
             {
                 Screen = AppBarScreen.FromPrimaryScreen();
             }
-            SetScreenPosition();
+            UpdatePosition();
         }
 
-        public virtual void SetPosition()
+        public virtual bool UpdatePosition()
         {
-            var desiredRect = GetDesiredRect();
-            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, desiredRect.Left, desiredRect.Top, desiredRect.Width, desiredRect.Height, (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE);
-
-            if (EnvironmentHelper.IsAppRunningAsShell)
+            // Let Explorer AppBar figure out our position if we are an AppBar, otherwise set our desired rect
+            if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell)
             {
-                _appBarManager.SetWorkArea(Screen);
+                return _appBarManager.ABSetPos(this);
             }
+
+            return SetWindowPosition(GetDesiredRect());
         }
         #endregion
 

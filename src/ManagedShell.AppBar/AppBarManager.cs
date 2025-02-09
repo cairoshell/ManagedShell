@@ -17,12 +17,6 @@ namespace ManagedShell.AppBar
         private AppBarMessageDelegate _appBarMessageDelegate;
         private int uCallBack;
 
-        private int retryNum;
-        private Rect retryRect;
-        private DateTime retryTimestamp;
-        private int maxRetryNum = 20;
-        private TimeSpan maxRetryTimespan = TimeSpan.FromSeconds(10);
-
         public List<AppBarWindow> AppBars { get; } = new List<AppBarWindow>();
         public List<AppBarWindow> AutoHideBars { get; } = new List<AppBarWindow>();
         public EventHandler<AppBarEventArgs> AppBarEvent;
@@ -250,7 +244,7 @@ namespace ManagedShell.AppBar
 
                     if (!EnvironmentHelper.IsAppRunningAsShell)
                     {
-                        ABSetPos(abWindow, true);
+                        ABSetPos(abWindow);
                     }
                     else
                     {
@@ -279,12 +273,17 @@ namespace ManagedShell.AppBar
             return uCallBack;
         }
 
-        public void AppBarActivate(IntPtr hwnd)
+        public void AppBarActivate(AppBarWindow abWindow)
         {
+            if (!AppBars.Contains(abWindow))
+            {
+                return;
+            }
+
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = hwnd,
+                hWnd = abWindow.Handle,
                 lParam = (IntPtr)Convert.ToInt32(true)
             };
             
@@ -297,12 +296,17 @@ namespace ManagedShell.AppBar
             }
         }
 
-        public void AppBarWindowPosChanged(IntPtr hwnd)
+        public void AppBarWindowPosChanged(AppBarWindow abWindow)
         {
+            if (!AppBars.Contains(abWindow))
+            {
+                return;
+            }
+
             APPBARDATA abd = new APPBARDATA
             {
                 cbSize = Marshal.SizeOf(typeof(APPBARDATA)),
-                hWnd = hwnd
+                hWnd = abWindow.Handle
             };
             
             SHAppBarMessage((int)ABMsg.ABM_WINDOWPOSCHANGED, ref abd);
@@ -314,7 +318,7 @@ namespace ManagedShell.AppBar
             }
         }
 
-        public void ABSetPos(AppBarWindow abWindow, bool isCreate = false)
+        public bool ABSetPos(AppBarWindow abWindow)
         {
             lock (appBarLock)
             {
@@ -348,81 +352,16 @@ namespace ManagedShell.AppBar
 
                 SHAppBarMessage((int)ABMsg.ABM_SETPOS, ref abd);
 
-                // check if new coords
-                bool isSameCoords = false;
-                Rect currentRect;
-                GetWindowRect(abWindow.Handle, out currentRect);
-                if (!isCreate)
-                {
-                    bool topUnchanged = abd.rc.Top == currentRect.Top;
-                    bool leftUnchanged = abd.rc.Left == currentRect.Left;
-                    bool bottomUnchanged = abd.rc.Bottom == currentRect.Bottom;
-                    bool rightUnchanged = abd.rc.Right == currentRect.Right;
-
-                    isSameCoords = topUnchanged
-                                   && leftUnchanged
-                                   && bottomUnchanged
-                                   && rightUnchanged;
-                }
-
-                if (!isSameCoords)
-                {
-                    ShellLogger.Debug($"AppBarManager: {abWindow.Name} changing position (TxLxBxR) to {abd.rc.Top}x{abd.rc.Left}x{abd.rc.Bottom}x{abd.rc.Right} from {currentRect.Top}x{currentRect.Left}x{currentRect.Bottom}x{currentRect.Right}");
-                    abWindow.SetAppBarPosition(abd.rc);
-                }
-
-                abWindow.AfterAppBarPos(isSameCoords, abd.rc);
-
-                if ((((abd.uEdge == (int)AppBarEdge.Top || abd.uEdge == (int)AppBarEdge.Bottom) && abd.rc.Bottom - abd.rc.Top < desiredRect.Height) ||
-                    ((abd.uEdge == (int)AppBarEdge.Left || abd.uEdge == (int)AppBarEdge.Right) && abd.rc.Right - abd.rc.Left < desiredRect.Width)) && allowRetry(abd.rc))
-                {
-                    // The system did not respect the coordinates we selected, resulting in an unexpected window size.
-                    ABSetPos(abWindow);
-                }
+                return abWindow.SetWindowPosition(abd.rc);
             }
-        }
-
-        private bool allowRetry(Rect rect)
-        {
-            // The system did not respect the coordinates we selected. This may or may not need remediation, so keep track of attempts to prevent infinite looping.
-
-            if (rect.Top == retryRect.Top && rect.Left == retryRect.Left && rect.Right == retryRect.Right && rect.Bottom == retryRect.Bottom)
-            {
-                // Repeat rect
-                if (DateTime.Now.Subtract(retryTimestamp) < maxRetryTimespan)
-                {
-                    // within retry span
-                    if (retryNum >= maxRetryNum)
-                    {
-                        // hit max retries
-                        ShellLogger.Debug("AppBarManager: Max retries limit reached");
-                        return false;
-                    }
-                    else
-                    {
-                        // allow retry
-                        ShellLogger.Debug("AppBarManager: Allowing retry of ABSetPos");
-                        retryNum++;
-                        return true;
-                    }
-                }
-            }
-
-            // Reset
-            ShellLogger.Debug("AppBarManager: Resetting retry of ABSetPos");
-            retryNum = 0;
-            retryRect = rect;
-            retryTimestamp = DateTime.Now;
-
-            return true;
         }
         #endregion
 
         #region Work area
-        public int GetAppBarEdgeWindowsHeight(AppBarEdge edge, AppBarScreen screen)
+        public int GetAppBarEdgeWindowsHeight(AppBarEdge edge, AppBarScreen screen, IntPtr hWndIgnore)
         {
             int edgeHeight = 0;
-            Rect workAreaRect = GetWorkArea(screen, true, true);
+            Rect workAreaRect = GetWorkArea(screen, true, true, hWndIgnore);
 
             switch (edge)
             {
@@ -443,7 +382,7 @@ namespace ManagedShell.AppBar
             return edgeHeight;
         }
 
-        public Rect GetWorkArea(AppBarScreen screen, bool edgeBarsOnly, bool enabledBarsOnly)
+        public Rect GetWorkArea(AppBarScreen screen, bool edgeBarsOnly, bool enabledBarsOnly, IntPtr hWndIgnore)
         {
             int topEdgeWindowHeight = 0;
             int bottomEdgeWindowHeight = 0;
@@ -455,24 +394,23 @@ namespace ManagedShell.AppBar
             foreach (var window in AppBars)
             {
                 if (window.Screen.DeviceName == screen.DeviceName && 
+                    window.Handle != hWndIgnore &&
                     (window.AppBarMode == AppBarMode.Normal || !enabledBarsOnly) && 
                     (window.RequiresScreenEdge || !edgeBarsOnly))
                 {
-                    Rect windowRect;
-                    GetWindowRect(window.Handle, out windowRect);
                     switch (window.AppBarEdge)
                     {
                         case AppBarEdge.Left:
-                            leftEdgeWindowWidth += windowRect.Width;
+                            leftEdgeWindowWidth += window.WindowRect.Width;
                             break;
                         case AppBarEdge.Right:
-                            rightEdgeWindowWidth += windowRect.Width;
+                            rightEdgeWindowWidth += window.WindowRect.Width;
                             break;
                         case AppBarEdge.Bottom:
-                            bottomEdgeWindowHeight += windowRect.Height;
+                            bottomEdgeWindowHeight += window.WindowRect.Height;
                             break;
                         case AppBarEdge.Top:
-                            topEdgeWindowHeight += windowRect.Height;
+                            topEdgeWindowHeight += window.WindowRect.Height;
                             break;
                     }
                 }
@@ -488,7 +426,7 @@ namespace ManagedShell.AppBar
 
         public void SetWorkArea(AppBarScreen screen)
         {
-            Rect rc = GetWorkArea(screen, false, true);
+            Rect rc = GetWorkArea(screen, false, true, IntPtr.Zero);
 
             SystemParametersInfo((int)SPI.SETWORKAREA, 1, ref rc, (uint)(SPIF.UPDATEINIFILE | SPIF.SENDWININICHANGE));
         }
