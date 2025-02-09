@@ -313,7 +313,10 @@ namespace ManagedShell.WindowsTasks
             {
                 if (_hMonitor != value)
                 {
-                    ShellLogger.Debug($"ApplicationWindow: Monitor changed for {Handle} ({Title})");
+                    if (_hMonitor != IntPtr.Zero)
+                    {
+                        ShellLogger.Debug($"ApplicationWindow: Monitor changed for {Handle} ({Title})");
+                    }
                     _hMonitor = value;
                     OnPropertyChanged("HMonitor");
                 }
