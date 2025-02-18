@@ -451,7 +451,6 @@ namespace ManagedShell.WindowsTasks
                                 {
                                     ApplicationWindow win = Windows.First(wnd => wnd.Handle == msgCopy.LParam);
                                     win.SetMonitor();
-                                    ShellLogger.Debug($"TasksService: Monitor changed for {win.Handle} ({win.Title})");
 
                                     WindowEventArgs args = new WindowEventArgs
                                     {
