@@ -328,6 +328,24 @@ namespace ManagedShell.AppBar
             }
         }
 
+        protected virtual void OnFullScreenEnter()
+        {
+            ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} conceding to full-screen app");
+
+            Topmost = false;
+            WindowHelper.ShowWindowBottomMost(Handle);
+        }
+
+        protected virtual void OnFullScreenLeave()
+        {
+            ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} returning to normal state");
+
+            IsRaising = true;
+            Topmost = true;
+            WindowHelper.ShowWindowTopMost(Handle);
+            IsRaising = false;
+        }
+
         private void OnClosing(object sender, CancelEventArgs e)
         {
             IsClosing = true;
@@ -365,11 +383,11 @@ namespace ManagedShell.AppBar
 
             if (found && Topmost)
             {
-                setFullScreenMode(true);
+                OnFullScreenEnter();
             }
             else if (!found && !Topmost)
             {
-                setFullScreenMode(false);
+                OnFullScreenLeave();
             }
         }
 
@@ -565,26 +583,6 @@ namespace ManagedShell.AppBar
             if (((Screen.Primary && ProcessScreenChanges) || reason == ScreenSetupReason.DpiChange) && !AllowClose)
             {
                 SetScreenProperties(reason);
-            }
-        }
-
-        private void setFullScreenMode(bool entering)
-        {
-            if (entering)
-            {
-                ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} conceding to full-screen app");
-
-                Topmost = false;
-                WindowHelper.ShowWindowBottomMost(Handle);
-            }
-            else
-            {
-                ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} returning to normal state");
-
-                IsRaising = true;
-                Topmost = true;
-                WindowHelper.ShowWindowTopMost(Handle);
-                IsRaising = false;
             }
         }
 
