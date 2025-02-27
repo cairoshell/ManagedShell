@@ -301,8 +301,9 @@ namespace ManagedShell.WindowsTasks
         {
             get
             {
-                if (_hMonitor == IntPtr.Zero)
+                if (_hMonitor == IntPtr.Zero || EnvironmentHelper.IsWindows8OrBetter)
                 {
+                    // Ignore the cache on Windows 8+, as it may be wrong.
                     SetMonitor();
                 }
 
