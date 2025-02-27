@@ -433,7 +433,7 @@ namespace ManagedShell.WindowsTasks
                 return false;
             }
             
-            if (ClassName == "ApplicationFrameWindow" || ClassName == "Windows.UI.Core.CoreWindow" || ClassName == "StartMenuSizingFrame")
+            if (ClassName == "ApplicationFrameWindow" || ClassName == "Windows.UI.Core.CoreWindow" || ClassName == "StartMenuSizingFrame" || ClassName == "Shell_LightDismissOverlay")
             {
                 if ((ExtendedWindowStyles & (int)NativeMethods.ExtendedWindowStyles.WS_EX_WINDOWEDGE) == 0)
                 {
