@@ -328,8 +328,20 @@ namespace ManagedShell.AppBar
             }
         }
 
-        protected virtual void OnFullScreenEnter()
+        protected virtual void OnFullScreenEnter(FullScreenApp app)
         {
+            if (AppBarMode != AppBarMode.Normal && app.fromTasksService)
+            {
+                // If we are not reserving space, then some maximized windows could be mistaken as full-screen.
+                // Use the same strict bounds checks as full-screen apps with fromTasksService=false.
+                if (!(app.rect.Top == app.screen.Bounds.Top && app.rect.Left == app.screen.Bounds.Left &&
+                    app.rect.Bottom == app.screen.Bounds.Bottom && app.rect.Right == app.screen.Bounds.Right))
+                {
+                    ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} ignoring full-screen app");
+                    return;
+                }
+            }
+
             ShellLogger.Debug($"AppBarWindow: {Name} on {Screen.DeviceName} conceding to full-screen app");
 
             Topmost = false;
@@ -369,23 +381,23 @@ namespace ManagedShell.AppBar
 
         private void FullScreenApps_CollectionChanged(object sender, System.Collections.Specialized.NotifyCollectionChangedEventArgs e)
         {
-            bool found = false;
+            FullScreenApp app = null;
 
-            foreach (FullScreenApp app in _fullScreenHelper.FullScreenApps)
+            foreach (FullScreenApp _app in _fullScreenHelper.FullScreenApps)
             {
-                if (app.screen.DeviceName == Screen.DeviceName || app.screen.IsVirtualScreen)
+                if (_app.screen.DeviceName == Screen.DeviceName || _app.screen.IsVirtualScreen)
                 {
-                    // we need to not be on top now
-                    found = true;
+                    // there is a full screen app on our screen
+                    app = _app;
                     break;
                 }
             }
 
-            if (found && Topmost)
+            if (app != null && Topmost)
             {
-                OnFullScreenEnter();
+                OnFullScreenEnter(app);
             }
-            else if (!found && !Topmost)
+            else if (app == null && !Topmost)
             {
                 OnFullScreenLeave();
             }

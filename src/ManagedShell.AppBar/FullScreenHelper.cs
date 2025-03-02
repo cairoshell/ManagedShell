@@ -49,6 +49,12 @@ namespace ManagedShell.AppBar
 
         private void TasksService_FullScreenChanged(object sender, FullScreenEventArgs e)
         {
+            if (InactiveFullScreenApps.Count > 0 && InactiveFullScreenApps.Any(app => app.hWnd == e.Handle))
+            {
+                // If this window is in the inactive list, remove it--the message that triggered this event takes precedence
+                InactiveFullScreenApps.Remove(InactiveFullScreenApps.First(app => app.hWnd == e.Handle));
+            }
+
             if (FullScreenApps.Any(app => app.hWnd == e.Handle) == e.IsEntering)
             {
                 if (e.IsEntering)
@@ -61,12 +67,6 @@ namespace ManagedShell.AppBar
                     }
                 }
                 return;
-            }
-
-            if (InactiveFullScreenApps.Count > 0 && InactiveFullScreenApps.Any(app => app.hWnd == e.Handle))
-            {
-                // If this window is in the inactive list, remove it because it is no longer needed
-                InactiveFullScreenApps.Remove(InactiveFullScreenApps.First(app => app.hWnd == e.Handle));
             }
 
             if (e.IsEntering)
@@ -224,10 +224,10 @@ namespace ManagedShell.AppBar
         private FullScreenApp getFullScreenApp(IntPtr hWnd, bool fromTasksService = false)
         {
             ScreenInfo screenInfo = null;
+            Rect rect = GetEffectiveWindowRect(hWnd);
 
             if (!fromTasksService)
             {
-                Rect rect = GetEffectiveWindowRect(hWnd);
                 var allScreens = Screen.AllScreens.Select(ScreenInfo.Create).ToList();
                 if (allScreens.Count > 1) allScreens.Add(ScreenInfo.CreateVirtualScreen());
 
@@ -260,7 +260,7 @@ namespace ManagedShell.AppBar
             }
 
             // this is a full screen app
-            return new FullScreenApp { hWnd = hWnd, screen = screenInfo, title = win.Title, fromTasksService = fromTasksService };
+            return new FullScreenApp { hWnd = hWnd, screen = screenInfo, rect = rect, title = win.Title, fromTasksService = fromTasksService };
         }
 
         private Rect GetEffectiveWindowRect(IntPtr hWnd)
