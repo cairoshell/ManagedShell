@@ -4,9 +4,6 @@
     {
         DeviceChange,
         DisplayChange,
-        DpiChange,
-        DwmChange,
-        FirstRun,
-        Reconciliation
+        DpiChange
     }
 }

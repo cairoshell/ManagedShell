@@ -565,11 +565,6 @@ namespace ManagedShell.AppBar
                 ProcessScreenChange(ScreenSetupReason.DeviceChange);
                 handled = true;
             }
-            else if (msg == (int)NativeMethods.WM.DWMCOMPOSITIONCHANGED)
-            {
-                ProcessScreenChange(ScreenSetupReason.DwmChange);
-                handled = true;
-            }
             
             return IntPtr.Zero;
         }
