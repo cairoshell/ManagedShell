@@ -203,6 +203,8 @@ namespace ManagedShell.WindowsTasks
                 if (moveEventHook != IntPtr.Zero) UnhookWinEvent(moveEventHook);
                 _HookWin.DestroyHandle();
                 setTaskbarListHwnd(IntPtr.Zero);
+                IsInitialized = false;
+                Windows.Clear();
             }
 
             TaskCategoryProvider?.Dispose();
