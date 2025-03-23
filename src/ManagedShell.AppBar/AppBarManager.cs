@@ -19,7 +19,6 @@ namespace ManagedShell.AppBar
 
         public List<AppBarWindow> AppBars { get; } = new List<AppBarWindow>();
         public List<AppBarWindow> AutoHideBars { get; } = new List<AppBarWindow>();
-        public EventHandler<AppBarEventArgs> AppBarEvent;
 
         public AppBarManager(ExplorerHelper explorerHelper)
         {
@@ -35,12 +34,6 @@ namespace ManagedShell.AppBar
             {
                 window.AllowClose = true;
             }
-        }
-
-        public void NotifyAppBarEvent(AppBarWindow sender, AppBarEventReason reason)
-        {
-            AppBarEventArgs args = new AppBarEventArgs { Reason = reason };
-            AppBarEvent?.Invoke(sender, args);
         }
 
         private IntPtr appBarMessageDelegate(APPBARMSGDATAV3 amd, ref bool handled)
