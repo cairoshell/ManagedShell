@@ -700,6 +700,7 @@ namespace ManagedShell.WindowsTasks
 
         internal IntPtr DoClose()
         {
+            makeForeground();
             IntPtr retval = IntPtr.Zero;
             NativeMethods.SendMessageTimeout(Handle, (int)NativeMethods.WM.SYSCOMMAND, NativeMethods.SC_CLOSE, 0, 2, 200, ref retval);
 
