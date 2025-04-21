@@ -340,6 +340,7 @@ namespace ManagedShell.Common.Helpers
                 // get path
                 int len = outFileName.Capacity;
                 QueryFullProcessImageName(hProc, 0, outFileName, ref len);
+                CloseHandle(hProc);
             }
 
             return outFileName.ToString();
@@ -403,7 +404,7 @@ namespace ManagedShell.Common.Helpers
                 StringBuilder outAumid = new StringBuilder((int)len);
 
                 GetApplicationUserModelId(hProcess, ref len, outAumid);
-                CloseHandle((int)hProcess);
+                CloseHandle(hProcess);
 
                 if (outAumid.Length > 0)
                 {
