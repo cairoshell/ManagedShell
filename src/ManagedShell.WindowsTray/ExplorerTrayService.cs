@@ -106,7 +106,7 @@ namespace ManagedShell.WindowsTray
 
             VirtualFreeEx(hProcess, hBuffer, 0, AllocationType.Release);
 
-            CloseHandle((int)hProcess);
+            CloseHandle(hProcess);
         }
 
         private IntPtr FindExplorerTrayToolbarHwnd()

@@ -71,6 +71,9 @@ namespace ManagedShell.Interop
         [DllImport(Kernel32_DllName)]
         public static extern Int32 CloseHandle(Int32 Handle);
 
+        [DllImport(Kernel32_DllName)]
+        public static extern bool CloseHandle(IntPtr Handle);
+
         [DllImport(Kernel32_DllName, SetLastError = true, CallingConvention = CallingConvention.Winapi)]
         [return: MarshalAs(UnmanagedType.Bool)]
         public static extern bool IsWow64Process(
