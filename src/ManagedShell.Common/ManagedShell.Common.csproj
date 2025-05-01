@@ -4,6 +4,7 @@
     <TargetFrameworks>netcoreapp3.1;net471;net6.0-windows</TargetFrameworks>
     <UseWindowsForms>true</UseWindowsForms>
     <UseWPF>true</UseWPF>
+    <LangVersion>12</LangVersion>
   </PropertyGroup>
 
   <ItemGroup>
