@@ -36,14 +36,14 @@ namespace ManagedShell.Common.Helpers
                 using var key = Registry.CurrentUser.OpenSubKey($@"{SYSTEM_SOUND_ROOT_KEY}\{app}\{name}\.Current");
                 if (key == null)
                 {
-                    ShellLogger.Error($"SoundHelper: Unable to find sound {name} for app {app}");
+                    ShellLogger.Debug($"SoundHelper: Unable to find sound {name} for app {app}");
                     return false;
                 }
 
                 var soundFileName = key.GetValue(null) as string;
                 if (string.IsNullOrEmpty(soundFileName))
                 {
-                    ShellLogger.Error($"SoundHelper: Missing file for sound {name} for app {app}");
+                    ShellLogger.Debug($"SoundHelper: Missing file for sound {name} for app {app}");
                     return false;
                 }
 
