@@ -109,7 +109,7 @@ namespace ManagedShell.Common.Helpers
 
         public static void ExcludeWindowFromPeek(IntPtr hWnd)
         {
-            int status = (int)DWMNCRENDERINGPOLICY.DWMNCRP_ENABLED;
+            int status = 1;
             DwmSetWindowAttribute(hWnd,
                 DWMWINDOWATTRIBUTE.DWMWA_EXCLUDED_FROM_PEEK,
                 ref status,
