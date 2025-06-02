@@ -92,6 +92,7 @@ namespace ManagedShell.AppBar
             set
             {
                 _autoHideElement = value;
+                _autoHideElement.RenderTransform = new TranslateTransform();
                 OnPropertyChanged();
             }
         }
@@ -225,12 +226,6 @@ namespace ManagedShell.AppBar
             animation.BeginTime = TimeSpan.FromMilliseconds(immediate ? 0 : isHiding ? AutoHideDelayMs : AutoHideShowDelayMs);
             animation.EasingFunction = new SineEase();
 
-            Storyboard.SetTarget(animation, AutoHideElement);
-            Storyboard.SetTargetProperty(animation, new PropertyPath($"RenderTransform.(TranslateTransform.{(Orientation == Orientation.Horizontal ? 'Y' : 'X')})"));
-
-            var storyboard = new Storyboard();
-            storyboard.Children.Add(animation);
-
             animation.CurrentStateInvalidated += (object sender, EventArgs e) => {
                 if (((AnimationClock)sender).CurrentState == ClockState.Active)
                 {
@@ -238,11 +233,11 @@ namespace ManagedShell.AppBar
                 }
             };
 
-            storyboard.Completed += (object sender, EventArgs e) => {
+            animation.Completed += (object sender, EventArgs e) => {
                 OnAutoHideAnimationComplete(isHiding);
             };
 
-            storyboard.Begin(AutoHideElement);
+            AutoHideElement.RenderTransform.BeginAnimation(Orientation == Orientation.Horizontal ? TranslateTransform.YProperty : TranslateTransform.XProperty, animation);
         }
 
         protected void PeekDuringAutoHide(int msToPeek = 1000)
@@ -368,6 +363,8 @@ namespace ManagedShell.AppBar
             {
                 UnregisterAppBar();
                 _appBarManager.UnregisterAutoHideBar(this);
+                AutoHideElement?.RenderTransform?.BeginAnimation(TranslateTransform.YProperty, null);
+                AutoHideElement?.RenderTransform?.BeginAnimation(TranslateTransform.XProperty, null);
 
                 // unregister full-screen notifications
                 _fullScreenHelper.FullScreenApps.CollectionChanged -= FullScreenApps_CollectionChanged;
