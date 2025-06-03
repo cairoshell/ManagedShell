@@ -271,6 +271,8 @@ namespace ManagedShell.AppBar
             helper = new WindowInteropHelper(this);
             Handle = helper.Handle;
 
+            WindowHelper.SetWindowNoActivate(Handle);
+
             // set up window procedure
             HwndSource source = HwndSource.FromHwnd(Handle);
             source.AddHook(WndProc);
