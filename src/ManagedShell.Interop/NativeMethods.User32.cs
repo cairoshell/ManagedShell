@@ -3031,7 +3031,10 @@ namespace ManagedShell.Interop
         public static extern int ActivateKeyboardLayout(int hkl, uint flags);
 
         [DllImport(User32_DllName)]
-        public static extern bool PostMessage(int hWnd, uint msg, int wParam, long lParam);
+        public static extern bool PostMessage(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
+
+        [DllImport(User32_DllName)]
+        public static extern IntPtr GetTopWindow(IntPtr hWnd);
 
         [DllImport(User32_DllName)]
         public static extern bool PostMessage(IntPtr hWnd, uint msg, IntPtr wParam, IntPtr lParam);
