@@ -146,6 +146,8 @@ namespace ManagedShell.ShellFolders
                 }
             }
 
+            Marshal.FinalReleaseComObject(link);
+
             return target;
         }
     }
