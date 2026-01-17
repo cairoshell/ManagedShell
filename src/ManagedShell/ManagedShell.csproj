@@ -1,7 +1,7 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.WindowsDesktop">
 
   <PropertyGroup>
-    <TargetFrameworks>netcoreapp3.1;net471;net6.0-windows</TargetFrameworks>
+    <TargetFrameworks>net480;net6.0-windows;net10.0-windows</TargetFrameworks>
 	<RuntimeIdentifiers>win-x86;win-x64;win-arm64</RuntimeIdentifiers>
     <UseWPF>true</UseWPF>
     <TargetsForTfmSpecificBuildOutput>$(TargetsForTfmSpecificBuildOutput);CopyProjectReferencesToPackage</TargetsForTfmSpecificBuildOutput>
@@ -24,10 +24,10 @@
     <ProjectReference Include="..\ManagedShell.UWPInterop\ManagedShell.UWPInterop.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.WindowsTasks\ManagedShell.WindowsTasks.csproj" PrivateAssets="all" />
     <ProjectReference Include="..\ManagedShell.WindowsTray\ManagedShell.WindowsTray.csproj" PrivateAssets="all" />
-    <PackageReference Include="System.Data.OleDb" Version="6.0.0" />
+    <PackageReference Include="System.Data.OleDb" Version="8.0.1" />
     <PackageReference Include="System.Security.Principal.Windows" Version="5.0.0" />
-    <PackageReference Include="System.ServiceProcess.ServiceController" Version="6.0.0" />
-    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="1.1.1" PrivateAssets="All" />
+    <PackageReference Include="System.ServiceProcess.ServiceController" Version="8.0.1" />
+    <PackageReference Include="Microsoft.SourceLink.GitHub" Version="8.0.0" PrivateAssets="All" />
   </ItemGroup>
 
   <Target Name="CopyProjectReferencesToPackage" DependsOnTargets="BuildOnlySettings;ResolveReferences">

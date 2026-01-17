@@ -42,7 +42,7 @@ namespace ManagedShell.Common.Helpers
             return NativeMethods.PostMessage(0xffff,
                 (uint) NativeMethods.WM.INPUTLANGCHANGEREQUEST,
                 0,
-                NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint)(NativeMethods.KLF.SUBSTITUTE_OK | NativeMethods.KLF.ACTIVATE)));
+                (long)NativeMethods.LoadKeyboardLayout(layoutId.ToString("x8"), (uint)(NativeMethods.KLF.SUBSTITUTE_OK | NativeMethods.KLF.ACTIVATE)));
         }
     }
 }
