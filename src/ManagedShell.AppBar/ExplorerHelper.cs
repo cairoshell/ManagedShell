@@ -24,7 +24,7 @@ namespace ManagedShell.AppBar
 
             set
             {
-                if (value != _hideExplorerTaskbar)
+                if (value != _hideExplorerTaskbar && !EnvironmentHelper.IsAppRunningAsShell)
                 {
                     _hideExplorerTaskbar = value;
 
@@ -124,18 +124,15 @@ namespace ManagedShell.AppBar
 
         private void HideTaskbar()
         {
-            if (!EnvironmentHelper.IsAppRunningAsShell)
+            if (startupTaskbarState == null)
             {
-                if (startupTaskbarState == null)
-                {
-                    startupTaskbarState = GetTaskbarState();
-                }
+                startupTaskbarState = GetTaskbarState();
+            }
 
-                if (HideExplorerTaskbar)
-                {
-                    DoHideTaskbar();
-                    taskbarMonitor.Start();
-                }
+            if (HideExplorerTaskbar)
+            {
+                DoHideTaskbar();
+                taskbarMonitor.Start();
             }
         }
 
@@ -147,12 +144,9 @@ namespace ManagedShell.AppBar
 
         private void ShowTaskbar()
         {
-            if (!EnvironmentHelper.IsAppRunningAsShell)
-            {
-                SetTaskbarState(startupTaskbarState ?? ABState.Default);
-                SetTaskbarVisibility((int)SetWindowPosFlags.SWP_SHOWWINDOW);
-                taskbarMonitor.Stop();
-            }
+            SetTaskbarState(startupTaskbarState ?? ABState.Default);
+            SetTaskbarVisibility((int)SetWindowPosFlags.SWP_SHOWWINDOW);
+            taskbarMonitor.Stop();
         }
 
         private void SetupTaskbarMonitor()
