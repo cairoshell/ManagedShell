@@ -1,7 +1,7 @@
 # ManagedShell
 ![ManagedShell](https://github.com/cairoshell/ManagedShell/workflows/ManagedShell/badge.svg) [![Nuget](https://img.shields.io/nuget/v/ManagedShell?color=informational)](https://www.nuget.org/packages/ManagedShell/)
 
-A library for creating Windows shell replacements using .NET, written in C#.
+A library for creating Windows shell replacements using .NET and WPF, written in C#.
 
 ## Features
 - Tasks service that provides taskbar functionality
@@ -15,4 +15,5 @@ A library for creating Windows shell replacements using .NET, written in C#.
 Visit the [ManagedShell Wiki](https://github.com/cairoshell/ManagedShell/wiki) for usage documentation.
 
 ## Example implementations
+- [Cairo Shell](https://github.com/cairoshell/cairoshell)
 - [RetroBar](https://github.com/dremin/RetroBar)
