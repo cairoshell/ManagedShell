@@ -3801,5 +3801,38 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName)]
         public static extern bool UnregisterDeviceNotification(IntPtr handle);
+
+        // Thumbnail toolbar button structures and enums
+        [Flags]
+        public enum THUMBBUTTONFLAGS
+        {
+            THBF_ENABLED = 0x0,
+            THBF_DISABLED = 0x1,
+            THBF_DISMISSONCLICK = 0x2,
+            THBF_NOBACKGROUND = 0x4,
+            THBF_HIDDEN = 0x8,
+            THBF_NONINTERACTIVE = 0x10
+        }
+
+        [Flags]
+        public enum THUMBBUTTONMASK
+        {
+            THB_BITMAP = 0x1,
+            THB_ICON = 0x2,
+            THB_TOOLTIP = 0x4,
+            THB_FLAGS = 0x8
+        }
+
+        [StructLayout(LayoutKind.Sequential, Pack = 8, CharSet = CharSet.Unicode)]
+        public struct THUMBBUTTON
+        {
+            public THUMBBUTTONMASK dwMask;
+            public uint iId;
+            public uint iBitmap;
+            public int hIcon;  // HICON is a 32-bit handle, not a pointer
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szTip;
+            public THUMBBUTTONFLAGS dwFlags;
+        }
     }
 }

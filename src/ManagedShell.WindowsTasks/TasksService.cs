@@ -88,6 +88,17 @@ namespace ManagedShell.WindowsTasks
             {
                 ShellLogger.Debug("TasksService: Starting");
 
+                // Test file writing
+                string debugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "thumb_debug.txt");
+                try
+                {
+                    System.IO.File.WriteAllText(debugPath, $"{DateTime.Now}: TasksService initialized - file writing works!\n");
+                }
+                catch (Exception ex)
+                {
+                    ShellLogger.Error($"Failed to write debug file to {debugPath}: {ex.Message}");
+                }
+
                 // create window to receive task events
                 _HookWin = new NativeWindowEx();
                 _HookWin.CreateHandle(new CreateParams());
@@ -607,17 +618,176 @@ namespace ManagedShell.WindowsTasks
                         return;
                     case (int)WM.USER + 76:
                         // ThumbBarAddButtons
-                        ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarAddButtons HWND:" + msg.WParam);
+                        ShellLogger.Debug($"TasksService: ITaskbarList: ThumbBarAddButtons HWND:{msg.WParam} LParam:{msg.LParam}");
+                        string debugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "thumb_debug.txt");
+                        System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: MESSAGE RECEIVED - ThumbBarAddButtons HWND:{msg.WParam}\n");
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Created temp window, checking if exists in collection. Window count: {Windows.Count}\n");
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msgCopy.WParam);
+                            ShellLogger.Debug($"TasksService: Found window for HWND {msg.WParam}: {win.Title}");
+
+                            try
+                            {
+                                // LParam is a pointer to shared memory containing button count and button array pointer
+                                IntPtr pData = msg.LParam;
+
+                                ShellLogger.Debug($"TasksService: Data pointer: {pData}");
+                                System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: ThumbBarAddButtons - HWND:{msg.WParam}, DataPointer:{pData}, Title:{win.Title}\n");
+
+                                if (pData != IntPtr.Zero && win.ProcId is uint procId)
+                                {
+                                    IntPtr hProcess = OpenProcess(ProcessAccessFlags.VirtualMemoryRead | ProcessAccessFlags.VirtualMemoryOperation, false, (int)procId);
+                                    if (hProcess != IntPtr.Zero)
+                                    {
+                                        IntPtr hShared = SHLockShared(pData, procId);
+                                        if (hShared != IntPtr.Zero)
+                                        {
+                                            // Read the count from the first DWORD
+                                            int buttonCount = Marshal.ReadInt32(hShared, 0);
+
+                                            System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Read from shared memory - ButtonCount:{buttonCount}\n");
+
+                                            if (buttonCount > 0 && buttonCount <= 7)
+                                            {
+                                                THUMBBUTTON[] buttons = new THUMBBUTTON[buttonCount];
+                                                int buttonSize = Marshal.SizeOf(typeof(THUMBBUTTON));
+                                                System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: THUMBBUTTON C# struct size: {buttonSize} bytes\n");
+
+                                                // Buttons stored inline after count
+                                                int offset = sizeof(int);
+                                                for (int i = 0; i < buttonCount; i++)
+                                                {
+                                                    try
+                                                    {
+                                                        IntPtr buttonPtr = new IntPtr(hShared.ToInt64() + offset + (i * buttonSize));
+                                                        buttons[i] = Marshal.PtrToStructure<THUMBBUTTON>(buttonPtr);
+                                                        System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Button {i} at offset {offset + (i * buttonSize)}: Mask={buttons[i].dwMask}, ID={buttons[i].iId}, Bitmap={buttons[i].iBitmap}, Flags={buttons[i].dwFlags}, Tooltip=\"{buttons[i].szTip}\", Icon=0x{buttons[i].hIcon:X}\n");
+                                                    }
+                                                    catch (Exception ex)
+                                                    {
+                                                        System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Error reading button {i}: {ex.Message}\n");
+                                                    }
+                                                }
+
+                                                // Convert to wrapper class for WPF binding (WPF cannot bind to struct fields)
+                                                win.ThumbnailButtons = buttons.Select(b => new ThumbnailButton(b)).ToArray();
+                                                System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: SUCCESS - Set {buttonCount} buttons\n");
+                                            }
+                                            else
+                                            {
+                                                System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Invalid buttonCount:{buttonCount}\n");
+                                            }
+
+                                            SHUnlockShared(hShared);
+                                        }
+                                        else
+                                        {
+                                            System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: SHLockShared on data pointer FAILED\n");
+                                        }
+
+                                        CloseHandle(hProcess);
+                                    }
+                                    else
+                                    {
+                                        System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: OpenProcess FAILED for ProcId:{procId}\n");
+                                    }
+                                }
+                                else
+                                {
+                                    System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Invalid pData or no ProcId\n");
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                ShellLogger.Error($"TasksService: Error parsing ThumbBarAddButtons: {ex.Message}");
+                                System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: EXCEPTION: {ex.Message}\n{ex.StackTrace}\n");
+                            }
+                        }
+                        else
+                        {
+                            System.IO.File.AppendAllText(debugPath, $"{DateTime.Now}: Window not found for HWND {msg.WParam}\n");
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 77:
                         // ThumbBarUpdateButtons
                         ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarUpdateButtons HWND:" + msg.WParam);
+                        string updateDebugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "thumb_debug.txt");
+                        System.IO.File.AppendAllText(updateDebugPath, $"{DateTime.Now}: MESSAGE RECEIVED - ThumbBarUpdateButtons HWND:{msg.WParam}\n");
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msgCopy.WParam);
+
+                            try
+                            {
+                                // LParam contains: low word = button count, high word = pointer to THUMBBUTTON array
+                                int buttonCount = msg.LParam.ToInt32() & 0xFFFF;
+                                IntPtr pButtons = new IntPtr(msg.LParam.ToInt64() >> 16);
+
+                                if (buttonCount > 0 && buttonCount <= 7 && pButtons != IntPtr.Zero)
+                                {
+                                    THUMBBUTTON[] buttons = new THUMBBUTTON[buttonCount];
+                                    int buttonSize = Marshal.SizeOf(typeof(THUMBBUTTON));
+
+                                    if (win.ProcId is uint procId)
+                                    {
+                                        IntPtr hProcess = OpenProcess(ProcessAccessFlags.VirtualMemoryRead | ProcessAccessFlags.VirtualMemoryOperation, false, (int)procId);
+                                        if (hProcess != IntPtr.Zero)
+                                        {
+                                            IntPtr hShared = SHLockShared(pButtons, procId);
+                                            if (hShared != IntPtr.Zero)
+                                            {
+                                                for (int i = 0; i < buttonCount; i++)
+                                                {
+                                                    IntPtr buttonPtr = new IntPtr(hShared.ToInt64() + (i * buttonSize));
+                                                    buttons[i] = Marshal.PtrToStructure<THUMBBUTTON>(buttonPtr);
+                                                }
+
+                                                SHUnlockShared(hShared);
+                                                // Convert to wrapper class for WPF binding (WPF cannot bind to struct fields)
+                                                win.ThumbnailButtons = buttons.Select(b => new ThumbnailButton(b)).ToArray();
+                                                ShellLogger.Debug($"TasksService: Updated {buttonCount} thumbnail buttons for HWND {msg.WParam}");
+
+                                                System.IO.File.AppendAllText(updateDebugPath, $"{DateTime.Now}: ThumbBarUpdateButtons - Updated {buttonCount} buttons\n");
+                                                for (int i = 0; i < buttons.Length; i++)
+                                                {
+                                                    System.IO.File.AppendAllText(updateDebugPath, $"{DateTime.Now}: Updated Button {i}: ID={buttons[i].iId}, Flags={buttons[i].dwFlags}, Tooltip=\"{buttons[i].szTip}\"\n");
+                                                }
+                                            }
+
+                                            CloseHandle(hProcess);
+                                        }
+                                    }
+                                }
+                            }
+                            catch (Exception ex)
+                            {
+                                ShellLogger.Error($"TasksService: Error parsing ThumbBarUpdateButtons: {ex.Message}");
+                            }
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 78:
                         // ThumbBarSetImageList
                         ShellLogger.Debug("TasksService: ITaskbarList: ThumbBarSetImageList HWND:" + msg.WParam);
+                        string imageListDebugPath = System.IO.Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.Desktop), "thumb_debug.txt");
+                        System.IO.File.AppendAllText(imageListDebugPath, $"{DateTime.Now}: MESSAGE RECEIVED - ThumbBarSetImageList HWND:{msg.WParam}, ImageList:{msg.LParam}\n");
+
+                        win = new ApplicationWindow(this, msg.WParam);
+                        if (Windows.Contains(win))
+                        {
+                            win = Windows.First(wnd => wnd.Handle == msgCopy.WParam);
+                            win.ThumbnailButtonImageList = msg.LParam;
+                            ShellLogger.Debug($"TasksService: Set thumbnail button image list for HWND {msg.WParam}: {msg.LParam}");
+                        }
+
                         msg.Result = IntPtr.Zero;
                         return;
                     case (int)WM.USER + 79:
