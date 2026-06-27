@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Runtime.InteropServices;
+using System.Text;
 using static ManagedShell.Interop.NativeMethods;
 
 namespace ManagedShell.Common.Helpers
@@ -102,7 +103,33 @@ namespace ManagedShell.Common.Helpers
         
         public static void HideWindowFromTasks(IntPtr hWnd)
         {
-            SetWindowLong(hWnd, GWL_EXSTYLE, (GetWindowLong(hWnd, GWL_EXSTYLE) & ~(int)ExtendedWindowStyles.WS_EX_APPWINDOW) | (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW);
+            int style = GetWindowLong(hWnd, GWL_EXSTYLE) & ~(int)ExtendedWindowStyles.WS_EX_APPWINDOW;
+            if (EnvironmentHelper.IsWindows11OrBetter)
+            {
+                // If the window has a Hidden Window owner, set the owner as a tool window instead so that we still receive WM_DPICHANGED on Windows 11.
+                // Hidden Window is the owner when ShowInTaskbar=false. Unfortunately, the window will not be hidden from Task Manager.
+                // https://github.com/dotnet/wpf/issues/10422
+                IntPtr hwndOwner = GetWindow(hWnd, GetWindow_Cmd.GW_OWNER);
+                if (hwndOwner == IntPtr.Zero)
+                {
+                    style |= (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW;
+                }
+                else
+                {
+                    int TITLE_LENGTH = 1024;
+                    StringBuilder titleBuilder = new StringBuilder(TITLE_LENGTH);
+                    GetWindowText(hwndOwner, titleBuilder, TITLE_LENGTH + 1);
+                    if (titleBuilder.ToString() == "Hidden Window")
+                    {
+                        SetWindowLong(hwndOwner, GWL_EXSTYLE, GetWindowLong(hwndOwner, GWL_EXSTYLE) | (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW);
+                    }
+                }
+            }
+            else
+            {
+                style |= (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW;
+            }
+            SetWindowLong(hWnd, GWL_EXSTYLE, style);
 
             ExcludeWindowFromPeek(hWnd);
         }
