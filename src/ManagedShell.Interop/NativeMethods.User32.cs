@@ -214,8 +214,20 @@ namespace ManagedShell.Interop
         }
 
         public const int MA_NOACTIVATE = 0x0003;
-        public const int GWL_STYLE = -16;
-        public const int GWL_EXSTYLE = -20;
+
+        public enum WindowLongFlags : int
+        {
+            GWL_EXSTYLE = -20,
+            GWLP_HINSTANCE = -6,
+            GWLP_HWNDPARENT = -8,
+            GWL_ID = -12,
+            GWL_STYLE = -16,
+            GWL_USERDATA = -21,
+            GWL_WNDPROC = -4,
+            DWLP_USER = 0x8,
+            DWLP_MSGRESULT = 0x0,
+            DWLP_DLGPROC = 0x4
+        }
 
         public const int HSHELL_HIGHBIT = 0x8000;
 
@@ -267,7 +279,24 @@ namespace ManagedShell.Interop
         public delegate IntPtr WndProcDelegate(IntPtr hWnd, int msg, IntPtr wParam, IntPtr lParam);
 
         [DllImport(User32_DllName, SetLastError = true)]
-        public static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+        private static extern int GetWindowLong(IntPtr hWnd, int nIndex);
+
+        [DllImport(User32_DllName, EntryPoint = "GetWindowLongPtr", SetLastError = true)]
+        private static extern IntPtr GetWindowLong64(IntPtr hWnd, int nIndex);
+
+        public static IntPtr GetWindowLongPtr(IntPtr hWnd, WindowLongFlags nIndex)
+        {
+            return GetWindowLongPtr(hWnd, (int)nIndex);
+        }
+
+        // This static method is required because Win32 does not support
+        // GetWindowLongPtr directly
+        public static IntPtr GetWindowLongPtr(IntPtr hWnd, int nIndex)
+        {
+            if (IntPtr.Size == 8)
+                return GetWindowLong64(hWnd, nIndex);
+            return (IntPtr)GetWindowLong(hWnd, nIndex);
+        }
 
         [return: MarshalAs(UnmanagedType.Bool)]
         [DllImport(User32_DllName, SetLastError = true)]
@@ -1704,7 +1733,24 @@ namespace ManagedShell.Interop
         public static extern bool IsWindowEnabled(IntPtr hWnd);
 
         [DllImport(User32_DllName)]
-        public static extern IntPtr SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+        private static extern int SetWindowLong(IntPtr hWnd, int nIndex, int dwNewLong);
+
+        [DllImport(User32_DllName, EntryPoint = "SetWindowLongPtr")]
+        private static extern IntPtr SetWindowLong64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        public static IntPtr SetWindowLongPtr(IntPtr hWnd, WindowLongFlags nIndex, IntPtr dwNewLong)
+        {
+            return SetWindowLongPtr(hWnd, (int)nIndex, dwNewLong);
+        }
+
+        // This static method is required because Win32 does not support
+        // SetWindowLongPtr directly
+        public static IntPtr SetWindowLongPtr(IntPtr hWnd, int nIndex, IntPtr dwNewLong)
+        {
+            if (IntPtr.Size == 8)
+                return SetWindowLong64(hWnd, nIndex, dwNewLong);
+            return (IntPtr)SetWindowLong(hWnd, nIndex, dwNewLong.ToInt32());
+        }
 
         [DllImport(User32_DllName, SetLastError = true)]
         public static extern uint GetWindowThreadProcessId(IntPtr hWnd, out uint lpdwProcessId);

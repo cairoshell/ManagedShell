@@ -239,9 +239,9 @@ namespace ManagedShell.WindowsTray
 
                     if ((wndPos.flags & SetWindowPosFlags.SWP_SHOWWINDOW) != 0)
                     {
-                        SetWindowLong(HwndTray, GWL_STYLE,
-                            GetWindowLong(HwndTray, GWL_STYLE) &
-                            ~(int)WindowStyles.WS_VISIBLE);
+                        SetWindowLongPtr(HwndTray, WindowLongFlags.GWL_STYLE,
+                            (IntPtr)((int)GetWindowLongPtr(HwndTray, WindowLongFlags.GWL_STYLE) &
+                            ~(int)WindowStyles.WS_VISIBLE));
 
                         ShellLogger.Debug($"TrayService: {TrayWndClass} became visible; hiding");
                     }

@@ -338,7 +338,7 @@ namespace ManagedShell.WindowsTasks
         {
             get
             {
-                return NativeMethods.GetWindowLong(Handle, NativeMethods.GWL_STYLE);
+                return (int)NativeMethods.GetWindowLongPtr(Handle, NativeMethods.WindowLongFlags.GWL_STYLE);
             }
         }
 
@@ -346,7 +346,7 @@ namespace ManagedShell.WindowsTasks
         {
             get
             {
-                return NativeMethods.GetWindowLong(Handle, NativeMethods.GWL_EXSTYLE);
+                return (int)NativeMethods.GetWindowLongPtr(Handle, NativeMethods.WindowLongFlags.GWL_EXSTYLE);
             }
         }
 
