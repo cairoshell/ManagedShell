@@ -24,8 +24,8 @@ namespace ManagedShell.Common.SupportingClasses
 
             CreateHandle(cp);
             MessageReceived += ShellWndProc;
-            NativeMethods.SetWindowLongPtr(Handle, NativeMethods.GWL_EXSTYLE, 
-                (IntPtr)((int)NativeMethods.GetWindowLongPtr(Handle, NativeMethods.GWL_EXSTYLE) & 
+            NativeMethods.SetWindowLongPtr(Handle, (int)NativeMethods.WindowLongFlags.GWL_EXSTYLE, 
+                (IntPtr)((int)NativeMethods.GetWindowLongPtr(Handle, (int)NativeMethods.WindowLongFlags.GWL_EXSTYLE) & 
                 ~(int)NativeMethods.ExtendedWindowStyles.WS_EX_NOACTIVATE));
 
             if (NativeMethods.SetShellWindow(Handle) == 1)
