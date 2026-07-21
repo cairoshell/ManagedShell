@@ -141,7 +141,7 @@ namespace ManagedShell.AppBar
                     else
                     {
                         // Still full screen but no longer active
-                        if (((int)GetWindowLongPtr(hWnd, WindowLongFlags.GWL_EXSTYLE) & (int)ExtendedWindowStyles.WS_EX_TOPMOST) == (int)ExtendedWindowStyles.WS_EX_TOPMOST)
+                        if ((GetWindowLong(hWnd, WindowLongFlags.GWL_EXSTYLE) & (int)ExtendedWindowStyles.WS_EX_TOPMOST) == (int)ExtendedWindowStyles.WS_EX_TOPMOST)
                         {
                             // If the new foreground window is a topmost window, don't consider this full-screen app inactive
                             continue;
@@ -264,8 +264,8 @@ namespace ManagedShell.AppBar
         }
 
         private Rect GetEffectiveWindowRect(IntPtr hWnd)
-        {
-            int style = (int)GetWindowLongPtr(hWnd, WindowLongFlags.GWL_STYLE);
+		{
+			int style = GetWindowLong(hWnd, WindowLongFlags.GWL_STYLE);
             Rect rect;
 
             if ((((int)WindowStyles.WS_CAPTION | (int)WindowStyles.WS_THICKFRAME) & style) == ((int)WindowStyles.WS_CAPTION | (int)WindowStyles.WS_THICKFRAME) ||

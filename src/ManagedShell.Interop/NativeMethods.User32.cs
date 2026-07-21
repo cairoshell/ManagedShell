@@ -284,6 +284,11 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName, EntryPoint = "GetWindowLongPtr", SetLastError = true)]
         private static extern IntPtr GetWindowLong64(IntPtr hWnd, int nIndex);
 
+        public static int GetWindowLong(IntPtr hWnd, WindowLongFlags nIndex)
+        {
+            return GetWindowLong(hWnd, (int)nIndex);
+        }
+
         public static IntPtr GetWindowLongPtr(IntPtr hWnd, WindowLongFlags nIndex)
         {
             return GetWindowLongPtr(hWnd, (int)nIndex);
@@ -1737,6 +1742,11 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName, EntryPoint = "SetWindowLongPtr")]
         private static extern IntPtr SetWindowLong64(IntPtr hWnd, int nIndex, IntPtr dwNewLong);
+
+        public static int SetWindowLong(IntPtr hWnd, WindowLongFlags nIndex, int dwNewLong)
+        {
+            return SetWindowLong(hWnd, (int)nIndex, dwNewLong);
+        }
 
         public static IntPtr SetWindowLongPtr(IntPtr hWnd, WindowLongFlags nIndex, IntPtr dwNewLong)
         {

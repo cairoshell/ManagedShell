@@ -103,7 +103,7 @@ namespace ManagedShell.Common.Helpers
         
         public static void HideWindowFromTasks(IntPtr hWnd)
         {
-            int style = (int)GetWindowLongPtr(hWnd, WindowLongFlags.GWL_EXSTYLE) & ~(int)ExtendedWindowStyles.WS_EX_APPWINDOW;
+            int style = GetWindowLong(hWnd, WindowLongFlags.GWL_EXSTYLE) & ~(int)ExtendedWindowStyles.WS_EX_APPWINDOW;
             if (EnvironmentHelper.IsWindows11OrBetter)
             {
                 // If the window has a Hidden Window owner, set the owner as a tool window instead so that we still receive WM_DPICHANGED on Windows 11.
@@ -121,7 +121,7 @@ namespace ManagedShell.Common.Helpers
                     GetWindowText(hwndOwner, titleBuilder, TITLE_LENGTH + 1);
                     if (titleBuilder.ToString() == "Hidden Window")
                     {
-                        SetWindowLongPtr(hwndOwner, WindowLongFlags.GWL_EXSTYLE, (IntPtr)((int)GetWindowLongPtr(hwndOwner, WindowLongFlags.GWL_EXSTYLE) | (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW));
+                        SetWindowLong(hwndOwner, WindowLongFlags.GWL_EXSTYLE, (int)GetWindowLongPtr(hwndOwner, WindowLongFlags.GWL_EXSTYLE) | (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW);
                     }
                 }
             }
@@ -129,7 +129,7 @@ namespace ManagedShell.Common.Helpers
             {
                 style |= (int)ExtendedWindowStyles.WS_EX_TOOLWINDOW;
             }
-            SetWindowLongPtr(hWnd, WindowLongFlags.GWL_EXSTYLE, (IntPtr)style);
+            SetWindowLong(hWnd, WindowLongFlags.GWL_EXSTYLE, style);
 
             ExcludeWindowFromPeek(hWnd);
         }
