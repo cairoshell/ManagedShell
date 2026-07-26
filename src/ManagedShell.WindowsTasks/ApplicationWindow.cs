@@ -279,6 +279,38 @@ namespace ManagedShell.WindowsTasks
             }
         }
 
+        private ThumbnailButton[] _thumbnailButtons;
+
+        public ThumbnailButton[] ThumbnailButtons
+        {
+            get
+            {
+                return _thumbnailButtons;
+            }
+
+            set
+            {
+                _thumbnailButtons = value;
+                OnPropertyChanged("ThumbnailButtons");
+            }
+        }
+
+        private IntPtr _thumbnailButtonImageList = IntPtr.Zero;
+
+        public IntPtr ThumbnailButtonImageList
+        {
+            get
+            {
+                return _thumbnailButtonImageList;
+            }
+
+            set
+            {
+                _thumbnailButtonImageList = value;
+                OnPropertyChanged("ThumbnailButtonImageList");
+            }
+        }
+
         private WindowState _state;
 
         public WindowState State
