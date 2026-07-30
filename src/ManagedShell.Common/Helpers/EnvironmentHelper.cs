@@ -11,6 +11,8 @@ namespace ManagedShell.Common.Helpers
         private static int osVersionMinor = 0;
         private static int osVersionBuild = 0;
 
+        public static bool EnableWin11DpiWorkaround;
+
         private static void getOSVersion()
         {
             osVersionMajor = Environment.OSVersion.Version.Major;

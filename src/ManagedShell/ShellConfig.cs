@@ -67,7 +67,16 @@ namespace ManagedShell
         ///   - Otherwise, the string follows the format: "PathToExe:UID"
         /// </summary>
         public string[] PinnedNotifyIcons;
-        
+
         #endregion
+
+        /// <summary>
+        /// Controls whether the workaround for Windows 11 DPI change notification workaround for AppBars is enabled.<br />
+        /// <br />
+        /// In Windows 11, tool windows (which AppBars are, to hide from the taskbar, alt-tab, and Task Manager) do not receive DPI change notifications.<br />
+        /// To work around this, we can instead give the AppBar an owner window that has WS_EX_TOOLWINDOW, so the AppBar does not need it.<br />
+        /// Unfortunately, this results in the AppBar displaying in Task Manager, as well as some unpredictable Z-order issues due to the ownership relationship.
+        /// </summary>
+        public bool EnableWin11DpiWorkaround;
     }
 }

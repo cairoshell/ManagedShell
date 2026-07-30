@@ -136,7 +136,7 @@ namespace ManagedShell.AppBar
             PropertyChanged += AppBarWindow_PropertyChanged;
 
             ResizeMode = ResizeMode.NoResize;
-            if (EnvironmentHelper.IsWindows11OrBetter)
+            if (EnvironmentHelper.EnableWin11DpiWorkaround && EnvironmentHelper.IsWindows11OrBetter)
             {
                 // With Windows 11, we cannot use the normal way to hide from taskbar (setting as a tool window) because that breaks receiving WM_DPICHANGED.
                 ShowInTaskbar = false;
