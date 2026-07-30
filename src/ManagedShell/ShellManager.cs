@@ -17,7 +17,9 @@ namespace ManagedShell
             
             EnableTrayService = true,
             AutoStartTrayService = true,
-            PinnedNotifyIcons = NotificationArea.DEFAULT_PINNED
+            PinnedNotifyIcons = NotificationArea.DEFAULT_PINNED,
+
+            EnableWin11DpiWorkaround = false
         };
 
         /// <summary>
@@ -33,6 +35,8 @@ namespace ManagedShell
         /// <param name="config">A ShellConfig struct containing desired initialization parameters.</param>
         public ShellManager(ShellConfig config)
         {
+            EnvironmentHelper.EnableWin11DpiWorkaround = config.EnableWin11DpiWorkaround;
+
             if (config.EnableTrayService)
             {
                 TrayService = new TrayService();

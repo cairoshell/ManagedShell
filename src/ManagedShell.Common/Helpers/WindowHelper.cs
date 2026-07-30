@@ -104,7 +104,7 @@ namespace ManagedShell.Common.Helpers
         public static void HideWindowFromTasks(IntPtr hWnd)
         {
             int style = GetWindowLong(hWnd, WindowLongFlags.GWL_EXSTYLE) & ~(int)ExtendedWindowStyles.WS_EX_APPWINDOW;
-            if (EnvironmentHelper.IsWindows11OrBetter)
+            if (EnvironmentHelper.EnableWin11DpiWorkaround && EnvironmentHelper.IsWindows11OrBetter)
             {
                 // If the window has a Hidden Window owner, set the owner as a tool window instead so that we still receive WM_DPICHANGED on Windows 11.
                 // Hidden Window is the owner when ShowInTaskbar=false. Unfortunately, the window will not be hidden from Task Manager.
