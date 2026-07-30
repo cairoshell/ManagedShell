@@ -3857,5 +3857,22 @@ namespace ManagedShell.Interop
 
         [DllImport(User32_DllName)]
         public static extern bool UnregisterDeviceNotification(IntPtr handle);
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct GUITHREADINFO
+        {
+            public int cbSize;
+            public uint flags;
+            public IntPtr hwndActive;
+            public IntPtr hwndFocus;
+            public IntPtr hwndCapture;
+            public IntPtr hwndMenuOwner;
+            public IntPtr hwndMoveSize;
+            public IntPtr hwndCaret;
+            public Rect rcCaret;
+        }
+
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern bool GetGUIThreadInfo(uint idThread, ref GUITHREADINFO lpgui);
     }
 }
