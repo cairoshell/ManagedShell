@@ -713,7 +713,7 @@ namespace ManagedShell.AppBar
             return rect;
         }
 
-        protected internal bool SetWindowPosition(NativeMethods.Rect newRect)
+        protected internal bool SetWindowPosition(NativeMethods.Rect newRect, bool deferWorkArea = false)
         {
             var currentRect = WindowRect;
             if (newRect.Top == currentRect.Top &&
@@ -735,7 +735,7 @@ namespace ManagedShell.AppBar
             NativeMethods.SetWindowPos(Handle, IntPtr.Zero, newRect.Left, newRect.Top, newRect.Width, newRect.Height, swp);
             IsMoving = false;
 
-            if (EnvironmentHelper.IsAppRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell && !deferWorkArea)
             {
                 _appBarManager.SetWorkArea(Screen);
             }
@@ -767,13 +767,23 @@ namespace ManagedShell.AppBar
 
         public virtual bool UpdatePosition()
         {
+            return UpdatePosition(false);
+        }
+
+        public virtual bool UpdatePosition(bool deferWorkArea)
+        {
             // Let Explorer AppBar figure out our position if we are an AppBar, otherwise set our desired rect
             if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell)
             {
+                if (deferWorkArea)
+                {
+                    return SetWindowPosition(GetDesiredRect(), true);
+                }
+
                 return _appBarManager.ABSetPos(this);
             }
 
-            return SetWindowPosition(GetDesiredRect());
+            return SetWindowPosition(GetDesiredRect(), deferWorkArea);
         }
         #endregion
 
