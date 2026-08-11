@@ -119,19 +119,6 @@ namespace ManagedShell.ShellFolders
             ref Guid riid,
             out IntPtr ppv);
 
-        // Displays a shortcut menu at the specified location and 
-        // tracks the selection of items on the shortcut menu
-        [DllImport("user32.dll",
-            ExactSpelling = true,
-            CharSet = CharSet.Auto)]
-        public static extern uint TrackPopupMenuEx(
-            IntPtr hmenu,
-            TPM flags,
-            int x,
-            int y,
-            IntPtr hwnd,
-            IntPtr lptpm);
-
         // Creates a popup-menu. The menu is initially empty, but it can be filled with 
         // menu items by using the InsertMenuItem, AppendMenu, and InsertMenu functions
         [DllImport("user32",

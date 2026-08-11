@@ -171,9 +171,9 @@ namespace ManagedShell.ShellFolders
                 NativeMethods.AllowDarkModeForWindow(Handle, true);
             }
 
-            uint selected = Interop.TrackPopupMenuEx(
+            uint selected = NativeMethods.TrackPopupMenuEx(
                 nativeMenuPtr,
-                TPM.RETURNCMD,
+                NativeMethods.TPM.RETURNCMD,
                 x,
                 y,
                 Handle,
