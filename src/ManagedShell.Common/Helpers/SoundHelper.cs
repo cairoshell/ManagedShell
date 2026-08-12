@@ -157,7 +157,7 @@ namespace ManagedShell.Common.Helpers
             if (EnvironmentHelper.IsWindows8OrBetter)
             {
                 // Toast notification sound.
-                if (!PlaySystemSound("Notification.Default"))
+                if (!PlaySystemSound(".Default", "Notification.Default"))
                     PlayXPNotificationSound();
             }
             else
