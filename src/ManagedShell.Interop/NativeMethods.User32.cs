@@ -36,6 +36,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
 
+        [DllImport(User32_DllName)]
+        public static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
         public enum WindowZOrder
         {
             HWND_TOP = 0,
