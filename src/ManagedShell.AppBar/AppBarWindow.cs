@@ -773,13 +773,8 @@ namespace ManagedShell.AppBar
         public virtual bool UpdatePosition()
         {
             // Let Explorer AppBar figure out our position if we are an AppBar, otherwise set our desired rect
-            if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell)
+            if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !DeferWorkArea)
             {
-                if (DeferWorkArea)
-                {
-                    return SetWindowPosition(GetDesiredRect());
-                }
-
                 return _appBarManager.ABSetPos(this);
             }
 
