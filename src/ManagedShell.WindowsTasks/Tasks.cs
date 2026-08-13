@@ -21,16 +21,7 @@ namespace ManagedShell.WindowsTasks
 
         public ICollectionView CreateGroupedWindowsCollection()
         {
-            ICollectionView collection;
-            if (groupedWindows == null)
-            {
-                collection = CollectionViewSource.GetDefaultView(_tasksService.Windows);
-            }
-            else
-            {
-                collection = new CollectionViewSource { Source = groupedWindows.SourceCollection }.View;
-            }
-
+            ICollectionView collection = new ListCollectionView(_tasksService.Windows);
             collection.GroupDescriptions.Add(new PropertyGroupDescription("Category"));
             collection.CollectionChanged += groupedWindows_Changed;
             collection.Filter = groupedWindows_Filter;
