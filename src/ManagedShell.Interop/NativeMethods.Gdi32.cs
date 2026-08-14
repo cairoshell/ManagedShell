@@ -9,5 +9,8 @@ namespace ManagedShell.Interop
 
         [DllImport(Gdi32_DllName)]
         public static extern bool DeleteObject(IntPtr hObject);
+
+        [DllImport(Gdi32_DllName)]
+        public static extern IntPtr CreateRectRgn(int nLeftRect, int nTopRect, int nRightRect, int nBottomRect);
     }
 }

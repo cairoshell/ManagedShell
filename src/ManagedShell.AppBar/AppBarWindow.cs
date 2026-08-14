@@ -465,7 +465,10 @@ namespace ManagedShell.AppBar
                 switch ((NativeMethods.AppBarNotifications)wParam.ToInt32())
                 {
                     case NativeMethods.AppBarNotifications.PosChanged:
-                        _appBarManager.ABSetPos(this);
+                        if (!DeferWorkArea)
+                        {
+                            _appBarManager.ABSetPos(this);
+                        }
                         break;
 
                     case NativeMethods.AppBarNotifications.WindowArrange:
@@ -538,14 +541,14 @@ namespace ManagedShell.AppBar
                     changed = true;
                 }
 
-                if (changed && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose)
+                if (changed && AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !AllowClose && !DeferWorkArea)
                 {
                     // Tell other AppBars we changed
                     _appBarManager.AppBarWindowPosChanged(this);
                 }
 
                 // Determine if we are intentionally moving
-                if (changed && !IsMoving && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0)
+                if (changed && !IsMoving && !DeferWorkArea && (wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0)
                 {
                     // Someone else moved us! Let's restore state.
                     ShellLogger.Debug($"AppBarWindow: Repositioning due to unexpected move to {wndPos.x},{wndPos.y}");
@@ -713,6 +716,8 @@ namespace ManagedShell.AppBar
             return rect;
         }
 
+        public bool DeferWorkArea { get; set; }
+
         protected internal bool SetWindowPosition(NativeMethods.Rect newRect)
         {
             var currentRect = WindowRect;
@@ -735,7 +740,7 @@ namespace ManagedShell.AppBar
             NativeMethods.SetWindowPos(Handle, IntPtr.Zero, newRect.Left, newRect.Top, newRect.Width, newRect.Height, swp);
             IsMoving = false;
 
-            if (EnvironmentHelper.IsAppRunningAsShell)
+            if (EnvironmentHelper.IsAppRunningAsShell && !DeferWorkArea)
             {
                 _appBarManager.SetWorkArea(Screen);
             }
@@ -768,7 +773,7 @@ namespace ManagedShell.AppBar
         public virtual bool UpdatePosition()
         {
             // Let Explorer AppBar figure out our position if we are an AppBar, otherwise set our desired rect
-            if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell)
+            if (AppBarMode == AppBarMode.Normal && !EnvironmentHelper.IsAppRunningAsShell && !DeferWorkArea)
             {
                 return _appBarManager.ABSetPos(this);
             }

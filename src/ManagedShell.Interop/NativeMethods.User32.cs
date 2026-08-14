@@ -36,6 +36,9 @@ namespace ManagedShell.Interop
         [DllImport(User32_DllName)]
         public static extern bool SetWindowPos(IntPtr hWnd, IntPtr hWndInsertAfter, int X, int Y, int cx, int cy, int uFlags);
 
+        [DllImport(User32_DllName)]
+        public static extern int SetWindowRgn(IntPtr hWnd, IntPtr hRgn, bool bRedraw);
+
         public enum WindowZOrder
         {
             HWND_TOP = 0,
@@ -232,10 +235,55 @@ namespace ManagedShell.Interop
         public const int HSHELL_HIGHBIT = 0x8000;
 
         public const int SC_MINIMIZE = 0xF020;
+        public const int SC_MAXIMIZE = 0xF030;
         public const int SC_MOVE = 0xF010;
         public const int SC_RESTORE = 0xF120;
         public const int SC_SIZE = 0xF000;
         public const int SC_CLOSE = 0xF060;
+
+        public const uint MF_BYCOMMAND = 0x00000000;
+        public const uint MF_GRAYED = 0x00000001;
+        public const uint MF_ENABLED = 0x00000000;
+
+        // Specifies how TrackPopupMenuEx positions the shortcut menu horizontally
+        [Flags]
+        public enum TPM : uint
+        {
+            LEFTBUTTON = 0x0000,
+            RIGHTBUTTON = 0x0002,
+            LEFTALIGN = 0x0000,
+            CENTERALIGN = 0x0004,
+            RIGHTALIGN = 0x0008,
+            TOPALIGN = 0x0000,
+            VCENTERALIGN = 0x0010,
+            BOTTOMALIGN = 0x0020,
+            HORIZONTAL = 0x0000,
+            VERTICAL = 0x0040,
+            NONOTIFY = 0x0080,
+            RETURNCMD = 0x0100,
+            RECURSE = 0x0001,
+            HORPOSANIMATION = 0x0400,
+            HORNEGANIMATION = 0x0800,
+            VERPOSANIMATION = 0x1000,
+            VERNEGANIMATION = 0x2000,
+            NOANIMATION = 0x4000,
+            LAYOUTRTL = 0x8000,
+            WORKAREA = 0x10000
+        }
+
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern bool GetCursorPos(out POINT lpPoint);
+
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern IntPtr GetSystemMenu(IntPtr hWnd, bool bRevert);
+
+        [DllImport(User32_DllName, SetLastError = true)]
+        public static extern bool EnableMenuItem(IntPtr hMenu, uint uIDEnableItem, uint uEnable);
+
+        // Displays a shortcut menu at the specified location and 
+        // tracks the selection of items on the shortcut menu
+        [DllImport(User32_DllName, ExactSpelling = true, SetLastError = true)]
+        public static extern uint TrackPopupMenuEx(IntPtr hMenu, TPM uFlags, int x, int y, IntPtr hWnd, IntPtr lpTPMParams);
 
         [StructLayout(LayoutKind.Sequential)]
         public struct COPYDATASTRUCT
