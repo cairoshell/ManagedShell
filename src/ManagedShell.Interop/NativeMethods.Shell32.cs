@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
+using System.Text;
 
 namespace ManagedShell.Interop
 {
@@ -696,5 +697,90 @@ namespace ManagedShell.Interop
             NoAppcontainerRedirection = 0x00010000,
             AliasOnly = 0x80000000
         }
+
+        #region Shell change notifications (SHChangeNotifyRegister)
+
+        [StructLayout(LayoutKind.Sequential)]
+        public struct SHChangeNotifyEntry
+        {
+            public IntPtr pIdl;
+            [MarshalAs(UnmanagedType.Bool)]
+            public bool Recursively;
+        }
+
+        [Flags]
+        public enum SHCNRF : uint
+        {
+            InterruptLevel = 0x0001,
+            ShellLevel = 0x0002,
+            RecursiveInterrupt = 0x1000,
+            NewDelivery = 0x8000
+        }
+
+        [Flags]
+        public enum SHCNE : long
+        {
+            RENAMEITEM = 0x00000001L,
+            CREATE = 0x00000002L,
+            DELETE = 0x00000004L,
+            MKDIR = 0x00000008L,
+            RMDIR = 0x00000010L,
+            MEDIAINSERTED = 0x00000020L,
+            MEDIAREMOVED = 0x00000040L,
+            DRIVEREMOVED = 0x00000080L,
+            DRIVEADD = 0x00000100L,
+            NETSHARE = 0x00000200L,
+            NETUNSHARE = 0x00000400L,
+            ATTRIBUTES = 0x00000800L,
+            UPDATEDIR = 0x00001000L,
+            UPDATEITEM = 0x00002000L,
+            SERVERDISCONNECT = 0x00004000L,
+            UPDATEIMAGE = 0x00008000L,
+            DRIVEADDGUI = 0x00010000L,
+            RENAMEFOLDER = 0x00020000L,
+            FREESPACE = 0x00040000L,
+            EXTENDED_EVENT = 0x04000000L,
+            ASSOCCHANGED = 0x08000000L,
+            DISKEVENTS = 0x0002381FL,
+            GLOBALEVENTS = 0x0C0581E0L,
+            ALLEVENTS = 0x7FFFFFFFL,
+            INTERRUPT = unchecked((long)0x80000000L)
+        }
+
+        [Flags]
+        public enum SHCNF : uint
+        {
+            IDLIST = 0x0000,
+            PATHA = 0x0001,
+            PRINTERA = 0x0002,
+            DWORD = 0x0003,
+            PATHW = 0x0005,
+            PRINTERW = 0x0006,
+            TYPE = 0x00FF,
+            FLUSH = 0x1000,
+            FLUSHNOWAIT = 0x2000
+        }
+
+        // Registers a window to receive shell change notifications. Using SHCNRF_InterruptLevel
+        // (rather than SHCNRF_ShellLevel) avoids the OS's "trusted shell process" delivery
+        // restriction that normal shell-level listeners are subject to.
+        [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
+        public static extern IntPtr SHChangeNotifyRegister(IntPtr hWnd, SHCNRF fSources, SHCNE fEvents, uint wMsg, int cEntries, ref SHChangeNotifyEntry pFsne);
+
+        [DllImport(Shell32_DllName)]
+        public static extern bool SHChangeNotifyDeregister(IntPtr hNotify);
+
+        // Undocumented, ordinal-exported helpers used to decode the shared-memory payload
+        // delivered with the registered notification window message.
+        [DllImport(Shell32_DllName, EntryPoint = "#644")]
+        public static extern IntPtr SHChangeNotification_Lock(IntPtr wParam, int dwProcessId, out IntPtr pidlArray, out uint lEvent);
+
+        [DllImport(Shell32_DllName, EntryPoint = "#645")]
+        public static extern bool SHChangeNotification_Unlock(IntPtr hLock);
+
+        [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
+        public static extern bool SHGetPathFromIDList(IntPtr pidl, StringBuilder pszPath);
+
+        #endregion
     }
 }

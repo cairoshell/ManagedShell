@@ -10,6 +10,8 @@ namespace ManagedShell.Common.SupportingClasses
         public EventHandler WallpaperChanged;
         public EventHandler WorkAreaChanged;
 
+        private ExplorerRefreshWatcher _explorerRefreshWatcher;
+
         public ShellWindow()
         {
             CreateParams cp = new CreateParams();
@@ -32,18 +34,26 @@ namespace ManagedShell.Common.SupportingClasses
             {
                 // we did it
                 IsShellWindow = true;
+
+                // Becoming the shell window breaks Explorer's own folder-view auto-refresh, since
+                // shell-level change notifications are only delivered to the trusted shell process.
+                // Work around that by relaying notifications to open Explorer windows ourselves.
+                _explorerRefreshWatcher = new ExplorerRefreshWatcher(this);
             }
         }
 
         public void SetSize()
         {
-            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, SystemInformation.VirtualScreen.Left, 
-                SystemInformation.VirtualScreen.Top, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height, 
+            NativeMethods.SetWindowPos(Handle, IntPtr.Zero, SystemInformation.VirtualScreen.Left,
+                SystemInformation.VirtualScreen.Top, SystemInformation.VirtualScreen.Width, SystemInformation.VirtualScreen.Height,
                 (int)NativeMethods.SetWindowPosFlags.SWP_NOZORDER | (int)NativeMethods.SetWindowPosFlags.SWP_NOACTIVATE);
         }
 
         public void Dispose()
         {
+            _explorerRefreshWatcher?.Dispose();
+            _explorerRefreshWatcher = null;
+
             NativeMethods.DestroyWindow(Handle);
         }
 

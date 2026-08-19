@@ -11,6 +11,10 @@
     <PackageReference Include="System.Data.OleDb" Version="8.0.1" />
   </ItemGroup>
 
+  <ItemGroup Condition="'$(TargetFramework)' == 'net480'">
+    <Reference Include="Microsoft.CSharp" />
+  </ItemGroup>
+
   <ItemGroup>
     <Resource Include="Resources\nullIcon.png" />
   </ItemGroup>
