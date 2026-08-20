@@ -717,34 +717,36 @@ namespace ManagedShell.Interop
             NewDelivery = 0x8000
         }
 
+        // Underlying type is int to match the native fEvents parameter, which is LONG
+        // (32-bit) per SHChangeNotifyRegister's documented signature.
         [Flags]
-        public enum SHCNE : long
+        public enum SHCNE
         {
-            RENAMEITEM = 0x00000001L,
-            CREATE = 0x00000002L,
-            DELETE = 0x00000004L,
-            MKDIR = 0x00000008L,
-            RMDIR = 0x00000010L,
-            MEDIAINSERTED = 0x00000020L,
-            MEDIAREMOVED = 0x00000040L,
-            DRIVEREMOVED = 0x00000080L,
-            DRIVEADD = 0x00000100L,
-            NETSHARE = 0x00000200L,
-            NETUNSHARE = 0x00000400L,
-            ATTRIBUTES = 0x00000800L,
-            UPDATEDIR = 0x00001000L,
-            UPDATEITEM = 0x00002000L,
-            SERVERDISCONNECT = 0x00004000L,
-            UPDATEIMAGE = 0x00008000L,
-            DRIVEADDGUI = 0x00010000L,
-            RENAMEFOLDER = 0x00020000L,
-            FREESPACE = 0x00040000L,
-            EXTENDED_EVENT = 0x04000000L,
-            ASSOCCHANGED = 0x08000000L,
-            DISKEVENTS = 0x0002381FL,
-            GLOBALEVENTS = 0x0C0581E0L,
-            ALLEVENTS = 0x7FFFFFFFL,
-            INTERRUPT = unchecked((long)0x80000000L)
+            RENAMEITEM = 0x00000001,
+            CREATE = 0x00000002,
+            DELETE = 0x00000004,
+            MKDIR = 0x00000008,
+            RMDIR = 0x00000010,
+            MEDIAINSERTED = 0x00000020,
+            MEDIAREMOVED = 0x00000040,
+            DRIVEREMOVED = 0x00000080,
+            DRIVEADD = 0x00000100,
+            NETSHARE = 0x00000200,
+            NETUNSHARE = 0x00000400,
+            ATTRIBUTES = 0x00000800,
+            UPDATEDIR = 0x00001000,
+            UPDATEITEM = 0x00002000,
+            SERVERDISCONNECT = 0x00004000,
+            UPDATEIMAGE = 0x00008000,
+            DRIVEADDGUI = 0x00010000,
+            RENAMEFOLDER = 0x00020000,
+            FREESPACE = 0x00040000,
+            EXTENDED_EVENT = 0x04000000,
+            ASSOCCHANGED = 0x08000000,
+            DISKEVENTS = 0x0002381F,
+            GLOBALEVENTS = 0x0C0581E0,
+            ALLEVENTS = 0x7FFFFFFF,
+            INTERRUPT = unchecked((int)0x80000000)
         }
 
         [Flags]
@@ -761,14 +763,15 @@ namespace ManagedShell.Interop
             FLUSHNOWAIT = 0x2000
         }
 
-        // Registers a window to receive shell change notifications. Using SHCNRF_InterruptLevel
-        // (rather than SHCNRF_ShellLevel) avoids the OS's "trusted shell process" delivery
-        // restriction that normal shell-level listeners are subject to.
+        // Registers a window to receive shell change notifications. SHCNRF_InterruptLevel
+        // notifications are not restricted to Explorer's own folder views the way
+        // SHCNRF_ShellLevel notifications appear to be in practice (see ExplorerRefreshWatcher).
+        // Return value is a ULONG registration ID, not a handle.
         [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
-        public static extern IntPtr SHChangeNotifyRegister(IntPtr hWnd, SHCNRF fSources, SHCNE fEvents, uint wMsg, int cEntries, ref SHChangeNotifyEntry pFsne);
+        public static extern uint SHChangeNotifyRegister(IntPtr hWnd, SHCNRF fSources, SHCNE fEvents, uint wMsg, int cEntries, ref SHChangeNotifyEntry pFsne);
 
         [DllImport(Shell32_DllName)]
-        public static extern bool SHChangeNotifyDeregister(IntPtr hNotify);
+        public static extern bool SHChangeNotifyDeregister(uint ulID);
 
         // Decodes the shared-memory payload delivered with the registered notification window
         // message. Documented in shlobj_core.h (see SHChangeNotification_Lock/_Unlock on

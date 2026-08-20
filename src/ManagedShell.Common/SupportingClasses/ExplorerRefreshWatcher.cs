@@ -8,13 +8,15 @@ using static ManagedShell.Interop.NativeMethods;
 namespace ManagedShell.Common.SupportingClasses
 {
     /// <summary>
-    /// Once another process registers itself as the OS shell window (via SetShellWindow, as
-    /// ShellWindow does), Explorer's own folder view windows stop receiving the shell-level
-    /// change notifications they rely on for auto-refresh, since that delivery path is
-    /// restricted to windows belonging to whichever process the OS currently trusts as "the
-    /// shell". This watcher registers for the same notifications at interrupt level, which is
-    /// not subject to that restriction, and manually refreshes any open Explorer windows
-    /// viewing an affected folder.
+    /// Once ShellWindow registers itself as the OS shell window (via SetShellWindow), Explorer's
+    /// own folder view windows stop receiving the SHCNRF_ShellLevel change notifications they
+    /// rely on for auto-refresh. The exact reason isn't documented, but it's reproducible and
+    /// scoped specifically to SetShellWindow (confirmed against cairoshell/cairoshell#434) — the
+    /// working theory is that shell-level delivery is restricted to windows belonging to
+    /// whichever process the OS currently considers "the shell". SHCNRF_InterruptLevel
+    /// notifications (meant for background/service-style listeners) aren't subject to whatever
+    /// that restriction is, so this watcher registers for those instead and manually refreshes
+    /// any open Explorer window viewing an affected folder.
     /// </summary>
     public class ExplorerRefreshWatcher : IDisposable
     {
@@ -32,7 +34,7 @@ namespace ManagedShell.Common.SupportingClasses
 
         private readonly NativeWindowEx _window;
         private readonly int _notifyMessage;
-        private IntPtr _registration;
+        private uint _registration;
         private dynamic _shellApp;
 
         public ExplorerRefreshWatcher(NativeWindowEx window)
@@ -50,7 +52,7 @@ namespace ManagedShell.Common.SupportingClasses
             _registration = SHChangeNotifyRegister(_window.Handle, SHCNRF.InterruptLevel | SHCNRF.NewDelivery,
                 WatchedEvents, (uint)_notifyMessage, 1, ref entry);
 
-            if (_registration == IntPtr.Zero)
+            if (_registration == 0)
             {
                 ShellLogger.Warning("ExplorerRefreshWatcher: Failed to register for shell change notifications");
             }
@@ -63,7 +65,9 @@ namespace ManagedShell.Common.SupportingClasses
                 return;
             }
 
-            IntPtr lockHandle = SHChangeNotification_Lock(msg.WParam, 0, out IntPtr pidlArray, out uint eventId);
+            // Registered with SHCNRF_NewDelivery, so per SHChangeNotification_Lock's documented
+            // contract, wParam/lParam from the message map to its hChange/dwProcId parameters.
+            IntPtr lockHandle = SHChangeNotification_Lock(msg.WParam, unchecked((int)(long)msg.LParam), out IntPtr pidlArray, out uint eventId);
 
             if (lockHandle == IntPtr.Zero)
             {
@@ -180,10 +184,10 @@ namespace ManagedShell.Common.SupportingClasses
         {
             _window.MessageReceived -= WndProc;
 
-            if (_registration != IntPtr.Zero)
+            if (_registration != 0)
             {
                 SHChangeNotifyDeregister(_registration);
-                _registration = IntPtr.Zero;
+                _registration = 0;
             }
 
             if (_shellApp != null)
