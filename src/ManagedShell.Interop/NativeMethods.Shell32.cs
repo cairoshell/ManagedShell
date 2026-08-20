@@ -770,12 +770,13 @@ namespace ManagedShell.Interop
         [DllImport(Shell32_DllName)]
         public static extern bool SHChangeNotifyDeregister(IntPtr hNotify);
 
-        // Undocumented, ordinal-exported helpers used to decode the shared-memory payload
-        // delivered with the registered notification window message.
-        [DllImport(Shell32_DllName, EntryPoint = "#644")]
-        public static extern IntPtr SHChangeNotification_Lock(IntPtr wParam, int dwProcessId, out IntPtr pidlArray, out uint lEvent);
+        // Decodes the shared-memory payload delivered with the registered notification window
+        // message. Documented in shlobj_core.h (see SHChangeNotification_Lock/_Unlock on
+        // Microsoft Learn); Shell32.dll has exported these by name since Windows 10.
+        [DllImport(Shell32_DllName)]
+        public static extern IntPtr SHChangeNotification_Lock(IntPtr hChange, int dwProcId, out IntPtr pidlArray, out uint lEvent);
 
-        [DllImport(Shell32_DllName, EntryPoint = "#645")]
+        [DllImport(Shell32_DllName)]
         public static extern bool SHChangeNotification_Unlock(IntPtr hLock);
 
         [DllImport(Shell32_DllName, CharSet = CharSet.Auto)]
