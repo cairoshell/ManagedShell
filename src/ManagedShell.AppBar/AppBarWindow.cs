@@ -107,6 +107,23 @@ namespace ManagedShell.AppBar
         protected double AutoHideAnimationMs = 300;
         protected double AutoHideShowAnimationMs = 150;
 
+        private bool _deferWorkArea;
+        private bool _previouslyDeferredWorkArea;
+        public bool DeferWorkArea
+        {
+            get => _deferWorkArea;
+            set
+            {
+                bool oldValue = _deferWorkArea;
+                _deferWorkArea = value;
+                if (oldValue && oldValue != value)
+                {
+                    _previouslyDeferredWorkArea = true;
+                    UpdatePosition();
+                }
+            }
+        }
+
         private bool _isDragWithin;
         private bool _isMouseWithin;
         private bool _isContextMenuOpen;
@@ -522,6 +539,13 @@ namespace ManagedShell.AppBar
 
                 // Determine if our window rect has changed and update the cached values
                 bool changed = false;
+                if (_previouslyDeferredWorkArea)
+                {
+                    // We will get another WM_WINDOWPOSCHANGED when DeferWorkArea is disabled again,
+                    // and we always want to process it
+                    changed = true;
+                    _previouslyDeferredWorkArea = false;
+                }
                 if ((wndPos.flags & NativeMethods.SetWindowPosFlags.SWP_NOMOVE) == 0 &&
                     (wndPos.y != WindowRect.Top || wndPos.x != WindowRect.Left))
                 {
@@ -716,12 +740,11 @@ namespace ManagedShell.AppBar
             return rect;
         }
 
-        public bool DeferWorkArea { get; set; }
-
         protected internal bool SetWindowPosition(NativeMethods.Rect newRect)
         {
             var currentRect = WindowRect;
-            if (newRect.Top == currentRect.Top &&
+            if (!_previouslyDeferredWorkArea &&
+                newRect.Top == currentRect.Top &&
                 newRect.Left == currentRect.Left &&
                 newRect.Bottom == currentRect.Bottom &&
                 newRect.Right == currentRect.Right)
