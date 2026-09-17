@@ -239,6 +239,11 @@ namespace ManagedShell.Common.Helpers
             ShellKeyCombo(VK.LWIN, VK.LWIN);
         }
 
+        public static void ShowSearchMenu()
+        {
+            ShellKeyCombo(VK.LWIN, VK.KEY_S);
+        }
+
         public static void ShowStartContextMenu()
         {
             ShellKeyCombo(VK.LWIN, VK.KEY_X);
